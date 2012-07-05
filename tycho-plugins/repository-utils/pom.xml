@@ -1,17 +1,19 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.jboss.tools.tycho</groupId>
-  <artifactId>generate-repository-facade</artifactId>
-  <packaging>maven-plugin</packaging>
-  <version>0.0.1-SNAPSHOT</version>
-  <name>Mojo to Generate site.xml for eclipse-repository</name>
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.jboss.tools.tycho-plugins</groupId>
+	<artifactId>repository-utils</artifactId>
+	<packaging>maven-plugin</packaging>
+	<name>Set of Mojos to add content to p2 repositories</name>
 
-	<properties>
-		<tychoVersion>0.14.0</tychoVersion>
-	</properties>
-  
- <dependencies>
+	<parent>
+		<groupId>org.jboss.tools</groupId>
+		<artifactId>tycho-plugins</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+		<relativePath>..</relativePath>
+	</parent>
+
+	<dependencies>
 		<dependency>
 			<groupId>org.eclipse.tycho</groupId>
 			<artifactId>tycho-p2-facade</artifactId>
@@ -37,28 +39,13 @@
 			<artifactId>saxon-dom</artifactId>
 			<version>8.7</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.8.2</version>
 			<scope>test</scope>
 		</dependency>
-  </dependencies>
-  
-  <repositories>
-  	<repository>
-  		<id>central</id>
-  		<url>http://repo1.maven.org/maven2</url>
-  		<layout>default</layout>
-  		<releases><enabled>true</enabled></releases>
-  	</repository>
-  </repositories>
-  <pluginRepositories>
-  	<pluginRepository>
-  		<id>central-plugin</id>
-  		<url>http://repo1.maven.org/maven2</url>
-  	</pluginRepository>
-  </pluginRepositories>
+	</dependencies>
 
 </project>
