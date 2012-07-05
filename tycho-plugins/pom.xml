@@ -1,0 +1,36 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.jboss.tools</groupId>
+	<artifactId>tycho-plugins</artifactId>
+	<packaging>pom</packaging>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>In-House Maven plugins for JBT/JBDS build</name>
+
+	<properties>
+		<tychoVersion>0.15.0</tychoVersion>
+	</properties>
+
+	<modules>
+		<module>generate-repository-facade</module>
+	</modules>
+
+
+	<!-- To deploy to Nexus -->
+	<!-- Don't change "id" since it should match credentials entry in $M2_REPO/settings.xml -->
+	<distributionManagement>
+		<snapshotRepository>
+			<id>jboss-snapshots-repository</id>
+			<name>JBoss Snapshots Repository</name>
+			<url>https://repository.jboss.org/nexus/content/repositories/snapshots/</url>
+			<uniqueVersion>false</uniqueVersion>
+		</snapshotRepository>
+		<repository>
+			<id>jboss-staging-repository</id>
+			<name>JBoss Staging Repository</name>
+			<uniqueVersion>false</uniqueVersion>
+			<url>https://repository.jboss.org/nexus/content/groups/staging/</url>
+		</repository>
+	</distributionManagement>
+
+</project>
