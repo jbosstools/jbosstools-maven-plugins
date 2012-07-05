@@ -15,6 +15,21 @@
 		<module>repository-utils</module>
 	</modules>
 
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<configuration>
+						<compilerVersion>1.5</compilerVersion>
+						<target>1.5</target>
+						<source>1.5</source>
+					</configuration>				
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
 
 	<!-- To deploy to Nexus -->
 	<!-- Don't change "id" since it should match credentials entry in $M2_REPO/settings.xml -->
