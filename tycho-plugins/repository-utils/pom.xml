@@ -47,5 +47,18 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+	
+	<repositories>
+		<repository>
+			<id>jboss-snapshots-repository</id>
+			<name>JBoss Snapshots Repository</name>
+			<url>https://repository.jboss.org/nexus/content/repositories/snapshots/</url>
+		</repository>
+		<repository>
+			<id>jboss-staging-repository</id>
+			<name>JBoss Staging Repository</name>
+			<url>https://repository.jboss.org/nexus/content/groups/staging/</url> 
+		</repository>
+	</repositories>
 
 </project>
