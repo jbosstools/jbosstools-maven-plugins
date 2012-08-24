@@ -130,7 +130,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         }
         
         
-        File repoZipFile = new File(project.getBuild().getDirectory(), project.getArtifactId() + ".zip");
+        File repoZipFile = new File(project.getBuild().getDirectory(), project.getArtifactId() + "-" + project.getVersion() + ".zip");
 		repoZipFile.delete();
 		try {
 	        ZipArchiver archiver = new ZipArchiver();
