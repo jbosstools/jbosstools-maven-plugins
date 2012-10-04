@@ -13,6 +13,7 @@
 
 	<modules>
 		<module>repository-utils</module>
+		<module>target-platform-utils</module>
 	</modules>
 
 	<build>
