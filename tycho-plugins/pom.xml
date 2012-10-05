@@ -26,11 +26,25 @@
 						<compilerVersion>1.5</compilerVersion>
 						<target>1.5</target>
 						<source>1.5</source>
-					</configuration>				
+					</configuration>
 				</plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
+
+	<repositories>
+		<repository>
+			<id>tycho-snapshots</id>
+			<url>https://oss.sonatype.org/content/groups/public/</url>
+			<layout>default</layout>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
 
 	<!-- To deploy to Nexus -->
 	<!-- Don't change "id" since it should match credentials entry in $M2_REPO/settings.xml -->

@@ -95,7 +95,7 @@ public class FlattenTargetMojo extends AbstractMojo
         	if (!this.sourceTargetArtifact.isCorrectlySet()) {
         		throw new MojoExecutionException("'sourceTargetArtifact' must define groupId, artifactId and version");
         	}
-        	getLog().info("Downloading " + sourceTargetArtifact.toString());
+        	getLog().debug("Downloading " + sourceTargetArtifact.toString());
         	Artifact artifact = this.repositorySystem.createArtifactWithClassifier(this.sourceTargetArtifact.getGroupId(), this.sourceTargetArtifact.getArtifactId(), this.sourceTargetArtifact.getVersion(), "target",
                     this.sourceTargetArtifact.getArtifactId());
             ArtifactResolutionRequest request = new ArtifactResolutionRequest();
