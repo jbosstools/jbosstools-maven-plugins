@@ -77,24 +77,8 @@ public class MergeTargetsMojo extends AbstractMojo {
     	}
 
         if (this.sourceTargetArtifacts != null) {
-        	for (TargetArtifact sourceTargetArtifact : sourceTargetArtifacts) {
-	        	if (!sourceTargetArtifact.isCorrectlySet()) {
-	        		throw new MojoExecutionException("'sourceTargetArtifact' must define groupId, artifactId and version");
-	        	}
-	        	getLog().debug("Downloading " + sourceTargetArtifact.toString());
-	        	Artifact artifact = this.repositorySystem.createArtifactWithClassifier(sourceTargetArtifact.getGroupId(), sourceTargetArtifact.getArtifactId(), sourceTargetArtifact.getVersion(), "target",
-	                    sourceTargetArtifact.getArtifactId());
-	            ArtifactResolutionRequest request = new ArtifactResolutionRequest();
-	            request.setArtifact(artifact);
-	            request.setLocalRepository(this.session.getLocalRepository());
-	            request.setRemoteRepositories(this.project.getRemoteArtifactRepositories());
-	            this.repositorySystem.resolve(request);
-
-	            if (!artifact.isResolved()) {
-	                throw new RuntimeException("Could not resolve target platform specification artifact " + artifact);
-	            }
-
-	            this.sourceTargetFiles.add(artifact.getFile());
+        	for (TargetArtifact sourceTargetArtifact : this.sourceTargetArtifacts) {
+	        	this.sourceTargetFiles.add(sourceTargetArtifact.getFile(this.repositorySystem, this.session, this.project));
         	}
         }
 

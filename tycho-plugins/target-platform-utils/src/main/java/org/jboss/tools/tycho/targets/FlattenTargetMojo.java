@@ -92,23 +92,7 @@ public class FlattenTargetMojo extends AbstractMojo
         }
 
         if (this.sourceTargetArtifact != null) {
-        	if (!this.sourceTargetArtifact.isCorrectlySet()) {
-        		throw new MojoExecutionException("'sourceTargetArtifact' must define groupId, artifactId and version");
-        	}
-        	getLog().debug("Downloading " + sourceTargetArtifact.toString());
-        	Artifact artifact = this.repositorySystem.createArtifactWithClassifier(this.sourceTargetArtifact.getGroupId(), this.sourceTargetArtifact.getArtifactId(), this.sourceTargetArtifact.getVersion(), "target",
-                    this.sourceTargetArtifact.getArtifactId());
-            ArtifactResolutionRequest request = new ArtifactResolutionRequest();
-            request.setArtifact(artifact);
-            request.setLocalRepository(this.session.getLocalRepository());
-            request.setRemoteRepositories(this.project.getRemoteArtifactRepositories());
-            this.repositorySystem.resolve(request);
-
-            if (!artifact.isResolved()) {
-                throw new RuntimeException("Could not resolve target platform specification artifact " + artifact);
-            }
-
-            this.sourceTargetFile = artifact.getFile();
+            this.sourceTargetFile = this.sourceTargetArtifact.getFile(this.repositorySystem, this.session, this.project);
         }
 
         try {

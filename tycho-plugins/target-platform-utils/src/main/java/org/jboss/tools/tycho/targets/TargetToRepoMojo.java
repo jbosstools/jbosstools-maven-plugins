@@ -20,6 +20,8 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.repository.RepositorySystem;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.eclipse.sisu.equinox.EquinoxServiceFactory;
 import org.eclipse.tycho.BuildOutputDirectory;
 import org.eclipse.tycho.p2.resolver.TargetDefinitionFile;
@@ -51,30 +53,51 @@ public class TargetToRepoMojo extends AbstractMojo {
      * @readonly
      */
     private MavenSession session;
+    /**
+     * @component
+     */
+    @Requirement
+    private RepositorySystem repositorySystem;
 
     /**
-     * @parameter expression="${project.artifactId}.target"
+     * @parameter
      */
-    private File targetFile;
+    private File sourceTargetFile;
+
+    /**
+     * @parameter
+     */
+    private TargetArtifact sourceTargetArtifact;
 
     /**
      * @parameter expression="${project.build.directory}/${project.artifactId}.target.repo"
      */
-    private File targetRepository;
+    private File outputRepository;
 
     /** @component */
     private EquinoxServiceFactory p2;
 
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		try {
-			if (!this.targetFile.isFile()) {
-				throw new MojoExecutionException("Specified 'targetFile' (value: " + targetFile + ") is not a valid file");
+			if (this.sourceTargetArtifact != null && this.sourceTargetFile != null) {
+				getLog().debug("sourceTargetArtifact: " + this.sourceTargetArtifact.toString());
+				getLog().debug("sourceTargetFile; " + this.sourceTargetFile.toString());
+				throw new MojoExecutionException("Set either 'sourceTargetArtifact' XOR 'sourceTargetFile'");
 			}
-			this.targetRepository.mkdirs();
+			if (this.sourceTargetFile == null && this.sourceTargetArtifact == null) {
+				this.sourceTargetFile = new File(this.project.getBasedir(), this.project.getArtifactId() + ".target");
+			}
+			if (this.sourceTargetArtifact != null) {
+				this.sourceTargetFile = this.sourceTargetArtifact.getFile(this.repositorySystem, this.session, this.project);
+			}
+			if (!this.sourceTargetFile.isFile()) {
+				throw new MojoExecutionException("Specified 'targetFile' (value: " + sourceTargetFile + ") is not a valid file");
+			}
+			this.outputRepository.mkdirs();
 
 			final MirrorApplicationService mirrorService = p2.getService(MirrorApplicationService.class);
 
-			TargetDefinitionFile target = TargetDefinitionFile.read(targetFile);
+			TargetDefinitionFile target = TargetDefinitionFile.read(sourceTargetFile);
 	        final RepositoryReferences sourceDescriptor = new RepositoryReferences();
 	        for (final Location loc : target.getLocations()) {
 	        	if (loc instanceof InstallableUnitLocation) {
@@ -85,7 +108,7 @@ public class TargetToRepoMojo extends AbstractMojo {
 	        	}
 	        }
 
-	        final DestinationRepositoryDescriptor destinationDescriptor = new DestinationRepositoryDescriptor(this.targetRepository, this.targetFile.getName(), true, false, true);
+	        final DestinationRepositoryDescriptor destinationDescriptor = new DestinationRepositoryDescriptor(this.outputRepository, this.sourceTargetFile.getName(), true, false, true);
 
 	        mirrorService.mirrorStandalone(sourceDescriptor, destinationDescriptor, createIUDescriptions(target), createMirrorOptions(), new BuildOutputDirectory(this.project.getBuild().getOutputDirectory()));
 		} catch (Exception ex) {
