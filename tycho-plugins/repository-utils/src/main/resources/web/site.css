@@ -9,10 +9,17 @@ STYLE type ="text/css">td.spacer {
 	color: #1778be;
 }
 
+.table {
+	margin-top: 0px;
+	margin-left: 0px;
+	width: 920px;
+}
+
 .bodyText {
 	font-family: sans-serif;
 	font-size: 9pt;
 	color: #000000;
+	width: 100%
 }
 
 .sub-header {
@@ -60,6 +67,11 @@ STYLE type ="text/css">td.spacer {
 
 .link {
 	color: #187dc6;
+}
+
+.td_header {
+	background: url("https://www.jboss.org/dms/tools/images/tools-banner.png") 0 no-repeat;
+	height: 100px;
 }
 
 .column-header {

@@ -66,7 +66,7 @@ import org.xml.sax.SAXException;
  * Generates a JBoss-friendly facade and files for this p2 repo
  *
  * @goal generate-repository-facade
- * 
+ *
  * @phase package
  */
 public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
@@ -81,26 +81,26 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
      * @readonly
      */
     private MavenProject project;
-    
+
     /**
      * Additional symbols, to replace in files
      *
      * @parameter
      */
     private Map<String, String> symbols;
-    
+
     /**
      * template folder for HTML contents
      * @parameter
      */
 	private File siteTemplateFolder;
-	
+
 	/**
 	 * Additional sites to add to repo associateSites
-	 * @parameter 
+	 * @parameter
 	 */
 	private List<String> associateSites;
-	
+
 	/**
 	 * name of the file in ${siteTemplateFolder} to use as template for index.html
 	 * @parameter default-value="index.html"
@@ -113,12 +113,12 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
              return;
          }
 
-    	 if (symbols == null) {
-    		 symbols = new HashMap<String, String>();
+    	 if (this.symbols == null) {
+    		 this.symbols = new HashMap<String, String>();
 	     }
     	 // TODO populate default symbols: ${update.site.name} & ${update.site.description}
-    	 
- 		File outputRepository = new File(project.getBuild().getDirectory(), "repository");
+
+ 		File outputRepository = new File(this.project.getBuild().getDirectory(), "repository");
     	File outputSiteXml = generateSiteXml(outputRepository);
         generateSiteProperties(outputRepository, outputSiteXml);
         generateJBossToolsDirectoryXml(outputRepository);
@@ -128,8 +128,8 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         } catch (Exception ex) {
         	throw new MojoExecutionException("Error while altering content.jar",ex);
         }
-        
-        
+
+
         File repoZipFile = new File(project.getBuild().getDirectory(), project.getArtifactId() + "-" + project.getVersion() + ".zip");
 		repoZipFile.delete();
 		try {
@@ -141,7 +141,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		} catch (Exception ex) {
 			throw new MojoExecutionException("Could not create " + repoZipFile.getName(), ex);
 		}
-        
+
     }
 
 	private void generateWebStuff(File outputRepository, File outputSiteXml)
@@ -160,8 +160,8 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         } catch (Exception ex) {
         	throw new MojoExecutionException("Error occured while generating 'site.properties'", ex);
         }
-        
-        
+
+
         try {
         	copyTemplateResources(outputRepository);
         } catch (Exception ex) {
@@ -219,7 +219,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         } catch (Exception ex) {
         	throw new MojoExecutionException("Error occured while generating 'site.properties'", ex);
         }
-        
+
         try {
         	copyTemplateResources(outputRepository);
         } catch (Exception ex) {
@@ -234,7 +234,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         if (!categoryFile.isFile()) {
         	throw new MojoExecutionException("Missing 'category.xml file'");
         }
-        
+
 		UpdateSite site = null;
 		try {
 			site = UpdateSite.read(categoryFile);
@@ -309,7 +309,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         		done = true;
         	}
         }
-        // .close and .closeEntry raise exception: 
+        // .close and .closeEntry raise exception:
         // https://issues.apache.org/bugzilla/show_bug.cgi?id=3862
         ZipOutputStream outContentStream = new ZipOutputStream(new FileOutputStream(contentJar));
         ZipEntry contentXmlEntry = new ZipEntry("content.xml");
@@ -318,16 +318,16 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         Transformer transformer = tFactory.newTransformer();
         DOMSource source = new DOMSource(contentDoc);
         StreamResult result = new StreamResult(outContentStream);
-        transformer.transform(source, result); 
+        transformer.transform(source, result);
         outContentStream.closeEntry();
         outContentStream.close();
 	}
 
 	private void alterIndexFile(File outputSite) throws FileNotFoundException, IOException {
-		File templateFile = new File(outputSite, indexName);
+		File templateFile = new File(outputSite, this.indexName);
 		FileInputStream fis = new FileInputStream(templateFile);
 		String htmlFile = IOUtil.toString(fis, "UTF-8");
-		for (Entry<String, String> entry : symbols.entrySet()) {
+		for (Entry<String, String> entry : this.symbols.entrySet()) {
 			String key = entry.getKey();
 			if (!key.startsWith("${")) {
 				key = "${" + key + "}";
@@ -336,17 +336,25 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		}
 		FileOutputStream out = new FileOutputStream(templateFile);
 		out.write(htmlFile.getBytes("UTF-8"));
+		fis.close();
 		out.close();
 	}
-    
-	private void copyTemplateResources(File outputSite) throws IOException {
-		if (siteTemplateFolder != null) {
-			FileUtils.copyDirectory(siteTemplateFolder, outputSite);
+
+	private void copyTemplateResources(File outputSite) throws IOException, MojoExecutionException {
+		if (this.siteTemplateFolder != null) {
+			if (!this.siteTemplateFolder.isDirectory()) {
+				throw new MojoExecutionException("'siteTemplateFolder' not correctly set. " + this.siteTemplateFolder.getAbsolutePath() + " is not a directory");
+			}
+			FileUtils.copyDirectoryStructure(this.siteTemplateFolder, outputSite);
+			if (!new File(this.siteTemplateFolder, this.indexName).isFile()) {
+				// copy default index
+				InputStream indexStream = getClass().getResourceAsStream("/index.html");
+				FileUtils.copyStreamToFile(new RawInputStreamFacade(indexStream), new File(outputSite, this.indexName));
+				indexStream.close();
+			}
 		} else {
-			// load from resources
 			InputStream indexStream = getClass().getResourceAsStream("/index.html");
-			indexName = "index.html";
-			FileUtils.copyStreamToFile(new RawInputStreamFacade(indexStream), new File(outputSite, "index.html"));
+			FileUtils.copyStreamToFile(new RawInputStreamFacade(indexStream), new File(outputSite, this.indexName));
 			indexStream.close();
 			File webFolder = new File(outputSite, "web");
 			if (!webFolder.exists()) {
