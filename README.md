@@ -1,5 +1,9 @@
 # The JBoss Tools Maven Plugins project
 
+## Summary
+
+Various Maven/Tycho plugins used by JBoss Tools 
+
 ## Install
 
 _JBoss Tools Maven Plugins_ is part of [JBoss Tools](http://jboss.org/tools) from
