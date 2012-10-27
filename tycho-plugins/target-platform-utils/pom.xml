@@ -6,7 +6,6 @@
     <groupId>org.jboss.tools</groupId>
     <artifactId>tycho-plugins</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <relativePath>..</relativePath>
   </parent>
   <groupId>org.jboss.tools.tycho-plugins</groupId>
   <artifactId>target-platform-utils</artifactId>
