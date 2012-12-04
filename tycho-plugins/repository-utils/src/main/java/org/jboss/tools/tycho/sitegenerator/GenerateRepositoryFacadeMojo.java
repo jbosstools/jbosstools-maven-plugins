@@ -107,6 +107,12 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	 */
 	private String indexName;
 
+	/**
+	 * name of the file in ${siteTemplateFolder}/web to use for CSS
+	 * @parameter default-value="site.css"
+	 */
+	private String cssName;
+
     public void execute() throws MojoExecutionException
     {
     	 if (!ArtifactKey.TYPE_ECLIPSE_REPOSITORY.equals(project.getPackaging())) {
@@ -120,6 +126,14 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
  		File outputRepository = new File(this.project.getBuild().getDirectory(), "repository");
     	File outputSiteXml = generateSiteXml(outputRepository);
+		
+    	// If a siteTemplateFolder is set, pull index.html and site.css from there; otherwise use defaults
+        try {
+        	copyTemplateResources(outputRepository);
+        } catch (Exception ex) {
+        	throw new MojoExecutionException("Error while copying siteTemplateFolder content to " + outputRepository, ex);
+        }
+		
         generateSiteProperties(outputRepository, outputSiteXml);
         generateJBossToolsDirectoryXml(outputRepository);
         generateWebStuff(outputRepository, outputSiteXml);
@@ -160,13 +174,6 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         } catch (Exception ex) {
         	throw new MojoExecutionException("Error occured while generating 'site.properties'", ex);
         }
-
-
-        try {
-        	copyTemplateResources(outputRepository);
-        } catch (Exception ex) {
-        	throw new MojoExecutionException("Error while copying siteTemplateFolder content to " + outputRepository, ex);
-        }
         try {
         	alterIndexFile(outputRepository);
         } catch (Exception ex) {
@@ -196,7 +203,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         	}
         }
         if (org_jboss_tools_central_discovery.length == 0) {
-        	getLog().warn("No org.jboss.tools.central.discovery plugin in repo. Skip generatio of 'jbosstools-directory.xml'");
+        	getLog().warn("No org.jboss.tools.central.discovery plugin in repo. Skip generation of 'jbosstools-directory.xml'");
         }
         if (org_jboss_tools_central_discovery.length > 1) {
         	getLog().warn("Several org.jbosstools.central.discovery plugin in repo");
@@ -218,12 +225,6 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	        out.close();
         } catch (Exception ex) {
         	throw new MojoExecutionException("Error occured while generating 'site.properties'", ex);
-        }
-
-        try {
-        	copyTemplateResources(outputRepository);
-        } catch (Exception ex) {
-        	throw new MojoExecutionException("Error while copying siteTemplateFolder content to " + outputRepository, ex);
         }
 	}
 
@@ -341,18 +342,35 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	}
 
 	private void copyTemplateResources(File outputSite) throws IOException, MojoExecutionException {
+		getLog().debug("Using outputSite = " + outputSite);
+		getLog().debug("Using siteTemplateFolder = " + this.siteTemplateFolder);
 		if (this.siteTemplateFolder != null) {
 			if (!this.siteTemplateFolder.isDirectory()) {
 				throw new MojoExecutionException("'siteTemplateFolder' not correctly set. " + this.siteTemplateFolder.getAbsolutePath() + " is not a directory");
 			}
 			FileUtils.copyDirectoryStructure(this.siteTemplateFolder, outputSite);
-			if (!new File(this.siteTemplateFolder, this.indexName).isFile()) {
+			
+			// verify we have everything we need after copying from the siteTemplateFolder
+			if (!new File(outputSite, this.indexName).isFile()) {
 				// copy default index
+            	getLog().warn("No " + this.siteTemplateFolder + "/" + this.indexName + " found; using default.");
 				InputStream indexStream = getClass().getResourceAsStream("/index.html");
 				FileUtils.copyStreamToFile(new RawInputStreamFacade(indexStream), new File(outputSite, this.indexName));
 				indexStream.close();
-			}
+            }
+            File webFolder = new File(outputSite, "web");
+            if (!webFolder.exists()) {
+                webFolder.mkdir();
+            }
+            if (!new File(webFolder, this.cssName).isFile()) {
+            	// copy default css
+            	getLog().warn("No " + webFolder + "/" + this.cssName + " found; using default.");
+            	InputStream cssStream = getClass().getResourceAsStream("/web/" + this.cssName);
+            	FileUtils.copyStreamToFile(new RawInputStreamFacade(cssStream), new File(webFolder, this.cssName));
+            	cssStream.close();
+            }
 		} else {
+			// copy default index
 			InputStream indexStream = getClass().getResourceAsStream("/index.html");
 			FileUtils.copyStreamToFile(new RawInputStreamFacade(indexStream), new File(outputSite, this.indexName));
 			indexStream.close();
@@ -360,8 +378,9 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			if (!webFolder.exists()) {
 				webFolder.mkdir();
 			}
-			InputStream cssStream = getClass().getResourceAsStream("/web/site.css");
-			FileUtils.copyStreamToFile(new RawInputStreamFacade(cssStream), new File(webFolder, "site.css"));
+			// copy default css
+			InputStream cssStream = getClass().getResourceAsStream("/web/" + this.cssName);
+			FileUtils.copyStreamToFile(new RawInputStreamFacade(cssStream), new File(webFolder, this.cssName));
 			cssStream.close();
 		}
 	}
