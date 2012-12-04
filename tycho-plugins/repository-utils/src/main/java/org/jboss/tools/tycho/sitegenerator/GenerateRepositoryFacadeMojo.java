@@ -135,8 +135,8 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         }
 		
         generateSiteProperties(outputRepository, outputSiteXml);
-        generateJBossToolsDirectoryXml(outputRepository);
-        generateWebStuff(outputRepository, outputSiteXml);
+        String directoryXMLReplacement = generateJBossToolsDirectoryXml(outputRepository);
+        generateWebStuff(outputRepository, outputSiteXml, directoryXMLReplacement);
         try {
         	alterContentJar(outputRepository);
         } catch (Exception ex) {
@@ -158,7 +158,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
     }
 
-	private void generateWebStuff(File outputRepository, File outputSiteXml)
+	private void generateWebStuff(File outputRepository, File outputSiteXml, String directoryXMLReplacement)
 			throws TransformerFactoryConfigurationError, MojoExecutionException {
 		// Generate index.html
         try {
@@ -170,7 +170,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	        transformer.transform(new StreamSource(outputSiteXml), res);
 	        siteXsl.close();
 	        out.close();
-	        symbols.put("${site.contents}", out.toString());
+	        symbols.put("${site.contents}", out.toString().replaceAll("@@jbosstools-directory.xml@@", directoryXMLReplacement));
         } catch (Exception ex) {
         	throw new MojoExecutionException("Error occured while generating 'site.properties'", ex);
         }
@@ -181,7 +181,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         }
 	}
 
-	private void generateJBossToolsDirectoryXml(File outputRepository)
+	private String generateJBossToolsDirectoryXml(File outputRepository)
 			throws MojoExecutionException {
 		// Generate jbosstools-directory.xml
         File[] org_jboss_tools_central_discovery = new File(outputRepository, "plugins").listFiles(new FileFilter() {
@@ -204,10 +204,12 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         }
         if (org_jboss_tools_central_discovery.length == 0) {
         	getLog().warn("No org.jboss.tools.central.discovery plugin in repo. Skip generation of 'jbosstools-directory.xml'");
+        	return "";
         }
         if (org_jboss_tools_central_discovery.length > 1) {
-        	getLog().warn("Several org.jbosstools.central.discovery plugin in repo");
+        	getLog().warn("Several org.jbosstools.central.discovery plugins found in repo.");
         }
+        return "<a href=\"jbosstools-directory.xml\" style=\"font-size:x-small\">jbosstools-directory.xml</a> :: ";
 	}
 
 	private void generateSiteProperties(File outputRepository,
