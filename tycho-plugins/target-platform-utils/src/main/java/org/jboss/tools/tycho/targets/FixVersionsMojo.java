@@ -115,8 +115,13 @@ public class FixVersionsMojo extends AbstractMojo {
 						fos.write(message.getBytes());
 						fos.write('\n');
 					}
+					if (unit instanceof TargetDefinitionFile.Unit) {
+						// That's deprecated, but so cool (and no other way to do it except doing parsing by hand)
+						((TargetDefinitionFile.Unit)unit).setVersion(version);
+					}
 				}
 			}
+			TargetDefinitionFile.write(targetDef, new File(targetFile.getParent(), targetFile.getName() + "_fixedVersion.target"));
 		} catch (FileNotFoundException ex) {
 			throw new MojoExecutionException("Error while opening output file " + outputFile, ex);
 		} catch (IOException ex) {
