@@ -14,6 +14,7 @@
 	<modules>
 		<module>repository-utils</module>
 		<module>target-platform-utils</module>
+		<module>tycho-dependency-plugin</module>
 	</modules>
 
 	<build>
