@@ -305,6 +305,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	        			rep0.setAttribute("options", "1");
 	        			refElement.appendChild(rep0);
 	        			Element rep1 = (Element)rep0.cloneNode(true);
+	        			rep1.setAttribute("type", "1");
 	        			refElement.appendChild(rep1);
         			}
         			repoElement.appendChild(refElement);
@@ -317,8 +318,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         ZipOutputStream outContentStream = new ZipOutputStream(new FileOutputStream(contentJar));
         ZipEntry contentXmlEntry = new ZipEntry("content.xml");
         outContentStream.putNextEntry(contentXmlEntry);
-        TransformerFactory tFactory = TransformerFactory.newInstance();
-        Transformer transformer = tFactory.newTransformer();
+        Transformer transformer = TransformerFactory.newInstance().newTransformer();
         DOMSource source = new DOMSource(contentDoc);
         StreamResult result = new StreamResult(outContentStream);
         transformer.transform(source, result);
