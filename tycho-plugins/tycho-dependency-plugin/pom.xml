@@ -1,18 +1,28 @@
 <?xml version="1.0"?>
+<!--
+- Copyright (c) 2012-2013 Red Hat Inc.
+- All rights reserved. This program and the accompanying materials
+- are made available under the terms of the Eclipse Public License v1.0
+- which accompanies this distribution, and is available at
+- http://www.eclipse.org/legal/epl-v10.html
+-
+- Contributors:
+- Mickael Istria (JBoss, by Red Hat) - Initial API and implementation
+-->
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jboss.tools</groupId>
     <artifactId>tycho-plugins</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.16.0-SNAPSHOT</version>
   </parent>
   <groupId>org.jboss.tools.tycho-plugins</groupId>
   <artifactId>tycho-dependency-plugin</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
-  <name>Mojo to have fun with dependency management in Tycho</name>
-  <url>http://maven.apache.org</url>
+  <name>Mojos to have fun with dependency management in Tycho</name>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
@@ -32,12 +42,12 @@
     <dependency>
     	<groupId>org.eclipse.tycho</groupId>
     	<artifactId>tycho-p2-facade</artifactId>
-    	<version>0.16.0</version>
+    	<version>${tychoVersion}</version>
     </dependency>
     <dependency>
     	<groupId>org.eclipse.tycho</groupId>
     	<artifactId>tycho-p2-publisher-plugin</artifactId>
-    	<version>0.16.0</version>
+    	<version>${tychoVersion}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
