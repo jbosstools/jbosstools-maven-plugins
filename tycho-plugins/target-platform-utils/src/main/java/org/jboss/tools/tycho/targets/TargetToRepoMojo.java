@@ -22,13 +22,21 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.logging.Logger;
 import org.eclipse.sisu.equinox.EquinoxServiceFactory;
 import org.eclipse.tycho.BuildOutputDirectory;
+import org.eclipse.tycho.artifacts.TargetPlatform;
+import org.eclipse.tycho.core.resolver.shared.MavenRepositoryLocation;
+import org.eclipse.tycho.osgi.adapters.MavenLoggerAdapter;
 import org.eclipse.tycho.p2.resolver.TargetDefinitionFile;
+import org.eclipse.tycho.p2.resolver.facade.P2ResolutionResult;
+import org.eclipse.tycho.p2.resolver.facade.P2Resolver;
+import org.eclipse.tycho.p2.resolver.facade.P2ResolverFactory;
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.InstallableUnitLocation;
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Location;
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Repository;
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Unit;
+import org.eclipse.tycho.p2.target.facade.TargetPlatformBuilder;
 import org.eclipse.tycho.p2.tools.DestinationRepositoryDescriptor;
 import org.eclipse.tycho.p2.tools.RepositoryReferences;
 import org.eclipse.tycho.p2.tools.mirroring.facade.IUDescription;
@@ -70,12 +78,20 @@ public class TargetToRepoMojo extends AbstractMojo {
     private TargetArtifact sourceTargetArtifact;
 
     /**
+     * @parameter
+     */
+    private boolean includeSources;
+
+    /**
      * @parameter expression="${project.build.directory}/${project.artifactId}.target.repo"
      */
     private File outputRepository;
 
     /** @component */
-    private EquinoxServiceFactory p2;
+    private EquinoxServiceFactory equinox;
+
+    /** @component */
+    private Logger plexusLogger;
 
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		try {
@@ -95,7 +111,7 @@ public class TargetToRepoMojo extends AbstractMojo {
 			}
 			this.outputRepository.mkdirs();
 
-			final MirrorApplicationService mirrorService = p2.getService(MirrorApplicationService.class);
+			final MirrorApplicationService mirrorService = equinox.getService(MirrorApplicationService.class);
 
 			TargetDefinitionFile target = TargetDefinitionFile.read(sourceTargetFile);
 	        final RepositoryReferences sourceDescriptor = new RepositoryReferences();
@@ -116,7 +132,7 @@ public class TargetToRepoMojo extends AbstractMojo {
 		}
 	}
 
-    private static Collection<IUDescription> createIUDescriptions(TargetDefinitionFile target) {
+    private Collection<IUDescription> createIUDescriptions(TargetDefinitionFile target) {
         List<IUDescription> result = new ArrayList<IUDescription>();
         for (final Location loc : target.getLocations()) {
         	if (loc instanceof InstallableUnitLocation) {
@@ -125,6 +141,29 @@ public class TargetToRepoMojo extends AbstractMojo {
         		}
         	}
         }
+        if (this.includeSources) {
+        	P2ResolverFactory resolverFactory = this.equinox.getService(P2ResolverFactory.class);
+        	for (final Location loc : target.getLocations()) {
+            	if (loc instanceof InstallableUnitLocation) {
+            		InstallableUnitLocation location = (InstallableUnitLocation)loc;
+            		TargetPlatformBuilder tpBuilder = resolverFactory.createTargetPlatformBuilder(new MockExecutionEnvironment());
+            		for (Repository repo : location.getRepositories()) {
+                		tpBuilder.addP2Repository(new MavenRepositoryLocation(repo.getId(), repo.getLocation()));
+            		}
+            		TargetPlatform site = tpBuilder.buildTargetPlatform();
+    				P2Resolver resolver = resolverFactory.createResolver(new MavenLoggerAdapter(this.plexusLogger, true));
+            		for (Unit unit : ((InstallableUnitLocation)loc).getUnits()) {
+	                    P2ResolutionResult resolvedSource = resolver.resolveInstallableUnit(site, unit.getId() + ".source", "[" + unit.getVersion() + "," + unit.getVersion() + "]");
+	                    if (resolvedSource.getArtifacts().size() > 0 || resolvedSource.getNonReactorUnits().size() > 0) {
+	                    	result.add(new IUDescription(unit.getId() + ".source", unit.getVersion()));
+	                    	getLog().debug("Got source for "  + unit.getId() + "/" + unit.getVersion());
+	                    } else {
+	                    	getLog().warn("Could not find source for " + unit.getId() + "/" + unit.getVersion());
+	                    }
+                    }
+        		}
+        	}
+    	}
         return result;
     }
 
