@@ -78,7 +78,7 @@ public class TargetToRepoMojo extends AbstractMojo {
     private TargetArtifact sourceTargetArtifact;
 
     /**
-     * @parameter
+     * @parameter expression="${mirror-target-to-repo.includeSources}"
      */
     private boolean includeSources;
 
