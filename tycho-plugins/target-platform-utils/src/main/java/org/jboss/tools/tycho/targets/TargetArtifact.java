@@ -14,6 +14,7 @@ public class TargetArtifact {
 	private String groupId;
 	private String artifactId;
 	private String version;
+	private String classifier;
 
 	public String getGroupId() {
 		return this.groupId;
@@ -24,6 +25,9 @@ public class TargetArtifact {
 	public String getVersion() {
 		return this.version;
 	}
+    public String getClassifier() {
+        return this.classifier;
+    }
 
 	public boolean isCorrectlySet() {
 		return this.groupId != null && this.artifactId != null && this.version != null;
@@ -31,14 +35,19 @@ public class TargetArtifact {
 
 	@Override
 	public String toString() {
-		return this.groupId + ":" + this.artifactId + ":" + this.version;
+		return this.groupId + ":" + this.artifactId + ":" + this.classifier + ":" + this.version;
 	}
 
 	public File getFile(RepositorySystem repositorySystem, MavenSession session, MavenProject project) throws MojoExecutionException {
 		if (!isCorrectlySet()) {
     		throw new MojoExecutionException("'sourceTargetArtifact' must define groupId, artifactId and version");
     	}
-    	Artifact artifact = repositorySystem.createArtifactWithClassifier(this.groupId, this.artifactId, this.version, "target", this.artifactId);
+		Artifact artifact = null;
+		if (this.classifier == null) {
+			artifact = repositorySystem.createArtifact(this.groupId, this.artifactId, this.version, "target");
+		} else {
+			artifact = repositorySystem.createArtifactWithClassifier(this.groupId, this.artifactId, this.version, "target", this.classifier);
+		}
         ArtifactResolutionRequest request = new ArtifactResolutionRequest();
         request.setArtifact(artifact);
         request.setLocalRepository(session.getLocalRepository());
