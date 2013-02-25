@@ -19,7 +19,6 @@
   </parent>
   <groupId>org.jboss.tools.tycho-plugins</groupId>
   <artifactId>tycho-dependency-plugin</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
   <name>Mojos to have fun with dependency management in Tycho</name>
 
