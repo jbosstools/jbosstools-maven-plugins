@@ -15,10 +15,36 @@
 	<artifactId>tycho-plugins</artifactId>
 	<packaging>pom</packaging>
 	<version>0.16.0-SNAPSHOT</version>
-	<name>In-House Maven plugins for JBT/JBDS build</name>
+	<name>jbosstools-tycho-plugins-parent</name>
+        <description>In-House Maven plugins for JBT/JBDS build</description>
+        <url>http://jboss.org/tools</url>
+        <licenses>
+	  <license>
+	    <name>Eclipse Public License</name>
+	    <url>http://www.eclipse.org/legal/epl-v10.html</url>
+	  </license>
+	</licenses>
+ 
+        <scm>
+           <connection>scm:git:git://git@github.com:jbosstools/jbosstools-maven-plugins.git</connection>
+           <developerConnection>scm:git:ssh://git@github.com:jbosstools/jbosstools-maven-plugins.git</developerConnection>
+           <url>git://github.com/jbosstools/jbosstools-maven-plugins.git</url>
+	</scm>
+
+        <developers>
+           <developer>
+	     <id>tools.jboss.org</id>
+             <name>JBoss Tools</name>
+	     <organization>jboss.org/tools</organization>
+	     <organizationUrl>http://jboss.org/tools</organizationUrl>
+	   </developer>
+	</developers>
 
 	<properties>
 		<tychoVersion>0.16.0</tychoVersion>
+		<!--  Repository Deployment URLs taken from jboss parent pom -->
+		<jboss.releases.repo.url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
+		<jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
 	</properties>
 
 	<modules>
@@ -43,19 +69,6 @@
 		</pluginManagement>
 	</build>
 
-	<repositories>
-		<repository>
-			<id>tycho-snapshots</id>
-			<url>https://oss.sonatype.org/content/groups/public/</url>
-			<layout>default</layout>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
-	</repositories>
 
 	<!-- To deploy to Nexus -->
 	<!-- Don't change "id" since it should match credentials entry in $M2_REPO/settings.xml -->
@@ -63,14 +76,14 @@
 		<snapshotRepository>
 			<id>jboss-snapshots-repository</id>
 			<name>JBoss Snapshots Repository</name>
-			<url>https://repository.jboss.org/nexus/content/repositories/snapshots/</url>
+			<url>${jboss.snapshots.repo.url}</url>
 			<uniqueVersion>false</uniqueVersion>
 		</snapshotRepository>
 		<repository>
 			<id>jboss-staging-repository</id>
 			<name>JBoss Staging Repository</name>
 			<uniqueVersion>false</uniqueVersion>
-			<url>https://repository.jboss.org/nexus/content/groups/staging/</url>
+			<url>${jboss.releases.repo.url}</url>
 		</repository>
 	</distributionManagement>
 

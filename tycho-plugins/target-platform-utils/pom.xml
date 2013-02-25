@@ -20,7 +20,8 @@
   <groupId>org.jboss.tools.tycho-plugins</groupId>
   <artifactId>target-platform-utils</artifactId>
   <packaging>maven-plugin</packaging>
-  <name>Mojos to manipulate target-definition files</name>
+  <name>jbosstools-tycho-target-platform-utils</name>
+  <description>Mojos to manipulate target-definition files</description>
 
   <dependencies>
     <dependency>
