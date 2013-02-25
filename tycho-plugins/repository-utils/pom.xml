@@ -14,7 +14,8 @@
 	<groupId>org.jboss.tools.tycho-plugins</groupId>
 	<artifactId>repository-utils</artifactId>
 	<packaging>maven-plugin</packaging>
-	<name>Mojos to add content to p2 repositories</name>
+	<name>jbosstools-tycho-repository-utils</name>
+	<description>Mojos to add content to p2 repositories</description>
 
 	<parent>
 		<groupId>org.jboss.tools</groupId>
