@@ -42,6 +42,9 @@
 
 	<properties>
 		<tychoVersion>0.16.0</tychoVersion>
+		<!--  Repository Deployment URLs taken from jboss parent pom -->
+		<jboss.releases.repo.url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
+		<jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
 	</properties>
 
 	<modules>
@@ -65,5 +68,23 @@
 			</plugins>
 		</pluginManagement>
 	</build>
+
+
+	<!-- To deploy to Nexus -->
+	<!-- Don't change "id" since it should match credentials entry in $M2_REPO/settings.xml -->
+	<distributionManagement>
+		<snapshotRepository>
+			<id>jboss-snapshots-repository</id>
+			<name>JBoss Snapshots Repository</name>
+			<url>${jboss.snapshots.repo.url}</url>
+			<uniqueVersion>false</uniqueVersion>
+		</snapshotRepository>
+		<repository>
+			<id>jboss-staging-repository</id>
+			<name>JBoss Staging Repository</name>
+			<uniqueVersion>false</uniqueVersion>
+			<url>${jboss.releases.repo.url}</url>
+		</repository>
+	</distributionManagement>
 
 </project>
