@@ -28,6 +28,7 @@ import java.util.zip.ZipOutputStream;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -70,17 +71,20 @@ import org.xml.sax.SAXException;
  * @phase package
  */
 public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
+
+	/**
+     * @parameter expression="${project}"
+     * @required
+     * @readonly
+     */
+    private MavenProject project;
+
+
 	/**
      * @parameter expression="${session}"
      * @readonly
      */
     private MavenSession session;
-
-    /**
-     * @parameter expression="${project}"
-     * @readonly
-     */
-    private MavenProject project;
 
     /**
      * Additional symbols, to replace in files
@@ -113,9 +117,14 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	 */
 	private String cssName;
 
+	/**
+	 * @parameter
+	 */
+	private String p2StatsUrl;
+
     public void execute() throws MojoExecutionException
     {
-    	 if (!ArtifactKey.TYPE_ECLIPSE_REPOSITORY.equals(project.getPackaging())) {
+    	 if (!ArtifactKey.TYPE_ECLIPSE_REPOSITORY.equals(this.project.getPackaging())) {
              return;
          }
 
@@ -126,14 +135,14 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
  		File outputRepository = new File(this.project.getBuild().getDirectory(), "repository");
     	File outputSiteXml = generateSiteXml(outputRepository);
-		
+
     	// If a siteTemplateFolder is set, pull index.html and site.css from there; otherwise use defaults
         try {
         	copyTemplateResources(outputRepository);
         } catch (Exception ex) {
         	throw new MojoExecutionException("Error while copying siteTemplateFolder content to " + outputRepository, ex);
         }
-		
+
         generateSiteProperties(outputRepository, outputSiteXml);
         String directoryXMLReplacement = generateJBossToolsDirectoryXml(outputRepository);
         generateWebStuff(outputRepository, outputSiteXml, directoryXMLReplacement);
@@ -142,9 +151,16 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         } catch (Exception ex) {
         	throw new MojoExecutionException("Error while altering content.jar",ex);
         }
+        if (this.p2StatsUrl != null) {
+        	try {
+        		addP2Stats(outputRepository);
+        	} catch (Exception ex) {
+        		throw new MojoExecutionException("Error while adding p2.stats to repository", ex);
+        	}
+        }
 
 
-        File repoZipFile = new File(project.getBuild().getDirectory(), project.getArtifactId() + "-" + project.getVersion() + ".zip");
+        File repoZipFile = new File(this.project.getBuild().getDirectory(), this.project.getArtifactId() + "-" + this.project.getVersion() + ".zip");
 		repoZipFile.delete();
 		try {
 	        ZipArchiver archiver = new ZipArchiver();
@@ -170,7 +186,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	        transformer.transform(new StreamSource(outputSiteXml), res);
 	        siteXsl.close();
 	        out.close();
-	        symbols.put("${site.contents}", out.toString().replaceAll("@@jbosstools-directory.xml@@", directoryXMLReplacement));
+	        this.symbols.put("${site.contents}", out.toString().replaceAll("@@jbosstools-directory.xml@@", directoryXMLReplacement));
         } catch (Exception ex) {
         	throw new MojoExecutionException("Error occured while generating 'site.properties'", ex);
         }
@@ -276,11 +292,11 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		return outputSiteXml;
 	}
 
-	private void alterContentJar(File outputRepository)
+	private void alterContentJar(File p2repository)
 			throws FileNotFoundException, IOException, SAXException,
 			ParserConfigurationException, TransformerFactoryConfigurationError,
 			TransformerConfigurationException, TransformerException {
-		File contentJar = new File(outputRepository, "content.jar");
+		File contentJar = new File(p2repository, "content.jar");
         ZipInputStream contentStream = new ZipInputStream(new FileInputStream(contentJar));
         ZipEntry entry = null;
         Document contentDoc = null;
@@ -289,12 +305,14 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         	if (entry.getName().equals("content.xml")) {
         		contentDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(contentStream);
         		Element repoElement = (Element)contentDoc.getElementsByTagName("repository").item(0);
+        		// remove default references
         		NodeList references = repoElement.getElementsByTagName("references");
         		for (int i = 0; i < references.getLength(); i++) {
         			Node currentRef = references.item(i);
         			currentRef.getParentNode().removeChild(currentRef);
         		}
-        		if (associateSites != null && associateSites.size() > 0) {
+        		// add assiciateSites
+        		if (this.associateSites != null && this.associateSites.size() > 0) {
         			Element refElement = contentDoc.createElement("references");
         			refElement.setAttribute("size", Integer.valueOf(2 * associateSites.size()).toString());
         			for (String associate : associateSites) {
@@ -319,9 +337,73 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         ZipEntry contentXmlEntry = new ZipEntry("content.xml");
         outContentStream.putNextEntry(contentXmlEntry);
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+        transformer.setOutputProperty(OutputKeys.STANDALONE, "yes");
         DOMSource source = new DOMSource(contentDoc);
         StreamResult result = new StreamResult(outContentStream);
         transformer.transform(source, result);
+        contentStream.close();
+        outContentStream.closeEntry();
+        outContentStream.close();
+	}
+
+	/**
+	 * Add p2 stats to the repository
+	 * See http://wiki.eclipse.org/Equinox_p2_download_stats
+	 * @param p2repository
+	 */
+	private void addP2Stats(File p2repository)
+			throws FileNotFoundException, IOException, SAXException,
+			ParserConfigurationException, TransformerFactoryConfigurationError,
+			TransformerConfigurationException, TransformerException {
+		File artifactsJar = new File(p2repository, "artifacts.jar");
+        ZipInputStream contentStream = new ZipInputStream(new FileInputStream(artifactsJar));
+        ZipEntry entry = null;
+        Document contentDoc = null;
+        boolean done = false;
+        while (!done && (entry = contentStream.getNextEntry()) != null) {
+        	if (entry.getName().equals("artifacts.xml")) {
+        		contentDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(contentStream);
+        		Element repoElement = (Element)contentDoc.getElementsByTagName("repository").item(0);
+        		// Add p2.StatsURI property
+        		Element repoProperties = (Element)contentDoc.getElementsByTagName("properties").item(0);
+        		int newRepoPropertiesSize = Integer.parseInt(repoProperties.getAttribute("size")) + 1;
+        		repoProperties.setAttribute("size", Integer.toString(newRepoPropertiesSize));
+        		Element p2statsElement = contentDoc.createElement("property");
+        		p2statsElement.setAttribute("name", "p2.statsURI");
+        		p2statsElement.setAttribute("value", this.p2StatsUrl);
+        		repoProperties.appendChild(p2statsElement);
+        		// process features
+        		NodeList artifacts = ((Element)repoElement.getElementsByTagName("artifacts").item(0)).getElementsByTagName("artifact");
+        		for (int i = 0; i < artifacts.getLength(); i++) {
+        			Element currentArtifact = (Element)artifacts.item(i);
+        			if (currentArtifact.getAttribute("classifier").equals("org.eclipse.update.feature")) {
+        				String iu = currentArtifact.getAttribute("id");
+	        			Element artifactProperties = (Element)currentArtifact.getElementsByTagName("properties").item(0);
+	            		int newArtifactPropertiesSize = Integer.parseInt(artifactProperties.getAttribute("size")) + 1;
+	            		artifactProperties.setAttribute("size", Integer.toString(newArtifactPropertiesSize));
+	            		Element statsElement = contentDoc.createElement("property");
+	            		statsElement.setAttribute("name", "download.stats");
+	            		statsElement.setAttribute("value", iu);
+	            		artifactProperties.appendChild(statsElement);
+        			}
+        		}
+        		done = true;
+        	}
+        }
+        // .close and .closeEntry raise exception:
+        // https://issues.apache.org/bugzilla/show_bug.cgi?id=3862
+        ZipOutputStream outContentStream = new ZipOutputStream(new FileOutputStream(artifactsJar));
+        ZipEntry contentXmlEntry = new ZipEntry("artifacts.xml");
+        outContentStream.putNextEntry(contentXmlEntry);
+        Transformer transformer = TransformerFactory.newInstance().newTransformer();
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+        DOMSource source = new DOMSource(contentDoc);
+        StreamResult result = new StreamResult(outContentStream);
+        transformer.transform(source, result);
+        contentStream.close();
         outContentStream.closeEntry();
         outContentStream.close();
 	}
@@ -351,7 +433,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 				throw new MojoExecutionException("'siteTemplateFolder' not correctly set. " + this.siteTemplateFolder.getAbsolutePath() + " is not a directory");
 			}
 			FileUtils.copyDirectoryStructure(this.siteTemplateFolder, outputSite);
-			
+
 			// verify we have everything we need after copying from the siteTemplateFolder
 			if (!new File(outputSite, this.indexName).isFile()) {
 				// copy default index
