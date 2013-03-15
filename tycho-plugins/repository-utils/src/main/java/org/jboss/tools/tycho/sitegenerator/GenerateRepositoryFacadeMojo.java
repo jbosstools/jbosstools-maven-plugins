@@ -118,6 +118,12 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	private String cssName;
 
 	/**
+	 * Whether to remove or not the "Uncategorized" default category
+	 * @parameter default-value="false"
+	 */
+	private boolean removeDefaultCategory;
+
+	/**
 	 * @parameter
 	 */
 	private String p2StatsUrl;
@@ -305,28 +311,42 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         	if (entry.getName().equals("content.xml")) {
         		contentDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(contentStream);
         		Element repoElement = (Element)contentDoc.getElementsByTagName("repository").item(0);
-        		// remove default references
-        		NodeList references = repoElement.getElementsByTagName("references");
-        		for (int i = 0; i < references.getLength(); i++) {
-        			Node currentRef = references.item(i);
-        			currentRef.getParentNode().removeChild(currentRef);
+        		{
+        			NodeList references = repoElement.getElementsByTagName("references");
+	        		// remove default references
+	        		for (int i = 0; i < references.getLength(); i++) {
+	        			Node currentRef = references.item(i);
+	        			currentRef.getParentNode().removeChild(currentRef);
+	        		}
+	        		// add assiciateSites
+	        		if (this.associateSites != null && this.associateSites.size() > 0) {
+	        			Element refElement = contentDoc.createElement("references");
+	        			refElement.setAttribute("size", Integer.valueOf(2 * associateSites.size()).toString());
+	        			for (String associate : associateSites) {
+		        			Element rep0 = contentDoc.createElement("repository");
+		        			rep0.setAttribute("uri", associate);
+		        			rep0.setAttribute("url", associate);
+		        			rep0.setAttribute("type", "0");
+		        			rep0.setAttribute("options", "1");
+		        			refElement.appendChild(rep0);
+		        			Element rep1 = (Element)rep0.cloneNode(true);
+		        			rep1.setAttribute("type", "1");
+		        			refElement.appendChild(rep1);
+	        			}
+	        			repoElement.appendChild(refElement);
+	        		}
         		}
-        		// add assiciateSites
-        		if (this.associateSites != null && this.associateSites.size() > 0) {
-        			Element refElement = contentDoc.createElement("references");
-        			refElement.setAttribute("size", Integer.valueOf(2 * associateSites.size()).toString());
-        			for (String associate : associateSites) {
-	        			Element rep0 = contentDoc.createElement("repository");
-	        			rep0.setAttribute("uri", associate);
-	        			rep0.setAttribute("url", associate);
-	        			rep0.setAttribute("type", "0");
-	        			rep0.setAttribute("options", "1");
-	        			refElement.appendChild(rep0);
-	        			Element rep1 = (Element)rep0.cloneNode(true);
-	        			rep1.setAttribute("type", "1");
-	        			refElement.appendChild(rep1);
+        		if (this.removeDefaultCategory) {
+        			Element unitsElement = (Element)repoElement.getElementsByTagName("units").item(0);
+        			NodeList units = unitsElement.getElementsByTagName("unit");
+        			for (int i = 0; i < units.getLength(); i++) {
+        				Element unit = (Element)units.item(i);
+        				String id = unit.getAttribute("id");
+        				if (id != null && id.contains(".Default")) {
+        					unit.getParentNode().removeChild(unit);
+        				}
         			}
-        			repoElement.appendChild(refElement);
+        			unitsElement.setAttribute("size", Integer.toString(unitsElement.getElementsByTagName("unit").getLength()));
         		}
         		done = true;
         	}
@@ -417,7 +437,9 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			if (!key.startsWith("${")) {
 				key = "${" + key + "}";
 			}
-			htmlFile = htmlFile.replace(key, entry.getValue());
+			if (entry.getValue() != null) {
+				htmlFile = htmlFile.replace(key, entry.getValue());
+			}
 		}
 		FileOutputStream out = new FileOutputStream(templateFile);
 		out.write(htmlFile.getBytes("UTF-8"));
