@@ -24,6 +24,21 @@
 	</parent>
 
 	<dependencies>
+	    <dependency>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-core</artifactId>
+			<version>3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.codehaus.plexus</groupId>
+			<artifactId>plexus-utils</artifactId>
+			<version>3.0</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.maven</groupId>
+		    <artifactId>maven-artifact-manager</artifactId>
+		    <version>2.0</version>
+		</dependency>
 		<dependency>
 			<groupId>org.eclipse.tycho</groupId>
 			<artifactId>tycho-p2-facade</artifactId>
@@ -49,7 +64,6 @@
 			<artifactId>saxon-dom</artifactId>
 			<version>8.7</version>
 		</dependency>
-
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -57,7 +71,17 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	
+
+	<!-- build>
+    	<extensions>
+			<extension>
+				<groupId>org.apache.maven.wagon</groupId>
+				<artifactId>wagon-http</artifactId>
+				<version>2.4</version>
+			</extension>
+		</extensions>
+	</build-->
+
 	<repositories>
 		<repository>
 			<id>jboss-snapshots-repository</id>
@@ -67,7 +91,7 @@
 		<repository>
 			<id>jboss-staging-repository</id>
 			<name>JBoss Staging Repository</name>
-			<url>https://repository.jboss.org/nexus/content/groups/staging/</url> 
+			<url>https://repository.jboss.org/nexus/content/groups/staging/</url>
 		</repository>
 	</repositories>
 
