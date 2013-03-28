@@ -51,6 +51,7 @@ import org.eclipse.tycho.ArtifactKey;
 import org.eclipse.tycho.ReactorProject;
 import org.eclipse.tycho.core.ArtifactDependencyVisitor;
 import org.eclipse.tycho.core.FeatureDescription;
+import org.eclipse.tycho.core.TychoProject;
 import org.eclipse.tycho.core.osgitools.EclipseRepositoryProject;
 import org.eclipse.tycho.model.FeatureRef;
 import org.eclipse.tycho.model.UpdateSite;
@@ -95,9 +96,16 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
     /**
      * template folder for HTML contents
-     * @parameter
+     * @parameter default-value="siteTemplate"
      */
 	private File siteTemplateFolder;
+
+	/**
+	 * Additional files to add to repo and that are not in the "siteTemplateFolder".
+	 * These can be folders.
+	 * @parameter
+	 */
+	private List<File> additionalWebResources;
 
 	/**
 	 * Additional sites to add to repo associateSites
@@ -123,6 +131,12 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	 */
 	private boolean removeDefaultCategory;
 
+
+    /**
+     * @component role="org.eclipse.tycho.core.TychoProject"
+     */
+    private Map<String, TychoProject> projectTypes;
+
 	/**
 	 * @parameter
 	 */
@@ -140,7 +154,6 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
     	 // TODO populate default symbols: ${update.site.name} & ${update.site.description}
 
  		File outputRepository = new File(this.project.getBuild().getDirectory(), "repository");
-    	File outputSiteXml = generateSiteXml(outputRepository);
 
     	// If a siteTemplateFolder is set, pull index.html and site.css from there; otherwise use defaults
         try {
@@ -148,7 +161,21 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
         } catch (Exception ex) {
         	throw new MojoExecutionException("Error while copying siteTemplateFolder content to " + outputRepository, ex);
         }
+        if (this.additionalWebResources != null) {
+        	for (File resource : this.additionalWebResources) {
+        		try {
+	        		if (resource.isDirectory()) {
+	        			FileUtils.copyDirectoryStructure(resource, new File(outputRepository, resource.getName()));
+	        		} else if (resource.isFile()) {
+	        			FileUtils.copyFile(resource, new File(outputRepository, resource.getName()));
+	        		}
+        		} catch (Exception ex) {
+        			throw new MojoExecutionException("Error while copying resource " + resource.getPath(), ex);
+        		}
+        	}
+        }
 
+    	File outputSiteXml = generateSiteXml(outputRepository);
         generateSiteProperties(outputRepository, outputSiteXml);
         String directoryXMLReplacement = generateJBossToolsDirectoryXml(outputRepository);
         generateWebStuff(outputRepository, outputSiteXml, directoryXMLReplacement);
@@ -266,7 +293,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		} catch (IOException ex) {
 			throw new MojoExecutionException("Could not read 'category.xml' file", ex);
 		}
-		new EclipseRepositoryProject().getDependencyWalker(project).traverseUpdateSite(site, new ArtifactDependencyVisitor() {
+		new EclipseRepositoryProject().getDependencyWalker(this.project).traverseUpdateSite(site, new ArtifactDependencyVisitor() {
             @Override
             public boolean visitFeature(FeatureDescription feature) {
                 FeatureRef featureRef = feature.getFeatureRef();
