@@ -13,14 +13,16 @@ package org.jboss.tools.tycho.sitegenerator;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +38,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.wagon.Wagon;
 import org.apache.maven.wagon.repository.Repository;
+import org.codehaus.plexus.util.FileUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -54,8 +57,18 @@ public class FetchZipsFromRepo extends AbstractMojo {
 	private List<URL> repositories;
 
 	/**
+	 * Alternative location to look for zips.
+	 * Here is the order to process zip research
+	 * 1. Look for zip in outputFolder
+	 * 2. Look for zip in zipCacheDir (if specified)
+	 * 3. Look for zip at expected URL
+	 * @parameter expression="${fetch-zips-for-aggregate.zipCacheDir}"
+	 */
+	private File zipCacheDir;
+
+	/**
 	 * Location where to put zips
-	 * @parameter default-value="${basedir}/zips"
+	 * @parameter default-value="${basedir}/zips" expression="${fetch-zips-for-aggregate.outputFolder}"
 	 */
 	private File outputFolder;
 
@@ -74,6 +87,12 @@ public class FetchZipsFromRepo extends AbstractMojo {
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		if (this.skip || this.repositories == null || this.repositories.isEmpty()) {
 			return;
+		}
+		if (this.zipCacheDir != null && !this.zipCacheDir.isDirectory()) {
+			throw new MojoExecutionException("'zipCacheDir' must be a directory");
+		}
+		if (this.outputFolder.equals(this.zipCacheDir)) {
+			throw new MojoExecutionException("Same value for zipCacheDir and outputFolder is not allowed");
 		}
 
 		List<String> componentRepositories = new ArrayList<String>();
@@ -153,25 +172,15 @@ public class FetchZipsFromRepo extends AbstractMojo {
 						// First, get new MD5
 						File outputMD5File = new File(outputZipFile.getAbsolutePath() + ".MD5");
 						wagon.get(zip + ".MD5", outputMD5File);
+						InputStream md5is = new FileInputStream(outputMD5File);
+						BufferedReader md5reader = new BufferedReader(new InputStreamReader(md5is));
+						String retrievedMD5 = md5reader.readLine();
+						md5is.close();
 
 						String md5 = null;
 						// Then compare MD5 with current file
 						if (outputZipFile.exists()) {
-							MessageDigest digest = MessageDigest.getInstance("MD5");
-							InputStream zipIs = new FileInputStream(outputZipFile);
-							byte[] buffer = new byte[8192];
-							int read = 0;
-							while( (read = zipIs.read(buffer)) > 0) {
-								digest.update(buffer, 0, read);
-							}
-							byte[] md5sum = digest.digest();
-							BigInteger bigInt = new BigInteger(1, md5sum);
-							String computedMD5 = bigInt.toString(16);
-							zipIs.close();
-							InputStream md5is = new FileInputStream(outputMD5File);
-							BufferedReader md5reader = new BufferedReader(new InputStreamReader(md5is));
-							String retrievedMD5 = md5reader.readLine();
-							md5is.close();
+							String computedMD5 = getMD5(outputZipFile);
 							if (retrievedMD5.equals(computedMD5)) {
 								md5 = retrievedMD5;
 								getLog().info("  No change for " + outputZipFile.getAbsolutePath());
@@ -179,19 +188,28 @@ public class FetchZipsFromRepo extends AbstractMojo {
 						}
 
 						if (md5 == null) { // MDS == null <=> no existing file or out of date
-							wagon.get(zip, outputZipFile);
-							MessageDigest digest = MessageDigest.getInstance("MD5");
-							InputStream is = new FileInputStream(outputZipFile);
-							byte[] buffer = new byte[8192];
-							int read = 0;
-							while( (read = is.read(buffer)) > 0) {
-								digest.update(buffer, 0, read);
+							boolean useCache = false;
+							if (this.zipCacheDir != null) {
+								File cachedZip = new File(this.zipCacheDir, outputZipFile.getName());
+								if (cachedZip.exists() && getMD5(cachedZip).equals(retrievedMD5)) {
+									FileUtils.copyFile(cachedZip, outputZipFile);
+									getLog().info("  Got " + outputZipFile.getAbsolutePath() + " from " + cachedZip.getAbsolutePath());
+									useCache = true;
+								}
 							}
-							byte[] md5sum = digest.digest();
-							BigInteger bigInt = new BigInteger(1, md5sum);
-							md5 = bigInt.toString(16);
-							is.close();
-							getLog().info("  Got " + outputZipFile.getAbsolutePath());
+							if (!useCache) {
+								wagon.get(zip, outputZipFile);
+								getLog().info("  Got " + outputZipFile.getAbsolutePath() + " from " + wagon.getRepository().getUrl());
+								if (this.zipCacheDir != null) {
+									File cachedZip = new File(this.zipCacheDir, outputZipFile.getName());
+									if (!cachedZip.exists()) {
+										cachedZip.createNewFile();
+									}
+									FileUtils.copyFile(cachedZip, outputZipFile);
+									getLog().info("    Installed in cache: " + cachedZip.getAbsolutePath());
+								}
+							}
+							md5 = getMD5(outputZipFile);
 						}
 
 						allBuildProperties.put(zipName + ".filename", zip);
@@ -247,6 +265,21 @@ public class FetchZipsFromRepo extends AbstractMojo {
 		} catch (Exception ex) {
 			throw new MojoExecutionException("Error while creating 'metadata' files", ex);
 		}
+	}
+
+	private static String getMD5(File outputZipFile) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
+		MessageDigest digest = MessageDigest.getInstance("MD5");
+		InputStream zipIs = new FileInputStream(outputZipFile);
+		byte[] buffer = new byte[8192];
+		int read = 0;
+		while( (read = zipIs.read(buffer)) > 0) {
+			digest.update(buffer, 0, read);
+		}
+		byte[] md5sum = digest.digest();
+		BigInteger bigInt = new BigInteger(1, md5sum);
+		String computedMD5 = bigInt.toString(16);
+		zipIs.close();
+		return computedMD5;
 	}
 
 }
