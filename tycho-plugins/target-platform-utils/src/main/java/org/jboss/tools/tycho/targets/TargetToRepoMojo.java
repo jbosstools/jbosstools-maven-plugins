@@ -153,7 +153,14 @@ public class TargetToRepoMojo extends AbstractMojo {
             		TargetPlatform site = tpBuilder.buildTargetPlatform();
     				P2Resolver resolver = resolverFactory.createResolver(new MavenLoggerAdapter(this.plexusLogger, true));
             		for (Unit unit : ((InstallableUnitLocation)loc).getUnits()) {
-	                    P2ResolutionResult resolvedSource = resolver.resolveInstallableUnit(site, unit.getId() + ".source", "[" + unit.getVersion() + "," + unit.getVersion() + "]");
+            			String newUnitId = null;
+            			int featureSuffixIndex = unit.getId().lastIndexOf(".feature.group");
+            			if (featureSuffixIndex >= 0) {
+            				newUnitId = unit.getId().substring(0, featureSuffixIndex) + ".source.feature.group";
+            			} else {
+            				newUnitId = unit.getId() + ".source";
+            			}
+	                    P2ResolutionResult resolvedSource = resolver.resolveInstallableUnit(site, newUnitId, "[" + unit.getVersion() + "," + unit.getVersion() + "]");
 	                    if (resolvedSource.getArtifacts().size() > 0 || resolvedSource.getNonReactorUnits().size() > 0) {
 	                    	result.add(new IUDescription(unit.getId() + ".source", unit.getVersion()));
 	                    	getLog().debug("Got source for "  + unit.getId() + "/" + unit.getVersion());
