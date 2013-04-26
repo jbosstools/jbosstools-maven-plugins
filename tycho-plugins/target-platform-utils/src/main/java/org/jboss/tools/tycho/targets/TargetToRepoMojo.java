@@ -153,16 +153,16 @@ public class TargetToRepoMojo extends AbstractMojo {
             		TargetPlatform site = tpBuilder.buildTargetPlatform();
     				P2Resolver resolver = resolverFactory.createResolver(new MavenLoggerAdapter(this.plexusLogger, true));
             		for (Unit unit : ((InstallableUnitLocation)loc).getUnits()) {
-            			String newUnitId = null;
+            			String sourceUnitId = null;
             			int featureSuffixIndex = unit.getId().lastIndexOf(".feature.group");
             			if (featureSuffixIndex >= 0) {
-            				newUnitId = unit.getId().substring(0, featureSuffixIndex) + ".source.feature.group";
+            				sourceUnitId = unit.getId().substring(0, featureSuffixIndex) + ".source.feature.group";
             			} else {
-            				newUnitId = unit.getId() + ".source";
+            				sourceUnitId = unit.getId() + ".source";
             			}
-	                    P2ResolutionResult resolvedSource = resolver.resolveInstallableUnit(site, newUnitId, "[" + unit.getVersion() + "," + unit.getVersion() + "]");
+	                    P2ResolutionResult resolvedSource = resolver.resolveInstallableUnit(site, sourceUnitId, "[" + unit.getVersion() + "," + unit.getVersion() + "]");
 	                    if (resolvedSource.getArtifacts().size() > 0 || resolvedSource.getNonReactorUnits().size() > 0) {
-	                    	result.add(new IUDescription(unit.getId() + ".source", unit.getVersion()));
+	                    	result.add(new IUDescription(sourceUnitId, unit.getVersion()));
 	                    	getLog().debug("Got source for "  + unit.getId() + "/" + unit.getVersion());
 	                    } else {
 	                    	getLog().warn("Could not find source for " + unit.getId() + "/" + unit.getVersion());
