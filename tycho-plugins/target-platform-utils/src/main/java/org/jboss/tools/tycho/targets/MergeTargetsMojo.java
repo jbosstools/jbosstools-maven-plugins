@@ -50,12 +50,18 @@ public class MergeTargetsMojo extends AbstractMojo {
     @Requirement
     private RepositorySystem repositorySystem;
 
-	/**
+    /**
      * Location of the output file.
      * @parameter expression="${project.build.directory}/${project.artifactId}.target"
      * @required
      */
     private File outputFile;
+
+    /**
+     * Name for the target in the output file
+     * @parameter default-value="${project.artifactId}-${project.version}"
+     */
+    private String targetName;
 
     /**
      * Target to transform (as a file)
@@ -89,14 +95,18 @@ public class MergeTargetsMojo extends AbstractMojo {
         try {
 	        DocumentBuilder docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 	        Document targetDoc = docBuilder.parse(this.sourceTargetFiles.get(0));
-	        Element targetElement = (Element) ((Element)targetDoc.getElementsByTagName("target").item(0)).getElementsByTagName("locations").item(0);
+	        Element targetElement = (Element) targetDoc.getElementsByTagName("target").item(0);
+	        Element locationsElement = (Element) targetElement.getElementsByTagName("locations").item(0);
+
+	        /* Rename the target element to the name of the output file */
+	        targetElement.setAttribute("name", targetName);
 
 	        for (int i = 1; i < this.sourceTargetFiles.size(); i++) {
 	        	Document otherTargetDoc = docBuilder.parse(this.sourceTargetFiles.get(i));
 	        	Element otherLocations = (Element) ((Element)otherTargetDoc.getElementsByTagName("target").item(0)).getElementsByTagName("locations").item(0);
 	        	NodeList children = otherLocations.getChildNodes();
 	        	for (int j = 0; j < children.getLength(); j++) {
-	        		targetElement.appendChild(targetDoc.importNode(children.item(j), true));
+	        		locationsElement.appendChild(targetDoc.importNode(children.item(j), true));
 	        	}
 	        }
 
