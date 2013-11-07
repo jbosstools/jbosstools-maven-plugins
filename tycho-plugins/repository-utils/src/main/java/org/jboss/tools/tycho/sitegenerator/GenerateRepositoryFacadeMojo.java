@@ -12,7 +12,6 @@ package org.jboss.tools.tycho.sitegenerator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -190,8 +189,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
 		File outputSiteXml = generateSiteXml(outputRepository);
 		generateSiteProperties(outputRepository, outputSiteXml);
-		String directoryXMLReplacement = generateJBossToolsDirectoryXml(outputRepository);
-		generateWebStuff(outputRepository, outputSiteXml, directoryXMLReplacement);
+		generateWebStuff(outputRepository, outputSiteXml);
 		try {
 			alterContentJar(outputRepository);
 		} catch (Exception ex) {
@@ -219,7 +217,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
 	}
 
-	private void generateWebStuff(File outputRepository, File outputSiteXml, String directoryXMLReplacement) throws TransformerFactoryConfigurationError, MojoExecutionException {
+	private void generateWebStuff(File outputRepository, File outputSiteXml) throws TransformerFactoryConfigurationError, MojoExecutionException {
 		// Generate index.html
 		try {
 			InputStream siteXsl = getClass().getResourceAsStream("/xslt/site.xsl");
@@ -230,7 +228,6 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			transformer.transform(new StreamSource(outputSiteXml), res);
 			siteXsl.close();
 			out.close();
-			this.symbols.put("${site.contents}", out.toString().replaceAll("@@jbosstools-directory.xml@@", directoryXMLReplacement));
 		} catch (Exception ex) {
 			throw new MojoExecutionException("Error occured while generating 'site.properties'", ex);
 		}
@@ -239,36 +236,6 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		} catch (Exception ex) {
 			throw new MojoExecutionException("Error writing file " + indexName, ex);
 		}
-	}
-
-	private String generateJBossToolsDirectoryXml(File outputRepository) throws MojoExecutionException {
-		// Generate jbosstools-directory.xml
-		File[] org_jboss_tools_central_discovery = new File(outputRepository, "plugins").listFiles(new FileFilter() {
-			public boolean accept(File arg0) {
-				return arg0.getName().startsWith("org.jboss.tools.central.discovery_") && arg0.getName().endsWith(".jar");
-			}
-		});
-		if (org_jboss_tools_central_discovery.length > 0) {
-			try {
-				FileOutputStream directoryXml = new FileOutputStream(new File(outputRepository, "jbosstools-directory.xml"));
-				directoryXml.write("<directory xmlns=\"http://www.eclipse.org/mylyn/discovery/directory/\">\n".getBytes());
-				directoryXml.write("<entry url=\"plugins/".getBytes());
-				directoryXml.write(org_jboss_tools_central_discovery[0].getName().getBytes());
-				directoryXml.write("\" permitCategories=\"true\"/>\n".getBytes());
-				directoryXml.write("</directory>".getBytes());
-				directoryXml.close();
-			} catch (Exception ex) {
-				throw new MojoExecutionException("Could not write file 'jbosstools-directory.xml'", ex);
-			}
-		}
-		if (org_jboss_tools_central_discovery.length == 0) {
-			getLog().warn("No org.jboss.tools.central.discovery plugin in repo. Skip generation of 'jbosstools-directory.xml'");
-			return "";
-		}
-		if (org_jboss_tools_central_discovery.length > 1) {
-			getLog().warn("Several org.jbosstools.central.discovery plugins found in repo.");
-		}
-		return "<a href=\"jbosstools-directory.xml\" style=\"font-size:x-small\">jbosstools-directory.xml</a> :: ";
 	}
 
 	private void generateSiteProperties(File outputRepository, File outputSiteXml) throws TransformerFactoryConfigurationError, MojoExecutionException {

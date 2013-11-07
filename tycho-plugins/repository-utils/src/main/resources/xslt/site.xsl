@@ -114,7 +114,7 @@
 					<a href="features/" style="font-size:x-small">features</a>
 				</td>
 				<td class="rowLine" colspan="1">
-					@@jbosstools-directory.xml@@ <a href="site.properties" style="font-size:x-small">site.properties</a>
+					<a href="site.properties" style="font-size:x-small">site.properties</a>
 				</td>
 			</tr>
 		</table>
