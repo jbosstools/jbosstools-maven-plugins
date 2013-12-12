@@ -33,7 +33,7 @@ import org.eclipse.tycho.p2.target.facade.TargetDefinition.InstallableUnitLocati
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Location;
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Repository;
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Unit;
-import org.eclipse.tycho.p2.target.facade.TargetPlatformBuilder;
+import org.eclipse.tycho.p2.target.facade.TargetPlatformConfigurationStub;
 import org.osgi.framework.Version;
 
 /**
@@ -96,15 +96,16 @@ public class FixVersionsMojo extends AbstractMojo {
 					continue;
 				}
 				InstallableUnitLocation loc = (InstallableUnitLocation) location;
-				TargetPlatformBuilder tpBuilder = resolverFactory.createTargetPlatformBuilder(new MockExecutionEnvironment());
+				TargetPlatformConfigurationStub tpConfig = new TargetPlatformConfigurationStub();
 				for (Repository repo : loc.getRepositories()) {
 					String id = repo.getId();
 					if (repo.getId() == null || repo.getId().isEmpty()) {
 						id = repo.getLocation().toString();
 					}
-					tpBuilder.addP2Repository(new MavenRepositoryLocation(id, repo.getLocation()));
+					tpConfig.addP2Repository(new MavenRepositoryLocation(id, repo.getLocation()));
 				}
-				TargetPlatform site = tpBuilder.buildTargetPlatform();
+				TargetPlatform site = resolverFactory.getTargetPlatformFactory().createTargetPlatform(
+						tpConfig, new MockExecutionEnvironment(), null, null);
 				P2Resolver resolver = resolverFactory.createResolver(new MavenLoggerAdapter(this.plexusLogger, true));
 				for (Unit unit : loc.getUnits()) {
 					getLog().info("checking " + unit.getId());

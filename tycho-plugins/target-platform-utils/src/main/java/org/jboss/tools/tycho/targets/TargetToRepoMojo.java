@@ -26,6 +26,7 @@ import org.codehaus.plexus.logging.Logger;
 import org.eclipse.sisu.equinox.EquinoxServiceFactory;
 import org.eclipse.tycho.BuildOutputDirectory;
 import org.eclipse.tycho.artifacts.TargetPlatform;
+import org.eclipse.tycho.core.ee.ExecutionEnvironmentUtils;
 import org.eclipse.tycho.core.resolver.shared.MavenRepositoryLocation;
 import org.eclipse.tycho.osgi.adapters.MavenLoggerAdapter;
 import org.eclipse.tycho.p2.resolver.TargetDefinitionFile;
@@ -36,7 +37,7 @@ import org.eclipse.tycho.p2.target.facade.TargetDefinition.InstallableUnitLocati
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Location;
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Repository;
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Unit;
-import org.eclipse.tycho.p2.target.facade.TargetPlatformBuilder;
+import org.eclipse.tycho.p2.target.facade.TargetPlatformConfigurationStub;
 import org.eclipse.tycho.p2.tools.DestinationRepositoryDescriptor;
 import org.eclipse.tycho.p2.tools.RepositoryReferences;
 import org.eclipse.tycho.p2.tools.mirroring.facade.IUDescription;
@@ -146,12 +147,13 @@ public class TargetToRepoMojo extends AbstractMojo {
         	for (final Location loc : target.getLocations()) {
             	if (loc instanceof InstallableUnitLocation) {
             		InstallableUnitLocation location = (InstallableUnitLocation)loc;
-            		TargetPlatformBuilder tpBuilder = resolverFactory.createTargetPlatformBuilder(new MockExecutionEnvironment());
+            		TargetPlatformConfigurationStub tpConfig = new TargetPlatformConfigurationStub();
             		for (Repository repo : location.getRepositories()) {
-                		tpBuilder.addP2Repository(new MavenRepositoryLocation(repo.getId(), repo.getLocation()));
+                		tpConfig.addP2Repository(new MavenRepositoryLocation(repo.getId(), repo.getLocation()));
             		}
-            		TargetPlatform site = tpBuilder.buildTargetPlatform();
     				P2Resolver resolver = resolverFactory.createResolver(new MavenLoggerAdapter(this.plexusLogger, true));
+            		TargetPlatform site = resolverFactory.getTargetPlatformFactory().createTargetPlatform(
+            				tpConfig, new MockExecutionEnvironment(), null, null);
             		for (Unit unit : ((InstallableUnitLocation)loc).getUnits()) {
             			String sourceUnitId = null;
             			int featureSuffixIndex = unit.getId().lastIndexOf(".feature.group");
