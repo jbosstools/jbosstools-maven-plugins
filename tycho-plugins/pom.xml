@@ -14,7 +14,7 @@
 	<groupId>org.jboss.tools</groupId>
 	<artifactId>tycho-plugins</artifactId>
 	<packaging>pom</packaging>
-	<version>0.16.0-SNAPSHOT</version>
+	<version>0.16.0</version>
 	<name>jbosstools-tycho-plugins-parent</name>
         <description>In-House Maven plugins for JBT/JBDS build</description>
         <url>http://jboss.org/tools</url>
@@ -42,9 +42,6 @@
 
 	<properties>
 		<tychoVersion>0.16.0</tychoVersion>
-		<!--  Repository Deployment URLs taken from jboss parent pom -->
-		<jboss.releases.repo.url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
-		<jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
 	</properties>
 
 	<modules>
@@ -76,14 +73,14 @@
 		<snapshotRepository>
 			<id>jboss-snapshots-repository</id>
 			<name>JBoss Snapshots Repository</name>
-			<url>${jboss.snapshots.repo.url}</url>
+			<url>https://repository.jboss.org/nexus/content/repositories/snapshots/</url>
 			<uniqueVersion>false</uniqueVersion>
 		</snapshotRepository>
 		<repository>
 			<id>jboss-staging-repository</id>
 			<name>JBoss Staging Repository</name>
 			<uniqueVersion>false</uniqueVersion>
-			<url>${jboss.releases.repo.url}</url>
+			<url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</url>
 		</repository>
 	</distributionManagement>
 
