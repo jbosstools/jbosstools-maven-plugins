@@ -188,7 +188,9 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		}
 
 		File outputSiteXml = generateSiteXml(outputRepository);
-		generateSiteProperties(outputRepository, outputSiteXml);
+		if (new File(outputRepository, "features").isDirectory()) { //$NON-NLS-1$
+			generateSiteProperties(outputRepository, outputSiteXml);	
+		}
 		generateWebStuff(outputRepository, outputSiteXml);
 		try {
 			alterContentJar(outputRepository);
@@ -205,13 +207,13 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
 		File repoZipFile = new File(this.project.getBuild().getDirectory(), this.project.getArtifactId() + "-" + this.project.getVersion() + ".zip");
 		repoZipFile.delete();
+		ZipArchiver archiver = new ZipArchiver();
+		archiver.setDestFile(repoZipFile);
+		archiver.setForced(true);
+		archiver.addDirectory(outputRepository);
 		try {
-			ZipArchiver archiver = new ZipArchiver();
-			archiver.setDestFile(repoZipFile);
-			archiver.setForced(true);
-			archiver.addDirectory(outputRepository);
 			archiver.createArchive();
-		} catch (Exception ex) {
+		} catch (IOException ex) {
 			throw new MojoExecutionException("Could not create " + repoZipFile.getName(), ex);
 		}
 
@@ -227,9 +229,10 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			Result res = new StreamResult(out);
 			transformer.transform(new StreamSource(outputSiteXml), res);
 			siteXsl.close();
+			this.symbols.put("${site.contents}", out.toString());
 			out.close();
 		} catch (Exception ex) {
-			throw new MojoExecutionException("Error occured while generating 'site.properties'", ex);
+			throw new MojoExecutionException("Error occured while generating 'site.xsl'", ex);
 		}
 		try {
 			alterIndexFile(outputRepository);
@@ -254,6 +257,10 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		}
 	}
 
+	/*
+	 * We'll stop creating site.xml ASAP, but it's still use to generate list of features
+	 */
+	@Deprecated
 	private File generateSiteXml(File outputRepository) throws MojoExecutionException {
 		// Generate site.xml
 		UpdateSite site = null;
