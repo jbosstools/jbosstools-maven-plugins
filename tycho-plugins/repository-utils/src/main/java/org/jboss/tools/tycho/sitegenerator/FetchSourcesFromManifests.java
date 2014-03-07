@@ -123,14 +123,14 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 	 * 
 	 * @parameter default-value="${basedir}/cache" property="fetch-sources-from-manifests.zipCacheFolder"
 	 */
-	private File zipCacheFolder = new File("cache/");
+	private File zipCacheFolder;
 
 	/**
 	 * Location where to put zips
 	 * 
 	 * @parameter default-value="${basedir}/zips" property="fetch-sources-from-manifests.outputFolder"
 	 */
-	private File outputFolder = new File("zips/");
+	private File outputFolder;
 
 	/**
 	 * @parameter default-value="," property="fetch-sources-from-manifests.columnSeparator"
@@ -153,6 +153,10 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 	private String MANIFEST = "MANIFEST.MF";
 
 	public void execute() throws MojoExecutionException, MojoFailureException {
+		if (this.zipCacheFolder == null)
+		{
+			this.zipCacheFolder = new File(project.getBasedir() + File.separator + "cache" + File.separator);
+		}
 		if (this.zipCacheFolder != null && !this.zipCacheFolder.isDirectory()) {
 			try {
 				if (!this.zipCacheFolder.exists()) {
@@ -161,6 +165,10 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 			} catch (Exception ex) {
 				throw new MojoExecutionException("'zipCacheFolder' must be a directory", ex);
 			}
+		}
+		if (this.outputFolder ==null)
+		{
+			this.outputFolder = new File(project.getBasedir() + File.separator + "zips" + File.separator);
 		}
 		if (this.outputFolder.equals(this.zipCacheFolder)) {
 			throw new MojoExecutionException("zipCacheFolder and outputFolder can not be the same folder");
@@ -179,7 +187,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		String branch = project.getProperties().getProperty("mvngit.branch");
 		sb.append("-=> " + project.getGroupId() + ":" + project.getArtifactId() + ":" + project.getVersion() + columnSeparator + branch + " <=-\n");
 
-		String pluginPath = "target/repository/plugins";
+		String pluginPath = project.getBasedir() + File.separator + "target" + File.separator + "repository" + File.separator + "plugins";
 		String sep = " " + columnSeparator + " ";
 
 		for (String projectName : this.sourceFetchMap.keySet()) {
@@ -223,7 +231,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 
 			// retrieve the MANIFEST.MF file, eg., org.jboss.tools.usage_1.2.100.Alpha2-v20140221-1555-B437.jar!/META-INF/MANIFEST.MF
 			Manifest manifest;
-			File manifestFile = new File(MANIFEST);
+			File manifestFile = new File(this.outputFolder, MANIFEST);
 			try {
 				manifest = new Manifest(new FileInputStream(manifestFile));
 			} catch (Exception ex) {
