@@ -153,8 +153,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 	private String MANIFEST = "MANIFEST.MF";
 
 	public void execute() throws MojoExecutionException, MojoFailureException {
-		if (this.zipCacheFolder == null)
-		{
+		if (this.zipCacheFolder == null) {
 			this.zipCacheFolder = new File(project.getBasedir() + File.separator + "cache" + File.separator);
 		}
 		if (this.zipCacheFolder != null && !this.zipCacheFolder.isDirectory()) {
@@ -166,8 +165,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 				throw new MojoExecutionException("'zipCacheFolder' must be a directory", ex);
 			}
 		}
-		if (this.outputFolder ==null)
-		{
+		if (this.outputFolder == null) {
 			this.outputFolder = new File(project.getBasedir() + File.separator + "zips" + File.separator);
 		}
 		if (this.outputFolder.equals(this.zipCacheFolder)) {
@@ -202,10 +200,11 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 				throw new MojoExecutionException("No matching plugin found in " + pluginPath + " for " + pluginName + "_.+\\.jar.\nCheck your pom.xml for this line: <" + projectName + ">" + pluginName + "</" + projectName + ">");
 			}
 			File jarFile = matchingFiles[0];
+			File manifestFile = new File(this.outputFolder, MANIFEST);
 
 			try {
 				FileInputStream fin = new FileInputStream(jarFile);
-				OutputStream out = new FileOutputStream(MANIFEST);
+				OutputStream out = new FileOutputStream(manifestFile);
 				BufferedInputStream bin = new BufferedInputStream(fin);
 				ZipInputStream zin = new ZipInputStream(bin);
 				ZipEntry ze = null;
@@ -231,7 +230,6 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 
 			// retrieve the MANIFEST.MF file, eg., org.jboss.tools.usage_1.2.100.Alpha2-v20140221-1555-B437.jar!/META-INF/MANIFEST.MF
 			Manifest manifest;
-			File manifestFile = new File(this.outputFolder, MANIFEST);
 			try {
 				manifest = new Manifest(new FileInputStream(manifestFile));
 			} catch (Exception ex) {
@@ -248,9 +246,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 			if (ESR != null) {
 				SHA = ESR.substring(ESR.lastIndexOf(";commitId=") + 10);
 				// getLog().info(SHA);
-			}
-			else
-			{
+			} else {
 				SHA = "UNKNOWN";
 			}
 			// cleanup
@@ -389,14 +385,12 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		Wagon wagon = this.wagonManager.getWagon(repository.getProtocol());
 
 		// TODO: this should be retrieved from wagonManager
-		// TODO: enable these next 3 lines (and the remove line) to have visual progress when files are downloading
-		// com.googlecode.ConsoleDownloadMonitor downloadMonitor = new
-		// com.googlecode.ConsoleDownloadMonitor();
-		// wagon.addTransferListener(downloadMonitor);
+		com.googlecode.ConsoleDownloadMonitor downloadMonitor = new com.googlecode.ConsoleDownloadMonitor();
+		wagon.addTransferListener(downloadMonitor);
 		wagon.connect(repository, this.wagonManager.getProxy(repository.getProtocol()));
 		wagon.get(file, outputFile);
 		wagon.disconnect();
-		// wagon.removeTransferListener(downloadMonitor);
+		wagon.removeTransferListener(downloadMonitor);
 	}
 
 	private static String getMD5(File outputZipFile) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
