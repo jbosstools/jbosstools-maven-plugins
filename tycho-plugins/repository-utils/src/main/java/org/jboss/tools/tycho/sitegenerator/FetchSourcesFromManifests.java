@@ -174,7 +174,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 
 		File zipsDirectory = new File(this.outputFolder, "all");
 		if (!zipsDirectory.exists()) {
-			zipsDirectory.mkdir();
+			zipsDirectory.mkdirs();
 		}
 		Set<File> writtenFiles = new HashSet<File>();
 		Properties allBuildProperties = new Properties();
@@ -200,10 +200,11 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 				throw new MojoExecutionException("No matching plugin found in " + pluginPath + " for " + pluginName + "_.+\\.jar.\nCheck your pom.xml for this line: <" + projectName + ">" + pluginName + "</" + projectName + ">");
 			}
 			File jarFile = matchingFiles[0];
-			File manifestFile = new File(this.outputFolder, MANIFEST);
+			File manifestFile = null;
 
 			try {
 				FileInputStream fin = new FileInputStream(jarFile);
+				manifestFile =  File.createTempFile(MANIFEST, "");
 				OutputStream out = new FileOutputStream(manifestFile);
 				BufferedInputStream bin = new BufferedInputStream(fin);
 				ZipInputStream zin = new ZipInputStream(bin);
