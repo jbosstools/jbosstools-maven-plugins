@@ -45,32 +45,32 @@ import org.codehaus.plexus.util.FileUtils;
 /**
  * This class performs the following:
  * 
- * a) for a list of plugins (not source plugins!) in the current repo & a list
- * of matching projects b) retrieve the MANIFEST.MF files, eg.,
- * org.jboss.tools.usage_1
- * .2.100.Alpha2-v20140221-1555-B437.jar!/META-INF/MANIFEST.MF c) parse out the
- * commitId from Eclipse-SourceReferences, eg.:
+ * a) for a list of projects and a single plugin in current repo
+ * 
+ * b) retrieve the MANIFEST.MF file:
+ * 
+ * org.jboss.tools.usage_1.2.100.Alpha2-v20140221-1555-B437.jar!/META-INF/
+ * MANIFEST.MF
+ * 
+ * c) parse out the commitId from Eclipse-SourceReferences:
  * 
  * Eclipse-SourceReferences: scm:git:https://github.com/jbosstools/jbosst
  * ools-base.git;path="usage/plugins/org.jboss.tools.usage";commitId=184
  * e18cc3ac7c339ce406974b6a4917f73909cc4
  * 
- * d) turn those into SHAs, eg., 184e18cc3ac7c339ce406974b6a4917f73909cc4 e)
- * fetch source zips for those SHAs, eg.,
- * https://github.com/jbosstools/jbosstools
- * -base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip
+ * d) turn those into SHAs, eg., 184e18cc3ac7c339ce406974b6a4917f73909cc4
  * 
- * Note: zip contains a single subfolder:
- * !/184e18cc3ac7c339ce406974b6a4917f73909cc4/ f) rename them to be meaningful:
- * jbosstools-base_1.2.100.Alpha2-v20140221-1555-
- * B437_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip (?) g) produce a
+ * e) fetch source zips for those SHAs, eg.,
+ * https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip and save as
+ * jbosstools-base_Alpha2-v20140221-1555-B437_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
+ * 
  * digest file listing:
  * 
- * github project :: plugin :: version :: SHA :: zipfile jbosstools-base ::
- * org.jboss.tools.usage :: 1.2.100.Alpha2-v20140221-1555-B437 ::
- * 184e18cc3ac7c339ce406974b6a4917f73909cc4 ::
- * https://github.com/jbosstools/jbosstools
- * -base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip ...
+ * github project, plugin, version, SHA, origin/branch@SHA, remote zipfile, local zipfile
+ * 
+ * jbosstools-base, org.jboss.tools.usage, 1.2.100.Alpha2-v20140221-1555-B437, 184e18cc3ac7c339ce406974b6a4917f73909cc4,
+ * origin/jbosstools-4.1.x@184e18cc3ac7c339ce406974b6a4917f73909cc4, https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip,
+ * jbosstools-base_Alpha2-v20140221-1555-B437_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
  * 
  * @goal fetch-sources-from-manifests
  * 
@@ -79,28 +79,30 @@ import org.codehaus.plexus.util.FileUtils;
 public class FetchSourcesFromManifests extends AbstractMojo {
 
 	/**
+	 * @parameter property="project"
+	 * @required
+	 * @readonly
+	 */
+	private MavenProject project;
+
+	/**
 	 * Map of projects to plugins, so we know where to get the SHA (git
 	 * revision)
 	 * 
 	 * sourceFetchMap>
-	 * jbosstools-aerogear>org.jboss.tools.aerogear.hybrid.core</
-	 * jbosstools-aerogear>
-	 * jbosstools-arquillian>org.jboss.tools.arquillian.core
-	 * </jbosstools-arquillian>
+	 * jbosstools-aerogear>org.jboss.tools.aerogear.hybrid.core</jbosstools-aerogear>
+	 * jbosstools-arquillian>org.jboss.tools.arquillian.core</jbosstools-arquillian>
 	 * jbosstools-base>org.jboss.tools.common</jbosstools-base>
 	 * jbosstools-birt>org.jboss.tools.birt.core</jbosstools-birt>
 	 * jbosstools-central>org.jboss.tools.central</jbosstools-central>
 	 * jbosstools-forge>org.jboss.tools.forge.core</jbosstools-forge>
-	 * jbosstools-
-	 * freemarker>org.jboss.ide.eclipse.freemarker</jbosstools-freemarker>
+	 * jbosstools-freemarker>org.jboss.ide.eclipse.freemarker</jbosstools-freemarker>
 	 * jbosstools-gwt>org.jboss.tools.gwt.core</jbosstools-gwt>
 	 * jbosstools-hibernate>org.hibernate.eclipse</jbosstools-hibernate>
 	 * jbosstools-javaee>org.jboss.tools.jsf</jbosstools-javaee>
 	 * jbosstools-jst>org.jboss.tools.jst.web</jbosstools-jst>
-	 * jbosstools-livereload
-	 * >org.jboss.tools.livereload.core</jbosstools-livereload>
-	 * jbosstools-openshift
-	 * >org.jboss.tools.openshift.egit.core</jbosstools-openshift>
+	 * jbosstools-livereload>org.jboss.tools.livereload.core</jbosstools-livereload>
+	 * jbosstools-openshift>org.jboss.tools.openshift.egit.core</jbosstools-openshift>
 	 * jbosstools-portlet>org.jboss.tools.portlet.core</jbosstools-portlet>
 	 * jbosstools-server>org.jboss.ide.eclipse.as.core</jbosstools-server>
 	 * jbosstools-vpe>org.jboss.tools.vpe</jbosstools-vpe>
@@ -111,68 +113,35 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 	 */
 	private Map<String, String> sourceFetchMap;
 
-	public Map<String, String> getSourceFetchMap() {
-		return sourceFetchMap;
-	}
-
-	public void setSourceFetchMap(Map<String, String> sourceFetchMap) {
-		this.sourceFetchMap = sourceFetchMap;
-	}
-
 	/**
 	 * Alternative location to look for zips. Here is the order to process zip
-	 * research 1. Look for zip in outputFolder 2. Look for zip in zipCacheDir
-	 * (if specified) 3. Look for zip at expected URL
+	 * research
 	 * 
-	 * @parameter default-value="${basedir}/cache"
-	 *            property="fetch-sources-from-manifests.zipCacheFolder"
+	 * 1. Look for zip in zipCacheFolder
+	 * 2. Look for zip in outputFolder
+	 * 3. Look for zip at expected URL
+	 * 
+	 * @parameter default-value="${basedir}/cache" property="fetch-sources-from-manifests.zipCacheFolder"
 	 */
 	private File zipCacheFolder = new File("cache/");
-
-	public File getZipCacheFolder() {
-		return zipCacheFolder;
-	}
-
-	public void setZipCacheFolder(File zipCacheFolder) {
-		this.zipCacheFolder = zipCacheFolder;
-	}
 
 	/**
 	 * Location where to put zips
 	 * 
-	 * @parameter default-value="${basedir}/zips"
-	 *            property="fetch-sources-from-manifests.outputFolder"
+	 * @parameter default-value="${basedir}/zips" property="fetch-sources-from-manifests.outputFolder"
 	 */
 	private File outputFolder = new File("zips/");
 
-	public File getOutputFolder() {
-		return outputFolder;
-	}
-
-	public void setOutputFolder(File outputFolder) {
-		this.outputFolder = outputFolder;
-	}
+	/**
+	 * @parameter default-value="," property="fetch-sources-from-manifests.columnSeparator"
+	 */
+	private String columnSeparator = ",";
 
 	/**
 	 * @parameter default-value="false"
 	 *            property="fetch-sources-from-manifests.skip"
 	 */
 	private boolean skip;
-
-	public boolean isSkip() {
-		return skip;
-	}
-
-	public void setSkip(boolean skip) {
-		this.skip = skip;
-	}
-
-	/**
-	 * @parameter expression="${project}"
-	 * @required
-	 * @readonly
-	 */
-	private MavenProject project;
 
 	/**
 	 * For transfers
@@ -190,13 +159,11 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 					this.zipCacheFolder.mkdirs();
 				}
 			} catch (Exception ex) {
-				throw new MojoExecutionException(
-						"'zipCacheFolder' must be a directory", ex);
+				throw new MojoExecutionException("'zipCacheFolder' must be a directory", ex);
 			}
 		}
 		if (this.outputFolder.equals(this.zipCacheFolder)) {
-			throw new MojoExecutionException(
-					"zipCacheFolder and outputFolder can not be the same folder");
+			throw new MojoExecutionException("zipCacheFolder and outputFolder can not be the same folder");
 		}
 
 		File zipsDirectory = new File(this.outputFolder, "all");
@@ -206,23 +173,25 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		Set<File> writtenFiles = new HashSet<File>();
 		Properties allBuildProperties = new Properties();
 
+		File digestFile = new File(this.outputFolder, "ALL_REVISIONS.txt");
+		FileWriter dfw;
+		StringBuffer sb = new StringBuffer();
+		String branch = project.getProperties().getProperty("mvngit.branch");
+		sb.append("-=> " + project.getGroupId() + ":" + project.getArtifactId() + ":" + project.getVersion() + columnSeparator + branch + " <=-\n");
+
+		String pluginPath = "target/repository/plugins";
+		String sep = " " + columnSeparator + " ";
+
 		for (String projectName : this.sourceFetchMap.keySet()) {
 			String pluginName = this.sourceFetchMap.get(projectName);
 			// jbosstools-base = org.jboss.tools.common
 			// getLog().info(projectName + " = " + pluginName);
 
-			// find the first matching plugin jar, eg.,
-			// target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
-			File[] matchingFiles = listFilesMatching(new File(
-					"target/repository/plugins/"), pluginName + "_.+\\.jar");
+			// find the first matching plugin jar, eg., target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
+			File[] matchingFiles = listFilesMatching(new File(pluginPath), pluginName + "_.+\\.jar");
 			// for (File file : matchingFiles) getLog().debug(file.toString());
 			if (matchingFiles.length < 1) {
-				throw new MojoExecutionException(
-						"No matching plugin found in target/repository/plugins/ for "
-								+ pluginName
-								+ "_.+\\.jar.\nCheck your pom.xml for this line: <"
-								+ projectName + ">" + pluginName + "</"
-								+ projectName + ">");
+				throw new MojoExecutionException("No matching plugin found in " + pluginPath + " for " + pluginName + "_.+\\.jar.\nCheck your pom.xml for this line: <" + projectName + ">" + pluginName + "</" + projectName + ">");
 			}
 			File jarFile = matchingFiles[0];
 
@@ -249,25 +218,20 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 				zin.close();
 				// getLog().info("Saved " + jarFile + "!/META-INF/" + MANIFEST);
 			} catch (Exception ex) {
-				throw new MojoExecutionException("Error extracting " + MANIFEST
-						+ " from " + jarFile, ex);
+				throw new MojoExecutionException("Error extracting " + MANIFEST + " from " + jarFile, ex);
 			}
 
-			// retrieve the MANIFEST.MF file, eg.,
-			// org.jboss.tools.usage_1.2.100.Alpha2-v20140221-1555-B437.jar!/META-INF/MANIFEST.MF
+			// retrieve the MANIFEST.MF file, eg., org.jboss.tools.usage_1.2.100.Alpha2-v20140221-1555-B437.jar!/META-INF/MANIFEST.MF
 			Manifest manifest;
 			File manifestFile = new File(MANIFEST);
 			try {
 				manifest = new Manifest(new FileInputStream(manifestFile));
 			} catch (Exception ex) {
-				throw new MojoExecutionException(
-						"Error while reading manifest file " + MANIFEST, ex);
+				throw new MojoExecutionException("Error while reading manifest file " + MANIFEST, ex);
 			}
 
 			// parse out the commitId from Eclipse-SourceReferences:
-			// scm:git:https://github.com/jbosstools/jbosst
-			// ools-base.git;path="usage/plugins/org.jboss.tools.usage";commitId=184
-			// e18cc3ac7c339ce406974b6a4917f73909cc4
+			// scm:git:https://github.com/jbosstools/jbosstools-base.git;path="usage/plugins/org.jboss.tools.usage";commitId=184e18cc3ac7c339ce406974b6a4917f73909cc4
 			Attributes attr = manifest.getMainAttributes();
 			String ESR = null;
 			String SHA = null;
@@ -277,51 +241,37 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 				SHA = ESR.substring(ESR.lastIndexOf(";commitId=") + 10);
 				// getLog().info(SHA);
 			}
+			else
+			{
+				SHA = "UNKNOWN";
+			}
 			// cleanup
 			manifestFile.delete();
 
-			// fetch github source archive for that SHA, eg.,
-			// https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip
-			// to
-			// jbosstools-base_Alpha2-v20140221-1555-B437_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
+			// fetch github source archive for that SHA, eg., https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip
+			// to jbosstools-base_Alpha2-v20140221-1555-B437_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
+			String URL = "";
+			String outputZipName = "";
 			try {
-				if (SHA == null) {
-					getLog().warn(
-							"No Eclipse-SourceReferences SHA found in "
-									+ jarFile + "!/META-INF/" + MANIFEST);
-					getLog().warn(
-							"Cannot fetch " + projectName + " sources from "
-									+ pluginName + "!");
+				if (SHA == null || SHA.equals("UNKNOWN")) {
+					getLog().warn("Cannot fetch " + projectName + " sources: no Eclipse-SourceReferences in " + removePrefix(jarFile.toString(), pluginPath) + " " + MANIFEST);
 				} else {
-					String zipName = SHA + ".zip";
-					String outputZipName = projectName + "_"
-							+ getQualifier(pluginName, jarFile.toString())
-							+ "_" + SHA + "_sources.zip";
+					URL = "https://github.com/jbosstools/" + projectName + "/archive/" + SHA + ".zip";
+					outputZipName = projectName + "_" + getQualifier(pluginName, jarFile.toString(), false) + "_" + SHA + "_sources.zip";
 					File outputZipFile = new File(zipsDirectory, outputZipName);
 
 					boolean diduseCache = false;
-					if (this.zipCacheFolder != null
-							&& this.zipCacheFolder.exists()) {
-						File cachedZip = new File(this.zipCacheFolder,
-								outputZipName);
+					if (this.zipCacheFolder != null && this.zipCacheFolder.exists()) {
+						File cachedZip = new File(this.zipCacheFolder, outputZipName);
 						if (cachedZip.exists()) {
 							FileUtils.copyFile(cachedZip, outputZipFile);
-							getLog().info(
-									"Copied "
-											+ removePrefix(outputZipFile
-													.getAbsolutePath(), project
-													.getBasedir().toString()));
-							getLog().info(
-									"  From "
-											+ removePrefix(cachedZip
-													.getAbsolutePath(), project
-													.getBasedir().toString()));
+							getLog().debug("Copied " + removePrefix(outputZipFile.getAbsolutePath(), project.getBasedir().toString()));
+							getLog().debug("  From " + removePrefix(cachedZip.getAbsolutePath(), project.getBasedir().toString()));
 							diduseCache = true;
 						}
 					}
 					if (!diduseCache && !outputZipFile.exists()) {
-						doGet("https://github.com/jbosstools/" + projectName
-								+ "/archive/" + zipName, outputZipFile);
+						doGet(URL, outputZipFile);
 					}
 
 					// generate MD5 file too
@@ -330,76 +280,72 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 					if (outputZipFile.exists()) {
 						md5 = getMD5(outputZipFile);
 					}
-					File outputMD5File = new File(
-							outputZipFile.getAbsolutePath() + ".MD5");
+					File outputMD5File = new File(outputZipFile.getAbsolutePath() + ".MD5");
 					FileWriter fw = new FileWriter(outputMD5File);
 					fw.write(md5);
 					fw.close();
 
-					allBuildProperties.put(outputZipName + ".filename",
-							outputZipName);
-					allBuildProperties.put(outputZipName + ".filensize",
-							Long.toString(outputZipName.length()));
+					allBuildProperties.put(outputZipName + ".filename", outputZipName);
+					allBuildProperties.put(outputZipName + ".filensize", Long.toString(outputZipName.length()));
 					allBuildProperties.put(outputZipName + ".filemd5", md5);
 					writtenFiles.add(outputMD5File);
 					writtenFiles.add(outputZipFile);
 				}
 			} catch (Exception ex) {
-				throw new MojoExecutionException(
-						"Error while downloading github source archive", ex);
+				throw new MojoExecutionException("Error while downloading github source archive", ex);
 			}
 
-			// append into digest
-			// * github project :: plugin :: version :: SHA :: zipfile
-			// * jbosstools-base :: org.jboss.tools.usage ::
-			// 1.2.100.Alpha2-v20140221-1555-B437 ::
-			// 184e18cc3ac7c339ce406974b6a4917f73909cc4 ::
-			// https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip
-
+			// github project, plugin, version, SHA, origin/branch@SHA, remote zipfile, local zipfile
+			String revisionLine = projectName + sep + pluginName + sep + getQualifier(pluginName, jarFile.toString(), true) + sep + SHA + sep + "origin/" + branch + "@" + SHA + sep + URL + sep + outputZipName + "\n";
+			// getLog().info(revisionLine);
+			sb.append(revisionLine);
 		}
 
 		// getLog().info("Generating aggregate site metadata");
 		try {
 			{
-				File buildPropertiesAllXml = new File(this.outputFolder,
-						"build.properties.all.xml");
+				File buildPropertiesAllXml = new File(this.outputFolder, "build.properties.all.xml");
 				if (!buildPropertiesAllXml.exists()) {
 					buildPropertiesAllXml.createNewFile();
 				}
-				FileOutputStream xmlOut = new FileOutputStream(
-						buildPropertiesAllXml);
+				FileOutputStream xmlOut = new FileOutputStream(buildPropertiesAllXml);
 				allBuildProperties.storeToXML(xmlOut, null);
 				xmlOut.close();
 			}
 
 			{
-				File buildPropertiesFileTxt = new File(this.outputFolder,
-						"build.properties.file.txt");
+				File buildPropertiesFileTxt = new File(this.outputFolder, "build.properties.file.txt");
 				if (!buildPropertiesFileTxt.exists()) {
 					buildPropertiesFileTxt.createNewFile();
 				}
-				FileOutputStream textOut = new FileOutputStream(
-						buildPropertiesFileTxt);
+				FileOutputStream textOut = new FileOutputStream(buildPropertiesFileTxt);
 				allBuildProperties.store(textOut, null);
 				textOut.close();
 			}
 		} catch (Exception ex) {
-			throw new MojoExecutionException(
-					"Error while creating 'metadata' files", ex);
+			throw new MojoExecutionException("Error while creating 'metadata' files", ex);
 		}
 
+		try {
+			dfw = new FileWriter(digestFile);
+			dfw.write(sb.toString());
+			dfw.close();
+		} catch (Exception ex) {
+			throw new MojoExecutionException("Error writing to " + digestFile.toString(), ex);
+		}
+		// getLog().info("Written to " + digestFile.toString() + ":\n\n" + sb.toString());
 	}
 
 	private String removePrefix(String stringToTrim, String prefix) {
-		return stringToTrim.substring(stringToTrim.lastIndexOf(prefix)
-				+ prefix.length() + 1);
+		return stringToTrim.substring(stringToTrim.lastIndexOf(prefix) + prefix.length() + 1);
 	}
 
 	// given: pluginName = org.jboss.tools.common
 	// given: jarFileName =
 	// target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
-	// return Alpha2-v20140304-0055-B440
-	private String getQualifier(String pluginName, String jarFileName) {
+	// return 3.6.0.Alpha2-v20140304-0055-B440 (if full = true)
+	// return Alpha2-v20140304-0055-B440 (if full = false)
+	private String getQualifier(String pluginName, String jarFileName, boolean full) {
 		// trim .../pluginName prefix
 		String qualifier = removePrefix(jarFileName, pluginName);
 		// trim .jar suffix
@@ -412,8 +358,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 
 	// thanks to
 	// http://stackoverflow.com/questions/2928680/regex-for-files-in-a-directory
-	public static File[] listFilesMatching(File root, String regex)
-			throws MojoExecutionException {
+	public static File[] listFilesMatching(File root, String regex) throws MojoExecutionException {
 		if (!root.isDirectory()) {
 			throw new MojoExecutionException(root + " is not a directory.");
 		}
@@ -436,18 +381,17 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		Wagon wagon = this.wagonManager.getWagon(repository.getProtocol());
 
 		// TODO: this should be retrieved from wagonManager
+		// TODO: enable these next 3 lines (and the remove line) to have visual progress when files are downloading
 		// com.googlecode.ConsoleDownloadMonitor downloadMonitor = new
 		// com.googlecode.ConsoleDownloadMonitor();
 		// wagon.addTransferListener(downloadMonitor);
-		wagon.connect(repository,
-				this.wagonManager.getProxy(repository.getProtocol()));
+		wagon.connect(repository, this.wagonManager.getProxy(repository.getProtocol()));
 		wagon.get(file, outputFile);
 		wagon.disconnect();
 		// wagon.removeTransferListener(downloadMonitor);
 	}
 
-	private static String getMD5(File outputZipFile)
-			throws NoSuchAlgorithmException, FileNotFoundException, IOException {
+	private static String getMD5(File outputZipFile) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
 		MessageDigest digest = MessageDigest.getInstance("MD5");
 		InputStream zipIs = new FileInputStream(outputZipFile);
 		byte[] buffer = new byte[8192];
