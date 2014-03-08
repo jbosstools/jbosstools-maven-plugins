@@ -32,6 +32,7 @@ If you set a siteTemplateFolder value, ensure that the folder exists as site/sit
 				<artifactId>repository-utils</artifactId>
 				<version>0.0.1-SNAPSHOT</version>
 				<executions>
+					<!-- creates index.html and other artifacts -->
 					<execution>
 						<id>generate-facade</id>
 						<phase>package</phase>
@@ -46,6 +47,39 @@ If you set a siteTemplateFolder value, ensure that the folder exists as site/sit
 								<update.site.version>${update.site.version}</update.site.version>
 								<target.eclipse.version>${target.eclipse.version}</target.eclipse.version>
 							</symbols>
+						</configuration>
+					</execution>
+					<!-- fetches source zips and produces related metadata -->
+					<execution>
+						<id>fetch-sources</id>
+						<phase>package</phase>
+						<goals>
+							<goal>fetch-sources-from-manifests</goal>
+						</goals>
+						<configuration>
+							<!-- 
+							<zipCacheFolder>cache</zipCacheFolder> 
+							<outputFolder>zips</outputFolder> 
+							-->
+							<sourceFetchMap>
+								<jbosstools-base>org.jboss.tools.common</jbosstools-base>
+								<jbosstools-aerogear>org.jboss.tools.aerogear.hybrid.core</jbosstools-aerogear>
+								<jbosstools-arquillian>org.jboss.tools.arquillian.core</jbosstools-arquillian>
+								<jbosstools-birt>org.jboss.tools.birt.core</jbosstools-birt>
+								<jbosstools-central>org.jboss.tools.central</jbosstools-central>
+								<jbosstools-forge>org.jboss.tools.forge.core</jbosstools-forge>
+								<jbosstools-freemarker>org.jboss.ide.eclipse.freemarker</jbosstools-freemarker>
+								<jbosstools-gwt>org.jboss.tools.gwt.core</jbosstools-gwt>
+								<jbosstools-hibernate>org.hibernate.eclipse</jbosstools-hibernate>
+								<jbosstools-javaee>org.jboss.tools.jsf</jbosstools-javaee>
+								<jbosstools-jst>org.jboss.tools.jst.web</jbosstools-jst>
+								<jbosstools-livereload>org.jboss.tools.livereload.core</jbosstools-livereload>
+								<jbosstools-openshift>org.jboss.tools.openshift.egit.core</jbosstools-openshift>
+								<jbosstools-portlet>org.jboss.tools.portlet.core</jbosstools-portlet>
+								<jbosstools-server>org.jboss.ide.eclipse.as.core</jbosstools-server>
+								<jbosstools-vpe>org.jboss.tools.vpe</jbosstools-vpe>
+								<jbosstools-webservices>org.jboss.tools.ws.core</jbosstools-webservices>
+							</sourceFetchMap>
 						</configuration>
 					</execution>
 				</executions>

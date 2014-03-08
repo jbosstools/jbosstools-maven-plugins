@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013, Red Hat, Inc.
+ * Copyright (c) 2013-2014, Red Hat, Inc.
  * Distributed under license by Red Hat, Inc. All rights reserved.
  * This program is made available under the terms of the
  * Eclipse Public License v1.0 which accompanies this distribution,
@@ -62,18 +62,18 @@ public class FetchZipsFromRepo extends AbstractMojo {
 	 * 1. Look for zip in outputFolder
 	 * 2. Look for zip in zipCacheDir (if specified)
 	 * 3. Look for zip at expected URL
-	 * @parameter expression="${fetch-zips-for-aggregate.zipCacheFolder}"
+	 * @parameter property="fetch-zips-for-aggregate.zipCacheFolder"
 	 */
 	private File zipCacheFolder;
 
 	/**
 	 * Location where to put zips
-	 * @parameter default-value="${basedir}/zips" expression="${fetch-zips-for-aggregate.outputFolder}"
+	 * @parameter default-value="${basedir}/zips" property="fetch-zips-for-aggregate.outputFolder"
 	 */
 	private File outputFolder;
 
 	/**
-	 * @parameter default-value="false" expression="${fetch-zips-for-aggregate.skip}"
+	 * @parameter default-value="false" property="fetch-zips-for-aggregate.skip"
 	 */
 	private boolean skip;
 
