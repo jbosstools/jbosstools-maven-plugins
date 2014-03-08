@@ -12,8 +12,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -39,7 +37,7 @@ public class MergeTargetsMojo extends AbstractMojo {
      */
     private MavenProject project;
     /**
-     * @parameter expression="${session}"
+     * @parameter property="session"
      * @readonly
      */
     private MavenSession session;
@@ -52,7 +50,7 @@ public class MergeTargetsMojo extends AbstractMojo {
 
     /**
      * Location of the output file.
-     * @parameter expression="${project.build.directory}/${project.artifactId}.target"
+     * @parameter property="outputFile" default-value="${project.build.directory}/${project.artifactId}.target"
      * @required
      */
     private File outputFile;

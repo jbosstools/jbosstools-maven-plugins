@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2012, Red Hat, Inc.
+ * Copyright (c) 2012-2014, Red Hat, Inc.
  * Distributed under license by Red Hat, Inc. All rights reserved.
  * This program is made available under the terms of the
  * Eclipse Public License v1.0 which accompanies this distribution,
@@ -26,7 +26,6 @@ import org.codehaus.plexus.logging.Logger;
 import org.eclipse.sisu.equinox.EquinoxServiceFactory;
 import org.eclipse.tycho.BuildOutputDirectory;
 import org.eclipse.tycho.artifacts.TargetPlatform;
-import org.eclipse.tycho.core.ee.ExecutionEnvironmentUtils;
 import org.eclipse.tycho.core.resolver.shared.MavenRepositoryLocation;
 import org.eclipse.tycho.osgi.adapters.MavenLoggerAdapter;
 import org.eclipse.tycho.p2.resolver.TargetDefinitionFile;
@@ -58,7 +57,7 @@ public class TargetToRepoMojo extends AbstractMojo {
      */
     private MavenProject project;
     /**
-     * @parameter expression="${session}"
+     * @parameter property="session"
      * @readonly
      */
     private MavenSession session;
@@ -79,12 +78,12 @@ public class TargetToRepoMojo extends AbstractMojo {
     private TargetArtifact sourceTargetArtifact;
 
     /**
-     * @parameter expression="${mirror-target-to-repo.includeSources}"
+     * @parameter property="mirror-target-to-repo.includeSources"
      */
     private boolean includeSources;
 
     /**
-     * @parameter expression="${project.build.directory}/${project.artifactId}.target.repo"
+     * @parameter property=outputRepository default-value="${project.build.directory}/${project.artifactId}.target.repo"
      */
     private File outputRepository;
 

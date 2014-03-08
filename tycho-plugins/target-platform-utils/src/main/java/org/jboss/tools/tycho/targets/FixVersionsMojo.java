@@ -48,7 +48,7 @@ public class FixVersionsMojo extends AbstractMojo {
 	/**
      * .target file to fix version
      *
-     * @parameter expression="${targetFile}"
+     * @parameter property="targetFile"
      */
     private File targetFile;
 
