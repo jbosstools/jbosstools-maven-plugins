@@ -204,7 +204,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 
 			try {
 				FileInputStream fin = new FileInputStream(jarFile);
-				manifestFile =  File.createTempFile(MANIFEST, "");
+				manifestFile = File.createTempFile(MANIFEST, "");
 				OutputStream out = new FileOutputStream(manifestFile);
 				BufferedInputStream bin = new BufferedInputStream(fin);
 				ZipInputStream zin = new ZipInputStream(bin);
@@ -277,29 +277,37 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 						}
 					}
 					// scrub out old versions that we don't want in the cache anymore
-					File[] matchingSourceZips = listFilesMatching(zipsDirectory, projectName + "_.+\\.zip(\\.MD5)?");
+					File[] matchingSourceZips = listFilesMatching(zipsDirectory, projectName + "_.+\\.zip");
 					for (int i = 0; i < matchingSourceZips.length; i++) {
-						// don't delete the file we want, only all others matching projectName_.zip or .MD5
-						if (!outputZipFile.getName().equals(matchingSourceZips[i].getName()))
-						{
+						// don't delete the file we want, only all others matching projectName_.zip
+						if (!outputZipFile.getName().equals(matchingSourceZips[i].getName())) {
 							getLog().warn("Delete " + matchingSourceZips[i].getName());
 							matchingSourceZips[i].delete();
+						}
+					}
+					File[] matchingSourceMD5s = listFilesMatching(zipsDirectory, projectName + "_.+\\.zip\\.MD5");
+					for (int i = 0; i < matchingSourceMD5s.length; i++) {
+						// don't delete the file we want, only all others matching projectName_.zip or .MD5
+						if (!(outputZipFile.getName() + ".MD5").equals(matchingSourceMD5s[i].getName())) {
+							getLog().warn("Delete " + matchingSourceMD5s[i].getName());
+							matchingSourceMD5s[i].delete();
 						}
 					}
 					if (!diduseCache && !outputZipFile.exists()) {
 						doGet(URL, outputZipFile);
 					}
 
-					// generate MD5 file too
-					String md5 = null;
-					// Then compare MD5 with current file
-					if (outputZipFile.exists()) {
-						md5 = getMD5(outputZipFile);
-					}
+					// generate MD5 file too, if necessary
+					String md5 = null; // use NULL if we didn't download a file
 					File outputMD5File = new File(outputZipFile.getAbsolutePath() + ".MD5");
-					FileWriter fw = new FileWriter(outputMD5File);
-					fw.write(md5);
-					fw.close();
+					if (outputZipFile.exists()) {
+						md5 = getMD5(outputZipFile); // if we did download a file, generate MD5
+						if (!outputMD5File.exists()) { // don't write to file if we already have one
+							FileWriter fw = new FileWriter(outputMD5File);
+							fw.write(md5);
+							fw.close();
+						}
+					}
 
 					allBuildProperties.put(outputZipName + ".filename", outputZipName);
 					allBuildProperties.put(outputZipName + ".filensize", Long.toString(outputZipName.length()));
