@@ -204,7 +204,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 
 			try {
 				FileInputStream fin = new FileInputStream(jarFile);
-				manifestFile =  File.createTempFile(MANIFEST, "");
+				manifestFile = File.createTempFile(MANIFEST, "");
 				OutputStream out = new FileOutputStream(manifestFile);
 				BufferedInputStream bin = new BufferedInputStream(fin);
 				ZipInputStream zin = new ZipInputStream(bin);
@@ -261,8 +261,9 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 				if (SHA == null || SHA.equals("UNKNOWN")) {
 					getLog().warn("Cannot fetch " + projectName + " sources: no Eclipse-SourceReferences in " + removePrefix(jarFile.toString(), pluginPath) + " " + MANIFEST);
 				} else {
+					String shortQualifier = getQualifier(pluginName, jarFile.toString(), false);
 					URL = "https://github.com/jbosstools/" + projectName + "/archive/" + SHA + ".zip";
-					outputZipName = projectName + "_" + getQualifier(pluginName, jarFile.toString(), false) + "_" + SHA + "_sources.zip";
+					outputZipName = projectName + "_" + shortQualifier + "_" + SHA + "_sources.zip";
 					File outputZipFile = new File(zipsDirectory, outputZipName);
 
 					boolean diduseCache = false;
@@ -275,20 +276,38 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 							diduseCache = true;
 						}
 					}
+					// scrub out old versions that we don't want in the cache anymore
+					File[] matchingSourceZips = listFilesMatching(zipsDirectory, projectName + "_.+\\.zip");
+					for (int i = 0; i < matchingSourceZips.length; i++) {
+						// don't delete the file we want, only all others matching projectName_.zip
+						if (!outputZipFile.getName().equals(matchingSourceZips[i].getName())) {
+							getLog().warn("Delete " + matchingSourceZips[i].getName());
+							matchingSourceZips[i].delete();
+						}
+					}
+					File[] matchingSourceMD5s = listFilesMatching(zipsDirectory, projectName + "_.+\\.zip\\.MD5");
+					for (int i = 0; i < matchingSourceMD5s.length; i++) {
+						// don't delete the file we want, only all others matching projectName_.zip or .MD5
+						if (!(outputZipFile.getName() + ".MD5").equals(matchingSourceMD5s[i].getName())) {
+							getLog().warn("Delete " + matchingSourceMD5s[i].getName());
+							matchingSourceMD5s[i].delete();
+						}
+					}
 					if (!diduseCache && !outputZipFile.exists()) {
 						doGet(URL, outputZipFile);
 					}
 
-					// generate MD5 file too
-					String md5 = null;
-					// Then compare MD5 with current file
-					if (outputZipFile.exists()) {
-						md5 = getMD5(outputZipFile);
-					}
+					// generate MD5 file too, if necessary
+					String md5 = null; // use NULL if we didn't download a file
 					File outputMD5File = new File(outputZipFile.getAbsolutePath() + ".MD5");
-					FileWriter fw = new FileWriter(outputMD5File);
-					fw.write(md5);
-					fw.close();
+					if (outputZipFile.exists()) {
+						md5 = getMD5(outputZipFile); // if we did download a file, generate MD5
+						if (!outputMD5File.exists()) { // don't write to file if we already have one
+							FileWriter fw = new FileWriter(outputMD5File);
+							fw.write(md5);
+							fw.close();
+						}
+					}
 
 					allBuildProperties.put(outputZipName + ".filename", outputZipName);
 					allBuildProperties.put(outputZipName + ".filensize", Long.toString(outputZipName.length()));
@@ -354,11 +373,9 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		// trim .../pluginName prefix
 		String qualifier = removePrefix(jarFileName, pluginName);
 		// trim .jar suffix
-		qualifier = qualifier.substring(0, qualifier.length() - 5);
+		qualifier = qualifier.substring(0, qualifier.length() - 4);
 		// getLog().info("qualifier[0] = " + qualifier);
-		qualifier = qualifier.replaceAll("^(\\d+\\.\\d+\\.\\d+\\.)", "");
-		// getLog().info("qualifier[1] = " + qualifier);
-		return qualifier;
+		return full ? qualifier : qualifier.replaceAll("^(\\d+\\.\\d+\\.\\d+\\.)", "");
 	}
 
 	// thanks to
@@ -392,6 +409,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		wagon.get(file, outputFile);
 		wagon.disconnect();
 		wagon.removeTransferListener(downloadMonitor);
+		getLog().info("\nDownloaded:  " + outputFile.getName());
 	}
 
 	private static String getMD5(File outputZipFile) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
