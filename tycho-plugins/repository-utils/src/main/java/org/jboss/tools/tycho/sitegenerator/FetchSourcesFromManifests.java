@@ -261,8 +261,9 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 				if (SHA == null || SHA.equals("UNKNOWN")) {
 					getLog().warn("Cannot fetch " + projectName + " sources: no Eclipse-SourceReferences in " + removePrefix(jarFile.toString(), pluginPath) + " " + MANIFEST);
 				} else {
+					String shortQualifier = getQualifier(pluginName, jarFile.toString(), false);
 					URL = "https://github.com/jbosstools/" + projectName + "/archive/" + SHA + ".zip";
-					outputZipName = projectName + "_" + getQualifier(pluginName, jarFile.toString(), false) + "_" + SHA + "_sources.zip";
+					outputZipName = projectName + "_" + shortQualifier + "_" + SHA + "_sources.zip";
 					File outputZipFile = new File(zipsDirectory, outputZipName);
 
 					boolean diduseCache = false;
@@ -273,6 +274,16 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 							getLog().debug("Copied " + removePrefix(outputZipFile.getAbsolutePath(), project.getBasedir().toString()));
 							getLog().debug("  From " + removePrefix(cachedZip.getAbsolutePath(), project.getBasedir().toString()));
 							diduseCache = true;
+						}
+					}
+					// scrub out old versions that we don't want in the cache anymore
+					File[] matchingSourceZips = listFilesMatching(zipsDirectory, projectName + "_.+\\.zip(\\.MD5)?");
+					for (int i = 0; i < matchingSourceZips.length; i++) {
+						// don't delete the file we want, only all others matching projectName_.zip or .MD5
+						if (!outputZipFile.getName().equals(matchingSourceZips[i].getName()))
+						{
+							getLog().warn("Delete " + matchingSourceZips[i].getName());
+							matchingSourceZips[i].delete();
 						}
 					}
 					if (!diduseCache && !outputZipFile.exists()) {
@@ -354,11 +365,9 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		// trim .../pluginName prefix
 		String qualifier = removePrefix(jarFileName, pluginName);
 		// trim .jar suffix
-		qualifier = qualifier.substring(0, qualifier.length() - 5);
+		qualifier = qualifier.substring(0, qualifier.length() - 4);
 		// getLog().info("qualifier[0] = " + qualifier);
-		qualifier = qualifier.replaceAll("^(\\d+\\.\\d+\\.\\d+\\.)", "");
-		// getLog().info("qualifier[1] = " + qualifier);
-		return qualifier;
+		return full ? qualifier : qualifier.replaceAll("^(\\d+\\.\\d+\\.\\d+\\.)", "");
 	}
 
 	// thanks to
@@ -392,6 +401,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		wagon.get(file, outputFile);
 		wagon.disconnect();
 		wagon.removeTransferListener(downloadMonitor);
+		getLog().info("\nDownloaded:  " + outputFile.getName());
 	}
 
 	private static String getMD5(File outputZipFile) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
