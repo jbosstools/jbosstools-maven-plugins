@@ -403,13 +403,14 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		Wagon wagon = this.wagonManager.getWagon(repository.getProtocol());
 
 		// TODO: this should be retrieved from wagonManager
-		com.googlecode.ConsoleDownloadMonitor downloadMonitor = new com.googlecode.ConsoleDownloadMonitor();
-		wagon.addTransferListener(downloadMonitor);
+		// com.googlecode.ConsoleDownloadMonitor downloadMonitor = new com.googlecode.ConsoleDownloadMonitor();
+		// wagon.addTransferListener(downloadMonitor);
 		wagon.connect(repository, this.wagonManager.getProxy(repository.getProtocol()));
 		wagon.get(file, outputFile);
 		wagon.disconnect();
-		wagon.removeTransferListener(downloadMonitor);
-		getLog().info("\nDownloaded:  " + outputFile.getName());
+		// wagon.removeTransferListener(downloadMonitor);
+		double filesize = outputFile.length();
+		getLog().info("Downloaded: " + outputFile.getName() + " (" + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M)" : String.format("%.1f", filesize / 1024) + " k)"));
 	}
 
 	private static String getMD5(File outputZipFile) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
