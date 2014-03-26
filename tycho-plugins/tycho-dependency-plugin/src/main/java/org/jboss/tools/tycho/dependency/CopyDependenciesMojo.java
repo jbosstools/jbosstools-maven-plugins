@@ -3,7 +3,6 @@ package org.jboss.tools.tycho.dependency;
 import java.io.File;
 import java.util.Map;
 
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -21,20 +20,14 @@ import org.eclipse.tycho.core.TychoProject;
  */
 public class CopyDependenciesMojo extends AbstractMojo {
 
-	/**
-     * @parameter expression="${session}"
-     * @readonly
-     */
-    private MavenSession session;
-
     /**
-     * @parameter expression="${project}"
+     * @parameter property="project"
      * @readonly
      */
     private MavenProject project;
 
     /**
-     * @parameter expression="${outputDir}" default-value="${project.build.directory}/dependencies"
+     * @parameter property="outputDir" default-value="${project.build.directory}/dependencies"
      */
     private File outputDir;
 
