@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2012, Red Hat, Inc.
+ * Copyright (c) 2012, 2014 Red Hat, Inc.
  * Distributed under license by Red Hat, Inc. All rights reserved.
  * This program is made available under the terms of the
  * Eclipse Public License v1.0 which accompanies this distribution,
@@ -14,6 +14,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -23,6 +24,9 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.component.annotations.Requirement;
@@ -54,57 +58,41 @@ import org.eclipse.tycho.p2.tools.mirroring.facade.MirrorOptions;
  * Mirrors a target file as a p2 repo. Suitable for sharing/caching target/dependency sites.
  *
  * @author mistria
- * @goal mirror-target-to-repo
  */
+@Mojo(name = "mirror-target-to-repo")
 public class TargetToRepoMojo extends AbstractMojo {
 
-	 /**
-     * @parameter default-value="${project}"
-     * @readonly
-     */
+	@Parameter(property = "project", readonly = true)
     private MavenProject project;
-    /**
-     * @parameter expression="${session}"
-     * @readonly
-     */
-    private MavenSession session;
-    /**
-     * @component
-     */
-    @Requirement
+
+	@Parameter(property = "session", readonly = true)
+	private MavenSession session;
+
+	@Requirement
+	@Component
     private RepositorySystem repositorySystem;
 
-    /**
-     * @parameter
-     */
+	@Parameter
     private File sourceTargetFile;
 
-    /**
-     * @parameter
-     */
-    private TargetArtifact sourceTargetArtifact;
+	@Parameter
+	private TargetArtifact sourceTargetArtifact;
 
-    /**
-     * @parameter expression="${mirror-target-to-repo.includeSources}"
-     */
+	@Parameter(property = "mirror-target-to-repo.includeSources")
     private boolean includeSources;
 
-    /**
-     * @parameter expression="${project.build.directory}/${project.artifactId}.target.repo"
-     */
+	@Parameter(defaultValue = "${project.build.directory}/${project.artifactId}.target.repo")
     private File outputRepository;
     
-    /** @parameter default-value="JavaSE-1.6" */
+	@Parameter(defaultValue = "JavaSE-1.6")
     private String executionEnvironment;
 
-    /** @component */
-    private Logger logger;
-    /** @component */
-    private EquinoxServiceFactory equinox;
+    @Component private Logger logger;
+    @Component private EquinoxServiceFactory equinox;
     
     private P2ResolverFactory p2Factory;
 
-    /** @component */
+    @Component
     private Logger plexusLogger;
 
 	public void execute() throws MojoExecutionException, MojoFailureException {

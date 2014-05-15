@@ -1,3 +1,13 @@
+/**
+ * Copyright (c) 2013, 2014, Red Hat, Inc.
+ * Distributed under license by Red Hat, Inc. All rights reserved.
+ * This program is made available under the terms of the
+ * Eclipse Public License v1.0 which accompanies this distribution,
+ * and is available at http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributor:
+ *     Mickael Istria (Red Hat, Inc.) - initial API and implementation
+ ******************************************************************************/
 package org.jboss.tools.tycho.dependency;
 
 import java.io.File;
@@ -7,6 +17,9 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.tycho.core.ArtifactDependencyVisitor;
@@ -16,31 +29,20 @@ import org.eclipse.tycho.core.TychoProject;
 /**
  *
  * @author mistria
- * @goal copy-dependencies
- * @requiresProject true
  */
+@Mojo(name = "copy-dependencies", requiresProject = true)
 public class CopyDependenciesMojo extends AbstractMojo {
 
-	/**
-     * @parameter expression="${session}"
-     * @readonly
-     */
+	@Parameter(property = "session", readonly = true)
     private MavenSession session;
 
-    /**
-     * @parameter expression="${project}"
-     * @readonly
-     */
-    private MavenProject project;
+	@Parameter(property = "project", readonly = true)
+	private MavenProject project;
 
-    /**
-     * @parameter expression="${outputDir}" default-value="${project.build.directory}/dependencies"
-     */
+	@Parameter(property = "outputDir", defaultValue = "${project.build.directory}/dependencies")
     private File outputDir;
 
-    /**
-     * @component role="org.eclipse.tycho.core.TychoProject"
-     */
+	@Component(role = TychoProject.class)
     private Map<String, TychoProject> projectTypes;
 
 	public void execute() throws MojoExecutionException, MojoFailureException {

@@ -1,3 +1,13 @@
+/**
+ * Copyright (c) 2013, 2014 Red Hat, Inc.
+ * Distributed under license by Red Hat, Inc. All rights reserved.
+ * This program is made available under the terms of the
+ * Eclipse Public License v1.0 which accompanies this distribution,
+ * and is available at http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributor:
+ *     Mickael Istria (Red Hat, Inc.) - initial API and implementation
+ */
 package org.jboss.tools.tycho.targets;
 
 import java.io.File;
@@ -12,11 +22,12 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.component.annotations.Requirement;
@@ -28,50 +39,37 @@ import org.w3c.dom.NodeList;
  * Creates a single platform which merges locations from all platforms
  *
  * @author mistria
- * @goal merge-targets
  */
+@Mojo(name = "merge-targets")
 public class MergeTargetsMojo extends AbstractMojo {
 
 
-    /**
-     * @parameter default-value="${project}"
-     * @readonly
-     */
+	@Parameter(property = "project", readonly = true)
     private MavenProject project;
-    /**
-     * @parameter expression="${session}"
-     * @readonly
-     */
+
+	@Parameter(property = "session", readonly = true)
     private MavenSession session;
 
-    /**
-     * @component
-     */
     @Requirement
+    @Component
     private RepositorySystem repositorySystem;
 
-    /**
-     * Location of the output file.
-     * @parameter expression="${project.build.directory}/${project.artifactId}.target"
-     * @required
-     */
+    @Parameter(defaultValue = "${project.build.directory}/${project.artifactId}.target", required = true)
     private File outputFile;
 
-    /**
-     * Name for the target in the output file
-     * @parameter default-value="${project.artifactId}-${project.version}"
-     */
+    @Parameter(defaultValue = "${project.artifactId}-${project.version}")
     private String targetName;
 
     /**
-     * Target to transform (as a file)
-     * @parameter
+     * File-based Target definitions to merge
      */
+    @Parameter
     private List<File> sourceTargetFiles;
 
     /**
-     * @parameter
+     * GAV-based Target definitions to merge
      */
+    @Parameter
     private List<TargetArtifact> sourceTargetArtifacts;
 
     public void execute() throws MojoExecutionException {

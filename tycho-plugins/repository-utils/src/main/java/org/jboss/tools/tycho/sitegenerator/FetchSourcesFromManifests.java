@@ -37,6 +37,10 @@ import org.apache.maven.artifact.manager.WagonManager;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.wagon.Wagon;
 import org.apache.maven.wagon.repository.Repository;
@@ -72,17 +76,11 @@ import org.codehaus.plexus.util.FileUtils;
  * origin/jbosstools-4.1.x@184e18cc3ac7c339ce406974b6a4917f73909cc4, https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip,
  * jbosstools-base_Alpha2-v20140221-1555-B437_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
  * 
- * @goal fetch-sources-from-manifests
- * 
- * @phase package
  */
+@Mojo(name = "fetch-sources-from-manifests", defaultPhase = LifecyclePhase.PACKAGE)
 public class FetchSourcesFromManifests extends AbstractMojo {
 
-	/**
-	 * @parameter property="project"
-	 * @required
-	 * @readonly
-	 */
+	@Parameter(property = "project", required = true, readonly = true)
 	private MavenProject project;
 
 	/**
@@ -108,9 +106,8 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 	 * jbosstools-vpe>org.jboss.tools.vpe</jbosstools-vpe>
 	 * jbosstools-webservices>org.jboss.tools.ws.core</jbosstools-webservices>
 	 * /sourceFetchMap>
-	 * 
-	 * @parameter
 	 */
+	@Parameter
 	private Map<String, String> sourceFetchMap;
 
 	/**
@@ -120,9 +117,8 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 	 * 1. Look for zip in zipCacheFolder
 	 * 2. Look for zip in outputFolder
 	 * 3. Look for zip at expected URL
-	 * 
-	 * @parameter default-value="${basedir}/cache" property="fetch-sources-from-manifests.zipCacheFolder"
 	 */
+	@Parameter(property = "fetch-sources-from-manifests.zipCacheFolder", defaultValue = "${basedir}/cache")
 	private File zipCacheFolder;
 
 	/**
@@ -130,24 +126,19 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 	 * 
 	 * @parameter default-value="${basedir}/zips" property="fetch-sources-from-manifests.outputFolder"
 	 */
+	@Parameter(property = "fetch-sources-from-manifests.outputFolder", defaultValue = "${basedir}/zips")
 	private File outputFolder;
 
-	/**
-	 * @parameter default-value="," property="fetch-sources-from-manifests.columnSeparator"
-	 */
-	private String columnSeparator = ",";
+	@Parameter(property = "fetch-sources-from-manifests.columnSeparator", defaultValue = ",")
+	private String columnSeparator;
 
-	/**
-	 * @parameter default-value="false"
-	 *            property="fetch-sources-from-manifests.skip"
-	 */
+	@Parameter(property = "fetch-sources-from-manifests.skip", defaultValue = "false")
 	private boolean skip;
 
 	/**
-	 * For transfers
-	 * 
 	 * @component
 	 */
+	@Component
 	private WagonManager wagonManager;
 
 	private String MANIFEST = "MANIFEST.MF";

@@ -36,6 +36,10 @@ import org.apache.maven.artifact.manager.WagonManager;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.wagon.Wagon;
 import org.apache.maven.wagon.repository.Repository;
 import org.codehaus.plexus.util.FileUtils;
@@ -43,17 +47,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-/**
- * @goal fetch-zips-for-aggregate
- *
- * @phase package
- */
+@Mojo(name = "fetch-zips-for-aggregate", defaultPhase = LifecyclePhase.PACKAGE)
 public class FetchZipsFromRepo extends AbstractMojo {
 
 	/**
 	 * Repositories from where to fetch Zips
-	 * @parameter
 	 */
+	@Parameter
 	private List<URL> repositories;
 
 	/**
@@ -62,26 +62,23 @@ public class FetchZipsFromRepo extends AbstractMojo {
 	 * 1. Look for zip in outputFolder
 	 * 2. Look for zip in zipCacheDir (if specified)
 	 * 3. Look for zip at expected URL
-	 * @parameter property="fetch-zips-for-aggregate.zipCacheFolder"
 	 */
+	@Parameter(property = "fetch-zips-for-aggregate.zipCacheFolder")
 	private File zipCacheFolder;
 
 	/**
 	 * Location where to put zips
-	 * @parameter default-value="${basedir}/zips" property="fetch-zips-for-aggregate.outputFolder"
 	 */
+	@Parameter(property = "fetch-zips-for-aggregate.outputFolder", defaultValue = "${basedir}/zips")
 	private File outputFolder;
 
-	/**
-	 * @parameter default-value="false" property="fetch-zips-for-aggregate.skip"
-	 */
+	@Parameter(property = "fetch-zips-for-aggregate.skip", defaultValue = "false")
 	private boolean skip;
 
 	/**
 	 * For transfers
-	 *
-	 * @component
 	 */
+	@Component
 	private WagonManager wagonManager;
 
 	public void execute() throws MojoExecutionException, MojoFailureException {
