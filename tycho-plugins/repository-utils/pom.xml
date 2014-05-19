@@ -25,21 +25,6 @@
 	</parent>
 
 	<dependencies>
-	    <dependency>
-			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-core</artifactId>
-			<version>3.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.codehaus.plexus</groupId>
-			<artifactId>plexus-utils</artifactId>
-			<version>3.0</version>
-		</dependency>
-		<dependency>
-		    <groupId>org.apache.maven</groupId>
-		    <artifactId>maven-artifact-manager</artifactId>
-		    <version>2.0</version>
-		</dependency>
 		<dependency>
 			<groupId>org.eclipse.tycho</groupId>
 			<artifactId>tycho-p2-facade</artifactId>
@@ -64,12 +49,6 @@
 			<groupId>net.sf.saxon</groupId>
 			<artifactId>saxon-dom</artifactId>
 			<version>8.7</version>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.8.2</version>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.googlecode.maven-download-plugin</groupId>

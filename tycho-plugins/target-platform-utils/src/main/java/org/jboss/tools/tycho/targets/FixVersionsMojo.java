@@ -19,6 +19,10 @@ import java.lang.reflect.Method;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.sisu.equinox.EquinoxServiceFactory;
@@ -37,30 +41,21 @@ import org.eclipse.tycho.p2.target.facade.TargetPlatformConfigurationStub;
 import org.osgi.framework.Version;
 
 /**
- *
- * @goal fix-versions
- * @requireProject false
  * @author mistria
- *
  */
+@Mojo(name = "fix-versions", requiresProject = false, defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
 public class FixVersionsMojo extends AbstractMojo {
 
-	/**
-     * .target file to fix version
-     *
-     * @parameter expression="${targetFile}"
-     */
+	@Parameter(property = "targetFile")
     private File targetFile;
 
-    /**
-     * @parameter default-value="${project}"
-     */
+	@Parameter(property = "project")
     private MavenProject project;
 
-    /** @component */
+    @Component
     protected EquinoxServiceFactory equinox;
 
-    /** @component */
+    @Component
     private Logger plexusLogger;
 
 

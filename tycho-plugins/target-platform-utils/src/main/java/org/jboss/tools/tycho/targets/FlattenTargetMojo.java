@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2012, Red Hat, Inc.
+ * Copyright (c) 2012, 2014 Red Hat, Inc.
  * Distributed under license by Red Hat, Inc. All rights reserved.
  * This program is made available under the terms of the
  * Eclipse Public License v1.0 which accompanies this distribution,
@@ -20,11 +20,12 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.component.annotations.Requirement;
@@ -34,51 +35,43 @@ import org.w3c.dom.NodeList;
 
 /**
  * Takes a multi-site .target file as input and flatten it to have same IUs, but from a single site.
- *
- * @goal flatten-target
  */
-public class FlattenTargetMojo extends AbstractMojo
-{
+@Mojo(name = "flatten-target")
+public class FlattenTargetMojo extends AbstractMojo {
 
-    /**
-     * @parameter default-value="${project}"
-     * @readonly
-     */
+	@Parameter(property = "project", readonly = true)
     private MavenProject project;
-    /**
-     * @parameter expression="${session}"
-     * @readonly
-     */
+	
+	@Parameter(property = "session", readonly = true)
     private MavenSession session;
 
-    /**
-     * @component
-     */
     @Requirement
+    @Component
     private RepositorySystem repositorySystem;
 
 	/**
      * Location of the output file.
-     * @parameter expression="${project.build.directory}/${project.artifactId}.target"
-     * @required
      */
+    @Parameter(defaultValue = "${project.build.directory}/${project.artifactId}.target", required = true)
     private File outputFile;
 
     /**
-     * Target to transform (as a file)
-     * @parameter
+     * Location of the initial target (as file)
      */
+    @Parameter
     private File sourceTargetFile;
 
     /**
-     * @parameter
+     * Location of initial target (as artifact)
      */
+    @Parameter
     private TargetArtifact sourceTargetArtifact;
 
     /**
-     * @parameter
-     * @required
+     * The single repository that the created target will reference.
+     * It's typically the one where the aggregated site will be deployed.
      */
+    @Parameter(required = true)
     private String targetRepositoryUrl;
 
     public void execute() throws MojoExecutionException {

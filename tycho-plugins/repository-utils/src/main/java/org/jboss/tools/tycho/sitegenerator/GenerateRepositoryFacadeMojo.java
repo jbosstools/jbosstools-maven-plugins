@@ -41,6 +41,10 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.util.FileUtils;
@@ -65,85 +69,64 @@ import org.xml.sax.SAXException;
 
 /**
  * Generates a JBoss-friendly facade and files for this p2 repo
- *
- * @goal generate-repository-facade
- *
- * @phase package
  */
+@Mojo(name = "generate-repository-facade", defaultPhase = LifecyclePhase.PACKAGE)
 public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
-	/**
-	 * @parameter property="project"
-	 * @required
-	 * @readonly
-	 */
+	@Parameter(property = "project", required = true, readonly = true)
 	private MavenProject project;
 
-	/**
-	 * @parameter property="session"
-	 * @readonly
-	 */
+	@Parameter(property = "session", readonly = true)
 	private MavenSession session;
 
 	/**
 	 * Additional symbols, to replace in files
-	 *
-	 * @parameter
 	 */
+	@Parameter
 	private Map<String, String> symbols;
 
 	/**
 	 * template folder for HTML contents
-	 *
-	 * @parameter
 	 */
+	@Parameter
 	private File siteTemplateFolder;
 
 	/**
 	 * Additional files to add to repo and that are not in the
 	 * "siteTemplateFolder". These can be folders.
-	 *
-	 * @parameter
 	 */
+	@Parameter
 	private List<File> additionalWebResources;
 
 	/**
 	 * Additional sites to add to repo associateSites
-	 *
-	 * @parameter
 	 */
+	@Parameter
 	private List<String> associateSites;
 
 	/**
 	 * name of the file in ${siteTemplateFolder} to use as template for
 	 * index.html
-	 *
-	 * @parameter default-value="index.html"
 	 */
+	@Parameter(defaultValue = "index.html")
 	private String indexName;
 
 	/**
 	 * name of the file in ${siteTemplateFolder}/web to use for CSS
-	 *
-	 * @parameter default-value="site.css"
 	 */
+	@Parameter(defaultValue = "site.css")
 	private String cssName;
 
 	/**
 	 * Whether to remove or not the "Uncategorized" default category
-	 *
-	 * @parameter default-value="false"
 	 */
+	@Parameter(defaultValue = "false")
 	private boolean removeDefaultCategory;
 
-	/**
-	 * @component role="org.eclipse.tycho.core.TychoProject"
-	 */
+	@Component(role = TychoProject.class)
 	private Map<String, TychoProject> projectTypes;
 
-	/**
-	 * @parameter
-	 */
+	@Parameter
 	private String p2StatsUrl;
 
 	private File categoryFile;
