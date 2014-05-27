@@ -126,6 +126,12 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	@Component(role = TychoProject.class)
 	private Map<String, TychoProject> projectTypes;
 
+    /**
+     * Whether to skip generation of index.html and associated files
+     */
+    @Parameter(defaultValue = "false")
+    private boolean skipWebContentGeneration;
+
 	@Parameter
 	private String p2StatsUrl;
 
@@ -151,30 +157,32 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
 		// If a siteTemplateFolder is set, pull index.html and site.css from
 		// there; otherwise use defaults
-		try {
-			copyTemplateResources(outputRepository);
-		} catch (Exception ex) {
-			throw new MojoExecutionException("Error while copying siteTemplateFolder content to " + outputRepository, ex);
-		}
-		if (this.additionalWebResources != null) {
-			for (File resource : this.additionalWebResources) {
-				try {
-					if (resource.isDirectory()) {
-						FileUtils.copyDirectoryStructure(resource, new File(outputRepository, resource.getName()));
-					} else if (resource.isFile()) {
-						FileUtils.copyFile(resource, new File(outputRepository, resource.getName()));
-					}
-				} catch (Exception ex) {
-					throw new MojoExecutionException("Error while copying resource " + resource.getPath(), ex);
-				}
-			}
-		}
+        if (!skipWebContentGeneration) {
+            try {
+                copyTemplateResources(outputRepository);
+            } catch (Exception ex) {
+                throw new MojoExecutionException("Error while copying siteTemplateFolder content to " + outputRepository, ex);
+            }
+            if (this.additionalWebResources != null) {
+                for (File resource : this.additionalWebResources) {
+                    try {
+                        if (resource.isDirectory()) {
+                            FileUtils.copyDirectoryStructure(resource, new File(outputRepository, resource.getName()));
+                        } else if (resource.isFile()) {
+                            FileUtils.copyFile(resource, new File(outputRepository, resource.getName()));
+                        }
+                    } catch (Exception ex) {
+                        throw new MojoExecutionException("Error while copying resource " + resource.getPath(), ex);
+                    }
+                }
+            }
 
-		File outputSiteXml = generateSiteXml(outputRepository);
-		if (new File(outputRepository, "features").isDirectory()) { //$NON-NLS-1$
-			generateSiteProperties(outputRepository, outputSiteXml);	
+            File outputSiteXml = generateSiteXml(outputRepository);
+            if (new File(outputRepository, "features").isDirectory()) { //$NON-NLS-1$
+                generateSiteProperties(outputRepository, outputSiteXml);
+            }
+            generateWebStuff(outputRepository, outputSiteXml);
 		}
-		generateWebStuff(outputRepository, outputSiteXml);
 		try {
 			alterContentJar(outputRepository);
 		} catch (Exception ex) {
