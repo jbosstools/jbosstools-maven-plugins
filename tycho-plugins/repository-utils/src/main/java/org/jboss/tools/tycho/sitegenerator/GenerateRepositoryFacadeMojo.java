@@ -50,7 +50,7 @@ import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.io.RawInputStreamFacade;
-import org.eclipse.tycho.ArtifactKey;
+import org.eclipse.tycho.PackagingType;
 import org.eclipse.tycho.ReactorProject;
 import org.eclipse.tycho.core.ArtifactDependencyVisitor;
 import org.eclipse.tycho.core.FeatureDescription;
@@ -138,7 +138,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	private File categoryFile;
 
 	public void execute() throws MojoExecutionException {
-		if (!ArtifactKey.TYPE_ECLIPSE_REPOSITORY.equals(this.project.getPackaging())) {
+		if (!PackagingType.TYPE_ECLIPSE_REPOSITORY.equals(this.project.getPackaging())) {
 			return;
 		}
 		this.categoryFile = new File(project.getBasedir(), "category.xml");

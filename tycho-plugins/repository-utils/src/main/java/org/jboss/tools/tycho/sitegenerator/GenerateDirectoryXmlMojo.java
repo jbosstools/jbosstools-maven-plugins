@@ -21,6 +21,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.tycho.ArtifactKey;
+import org.eclipse.tycho.PackagingType;
 
 @Mojo(defaultPhase = LifecyclePhase.PACKAGE, name = "generate-discovery-site")
 public class GenerateDirectoryXmlMojo extends AbstractMojo {
@@ -35,7 +36,7 @@ public class GenerateDirectoryXmlMojo extends AbstractMojo {
 	private String discoveryFileName;
 	
 	public void execute() throws MojoExecutionException, MojoFailureException {
-		if (! ArtifactKey.TYPE_ECLIPSE_REPOSITORY.equals(this.project.getPackaging())) {
+		if (! PackagingType.TYPE_ECLIPSE_REPOSITORY.equals(this.project.getPackaging())) {
 			return;
 		}
 		if (!this.outputDirectory.exists()) {

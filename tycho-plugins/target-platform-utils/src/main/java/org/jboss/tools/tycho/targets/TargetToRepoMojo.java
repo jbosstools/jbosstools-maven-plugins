@@ -13,8 +13,6 @@ package org.jboss.tools.tycho.targets;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -32,12 +30,12 @@ import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.sisu.equinox.EquinoxServiceFactory;
+import org.eclipse.tycho.ArtifactType;
 import org.eclipse.tycho.BuildOutputDirectory;
 import org.eclipse.tycho.artifacts.TargetPlatform;
 import org.eclipse.tycho.core.facade.TargetEnvironment;
 import org.eclipse.tycho.core.resolver.shared.MavenRepositoryLocation;
 import org.eclipse.tycho.osgi.adapters.MavenLoggerAdapter;
-import org.eclipse.tycho.p2.resolver.P2TargetPlatformResolver;
 import org.eclipse.tycho.p2.resolver.TargetDefinitionFile;
 import org.eclipse.tycho.p2.resolver.facade.P2ResolutionResult;
 import org.eclipse.tycho.p2.resolver.facade.P2ResolutionResult.Entry;
@@ -153,7 +151,7 @@ public class TargetToRepoMojo extends AbstractMojo {
 	            		InstallableUnitLocation p2Loc = (InstallableUnitLocation) loc;
 	            		for (Unit unit : p2Loc.getUnits()) {
 	            			// resolve everything in TP
-	            			tpResolver.addDependency(P2Resolver.TYPE_INSTALLABLE_UNIT, unit.getId(), "[" + unit.getVersion() + "," + unit.getVersion() + "]");
+	            			tpResolver.addDependency(ArtifactType.TYPE_INSTALLABLE_UNIT, unit.getId(), "[" + unit.getVersion() + "," + unit.getVersion() + "]");
 	            		}
 	            	}
 	            }
