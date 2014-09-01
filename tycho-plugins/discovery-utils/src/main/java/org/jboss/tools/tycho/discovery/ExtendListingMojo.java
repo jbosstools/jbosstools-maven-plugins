@@ -3,6 +3,8 @@ package org.jboss.tools.tycho.discovery;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -10,6 +12,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -35,8 +38,11 @@ public class ExtendListingMojo extends AbstractMojo {
 	@Parameter(property = "targetListingFile", defaultValue = "earlyaccess.properties")
 	private File targetListingFile;
 	
-	@Parameter(property = "targetDefinitionFile")
+	@Parameter(property = "targetDefinitionFile", required = true)
 	private File targetDefinitionFile;
+	
+	@Parameter(property = "initialListing", required = false)
+	private URL initialListingFile;
 	
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		File pluginFile = new File(this.project.getBasedir(), "plugin.xml");
@@ -74,6 +80,17 @@ public class ExtendListingMojo extends AbstractMojo {
 			}
 		}
 		Properties listing = new Properties();
+		if (this.initialListingFile != null) {
+			InputStream stream = null;
+			try {
+				stream = this.initialListingFile.openStream();
+				listing.load(stream);
+			} catch (Exception ex) {
+				throw new MojoFailureException(ex.getMessage(), ex);
+			} finally {
+				IOUtils.closeQuietly(stream);
+			}
+		}
 		for (Entry<String, String> entry : earlyAccessIUsToVersion.entrySet()) {
 			String version = entry.getValue();
 			String toVersionRange = "[" + version + "," + version + "]";
