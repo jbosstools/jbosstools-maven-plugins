@@ -41,6 +41,7 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -72,6 +73,11 @@ import org.xml.sax.SAXException;
  */
 @Mojo(name = "generate-repository-facade", defaultPhase = LifecyclePhase.PACKAGE)
 public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
+	
+	private enum ReferenceStrategy {
+		embedReferences,
+		compositeReferences
+	}
 
 	@Parameter(property = "project", required = true, readonly = true)
 	private MavenProject project;
@@ -103,6 +109,24 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	 */
 	@Parameter
 	private List<String> associateSites;
+	
+	/**
+	 * This can have 2 values: embedReferences or compositeReferences.
+	 * "embedReferences" will add the repository references directly to the content.jar
+	 * of the repository.
+	 * "compositeReferences" will add repository references to a new external content.xml
+	 * and will create a composite that composite both content and references. Then top-level
+	 * repository won't contain any reference to other repo whereas repository in "withreferences"
+	 * will composite the top-level repo, with the additional repo adding references to
+	 * associateSites  
+	 * 
+	 * "compositeReferences" is preferred in case your site is used by an upstream project
+	 * that will manage the dependencies since its output is actually 2 sites: one without
+	 * the references for integrators, and one with references for testers/users who just
+	 * want dependencies to come without adding sites, so relying on references.
+	 */
+	@Parameter(defaultValue="embedReferences")
+	private ReferenceStrategy referenceStrategy;
 
 	/**
 	 * name of the file in ${siteTemplateFolder} to use as template for
@@ -137,7 +161,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
 	private File categoryFile;
 
-	public void execute() throws MojoExecutionException {
+	public void execute() throws MojoExecutionException, MojoFailureException {
 		if (!PackagingType.TYPE_ECLIPSE_REPOSITORY.equals(this.project.getPackaging())) {
 			return;
 		}
@@ -195,6 +219,13 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 				throw new MojoExecutionException("Error while adding p2.stats to repository", ex);
 			}
 		}
+		if (this.associateSites != null && !this.associateSites.isEmpty() && this.referenceStrategy == ReferenceStrategy.compositeReferences) {
+			try {
+				createCompositeReferences(outputRepository, this.associateSites);
+			} catch (IOException ex) {
+				throw new MojoFailureException(ex.getMessage(), ex);
+			}
+		}
 
 		File repoZipFile = new File(this.project.getBuild().getDirectory(), this.project.getArtifactId() + "-" + this.project.getVersion() + ".zip");
 		repoZipFile.delete();
@@ -205,9 +236,70 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		try {
 			archiver.createArchive();
 		} catch (IOException ex) {
-			throw new MojoExecutionException("Could not create " + repoZipFile.getName(), ex);
+			throw new MojoFailureException("Could not create " + repoZipFile.getName(), ex);
 		}
 
+	}
+
+	private void createCompositeReferences(File outputRepository, List<String> associateSites2) throws IOException {
+		long timestamp = System.currentTimeMillis();
+		String repoName = this.project.getName();
+		if (repoName == null) {
+			repoName = this.project.getArtifactId();
+		}
+		File referencesDir = new File(outputRepository, "references");
+		referencesDir.mkdir();
+		File contentXmlReference = new File(referencesDir, "content.xml");
+		StringBuilder content = new StringBuilder();
+		content
+			.append("<?xml version='1.0' encoding='UTF-8' standalone='yes'?>").append('\n')
+			.append("<?metadataRepository version='1.1.0'?>").append('\n')
+			.append("<repository name='References for").append(repoName).append("' type='org.eclipse.equinox.internal.p2.metadata.repository.LocalMetadataRepository' version='1'>").append('\n')
+			.append("  <properties size='1'>").append('\n')
+		    .append("    <property name='p2.timestamp' value='").append(timestamp).append("'/>").append('\n')
+		    .append("  </properties>").append('\n')
+		    .append("  <references size='").append(2 * associateSites2.size()).append("'>").append('\n');
+		for (String site : associateSites2) {
+			content.append("      <repository options='1' type='0' uri='").append(site).append("' url='").append(site).append("'/>").append('\n');
+			content.append("      <repository options='1' type='1' uri='").append(site).append("' url='").append(site).append("'/>").append('\n');
+		}
+		content.append("  </references>").append('\n');
+		content.append("</repository>");
+		org.apache.commons.io.FileUtils.writeStringToFile(contentXmlReference, content.toString());
+		
+		File compositeWithRefDir = new File(outputRepository, "withreferences");
+		compositeWithRefDir.mkdir();
+		{
+			File compositeContentXml = new File(compositeWithRefDir, "compositeContent.xml");
+			StringBuilder compositeContent = new StringBuilder();
+			compositeContent.append("<?compositeMetadataRepository version='1.0.0'?>").append('\n')
+				.append("<repository name='").append(repoName).append("' type='org.eclipse.equinox.internal.p2.metadata.repository.CompositeMetadataRepository' version='1.0.0'>").append('\n')
+				.append("  <properties size='2'>").append('\n')
+			    .append("    <property name='p2.compressed' value='true'/>").append('\n')
+			    .append("    <property name='p2.timestamp' value='").append(timestamp).append("'/>").append('\n')
+			    .append("  </properties>").append("\n")
+			    .append("  <children size='2'>").append("\n")
+			    .append("    <child location='../'/>").append('\n')
+			    .append("    <child location='../references'/>").append('\n')
+			    .append("  </children>").append('\n')
+			    .append("</repository>");
+			org.apache.commons.io.FileUtils.writeStringToFile(compositeContentXml, compositeContent.toString());
+		}
+		{
+			File compositeArtifactsXml = new File(compositeWithRefDir, "compositeArtifacts.xml");
+			StringBuilder compositeArtifact = new StringBuilder();
+			compositeArtifact.append("<?compositeArtifactRepository version='1.0.0'?>").append('\n')
+				.append("<repository name='").append(repoName).append("' type='org.eclipse.equinox.internal.p2.artifact.repository.CompositeArtifactRepository' version='1.0.0'>").append('\n')
+				.append("  <properties size='2'>").append('\n')
+			    .append("    <property name='p2.compressed' value='true'/>").append('\n')
+			    .append("    <property name='p2.timestamp' value='").append(timestamp).append("'/>").append('\n')
+			    .append("  </properties>").append("\n")
+			    .append("  <children size='1'>").append("\n")
+			    .append("    <child location='../'/>").append('\n')
+			    .append("  </children>").append('\n')
+			    .append("</repository>");
+			org.apache.commons.io.FileUtils.writeStringToFile(compositeArtifactsXml, compositeArtifact.toString());
+		}
 	}
 
 	private void generateWebStuff(File outputRepository, File outputSiteXml) throws TransformerFactoryConfigurationError, MojoExecutionException {
@@ -311,7 +403,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 						currentRef.getParentNode().removeChild(currentRef);
 					}
 					// add assiciateSites
-					if (this.associateSites != null && this.associateSites.size() > 0) {
+					if (this.associateSites != null && this.associateSites.size() > 0 && this.referenceStrategy == ReferenceStrategy.embedReferences) {
 						Element refElement = contentDoc.createElement("references");
 						refElement.setAttribute("size", Integer.valueOf(2 * associateSites.size()).toString());
 						for (String associate : associateSites) {
