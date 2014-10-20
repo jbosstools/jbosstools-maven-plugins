@@ -15,7 +15,7 @@
 	<groupId>org.jboss.tools</groupId>
 	<artifactId>tycho-plugins</artifactId>
 	<packaging>pom</packaging>
-	<version>0.21.1-SNAPSHOT</version>
+	<version>0.21.1</version>
 	<name>jbosstools-tycho-plugins-parent</name>
         <description>In-House Maven plugins for JBT/JBDS build</description>
         <url>http://jboss.org/tools</url>
