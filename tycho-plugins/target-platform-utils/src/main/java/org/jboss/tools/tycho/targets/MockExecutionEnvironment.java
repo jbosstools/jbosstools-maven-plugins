@@ -42,4 +42,8 @@ public class MockExecutionEnvironment implements
 		return null;
 	}
 
+	public boolean isIgnoredByResolver() {
+		return false;
+	}
+
 }

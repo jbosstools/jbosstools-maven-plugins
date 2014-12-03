@@ -27,6 +27,7 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.sisu.equinox.EquinoxServiceFactory;
 import org.eclipse.tycho.artifacts.TargetPlatform;
+import org.eclipse.tycho.core.resolver.shared.IncludeSourceMode;
 import org.eclipse.tycho.core.resolver.shared.MavenRepositoryLocation;
 import org.eclipse.tycho.osgi.adapters.MavenLoggerAdapter;
 import org.eclipse.tycho.p2.resolver.TargetDefinitionFile;
@@ -81,7 +82,7 @@ public class FixVersionsMojo extends AbstractMojo {
 			P2ResolverFactory resolverFactory = this.equinox.getService(P2ResolverFactory.class);
 			TargetDefinitionFile targetDef;
 			try {
-				targetDef = TargetDefinitionFile.read(this.targetFile);
+				targetDef = TargetDefinitionFile.read(this.targetFile, IncludeSourceMode.ignore);
 			} catch (Exception ex) {
 				throw new MojoExecutionException(ex.getMessage(), ex);
 			}

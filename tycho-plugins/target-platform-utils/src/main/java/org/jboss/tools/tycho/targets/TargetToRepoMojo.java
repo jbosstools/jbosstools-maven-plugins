@@ -33,8 +33,9 @@ import org.eclipse.sisu.equinox.EquinoxServiceFactory;
 import org.eclipse.tycho.ArtifactType;
 import org.eclipse.tycho.BuildOutputDirectory;
 import org.eclipse.tycho.artifacts.TargetPlatform;
-import org.eclipse.tycho.core.facade.TargetEnvironment;
+import org.eclipse.tycho.core.resolver.shared.IncludeSourceMode;
 import org.eclipse.tycho.core.resolver.shared.MavenRepositoryLocation;
+import org.eclipse.tycho.core.shared.TargetEnvironment;
 import org.eclipse.tycho.osgi.adapters.MavenLoggerAdapter;
 import org.eclipse.tycho.p2.resolver.TargetDefinitionFile;
 import org.eclipse.tycho.p2.resolver.facade.P2ResolutionResult;
@@ -113,7 +114,7 @@ public class TargetToRepoMojo extends AbstractMojo {
 
 			final MirrorApplicationService mirrorService = equinox.getService(MirrorApplicationService.class);
 
-			TargetDefinitionFile target = TargetDefinitionFile.read(sourceTargetFile);
+			TargetDefinitionFile target = TargetDefinitionFile.read(sourceTargetFile, IncludeSourceMode.ignore);
 	        final RepositoryReferences sourceDescriptor = new RepositoryReferences();
 	        for (final Location loc : target.getLocations()) {
 	        	if (loc instanceof InstallableUnitLocation) {

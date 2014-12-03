@@ -20,6 +20,7 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.tycho.core.resolver.shared.IncludeSourceMode;
 import org.eclipse.tycho.p2.resolver.TargetDefinitionFile;
 import org.eclipse.tycho.p2.resolver.TargetDefinitionFile.IULocation;
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Location;
@@ -67,7 +68,7 @@ public class ExtendListingMojo extends AbstractMojo {
 		}
 		
 		Map<String, String> earlyAccessIUsToVersion = new HashMap<String, String>();
-		TargetDefinitionFile file = TargetDefinitionFile.read(this.targetDefinitionFile);
+		TargetDefinitionFile file = TargetDefinitionFile.read(this.targetDefinitionFile, IncludeSourceMode.ignore);
 		for (Location location : file.getLocations()) {
 			if (! (location instanceof IULocation)) {
 				throw new MojoExecutionException("Only p2 IUs location are supported");
