@@ -51,9 +51,19 @@
 			<version>8.7</version>
 		</dependency>
 		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20141113</version>
+		</dependency>
+		<dependency>
 			<groupId>com.googlecode.maven-download-plugin</groupId>
 			<artifactId>download-maven-plugin</artifactId>
 			<version>1.2.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jgit</groupId>
+			<artifactId>org.eclipse.jgit</artifactId>
+			<version>3.6.0.201411121045-m1</version>
 		</dependency>
 	</dependencies>
 
