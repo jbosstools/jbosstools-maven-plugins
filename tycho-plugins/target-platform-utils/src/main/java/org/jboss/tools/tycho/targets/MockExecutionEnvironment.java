@@ -43,7 +43,7 @@ public class MockExecutionEnvironment implements
 	}
 
 	public boolean isIgnoredByResolver() {
-		return false;
+		return true;
 	}
 
 }

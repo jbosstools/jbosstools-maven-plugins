@@ -32,6 +32,7 @@ import org.codehaus.plexus.logging.Logger;
 import org.eclipse.sisu.equinox.EquinoxServiceFactory;
 import org.eclipse.tycho.ArtifactType;
 import org.eclipse.tycho.BuildOutputDirectory;
+import org.eclipse.tycho.DefaultArtifactKey;
 import org.eclipse.tycho.artifacts.TargetPlatform;
 import org.eclipse.tycho.core.resolver.shared.IncludeSourceMode;
 import org.eclipse.tycho.core.resolver.shared.MavenRepositoryLocation;
@@ -158,18 +159,18 @@ public class TargetToRepoMojo extends AbstractMojo {
 	            }
 	            P2ResolutionResult result = tpResolver.resolveMetadata(tpConfiguration, this.executionEnvironment);
 	            
-	            Set<String> sourcesFound = new HashSet<String>();
-	            Set<String> regularArtifacts = new HashSet<String>();
+	            Set<DefaultArtifactKey> sourcesFound = new HashSet<DefaultArtifactKey>();
+	            Set<DefaultArtifactKey> regularArtifacts = new HashSet<DefaultArtifactKey>();
 	        	for (Entry entry : result.getArtifacts()) {
 	        		if (entry.getId().endsWith(".source")) {
-	        			sourcesFound.add(entry.getId().substring(0, entry.getId().length() - ".source".length()));
+	        			sourcesFound.add(new DefaultArtifactKey(entry.getType(), entry.getId().substring(0, entry.getId().length() - ".source".length()), entry.getVersion()));
 	        		} else if (entry.getId().endsWith(".source.feature.group")) {
-	        			sourcesFound.add(entry.getId().replace(".source.feature.group", ".feature.group"));
+	        			sourcesFound.add(new DefaultArtifactKey(entry.getType(), entry.getId().replace(".source.feature.group", ".feature.group"), entry.getVersion()));
 	        		} else {
-	        			regularArtifacts.add(entry.getId());
+	        			regularArtifacts.add(new DefaultArtifactKey(entry.getType(), entry.getId(), entry.getVersion()));
 	        		}
 	        	}
-	        	Set<String> artifactsWithoutSources = new HashSet<String>(regularArtifacts);
+	        	Set<DefaultArtifactKey> artifactsWithoutSources = new HashSet<DefaultArtifactKey>(regularArtifacts);
 	        	artifactsWithoutSources.removeAll(sourcesFound);
 	        	if (!artifactsWithoutSources.isEmpty()) {
 	        		TargetPlatformConfigurationStub sites = new TargetPlatformConfigurationStub();
@@ -183,12 +184,17 @@ public class TargetToRepoMojo extends AbstractMojo {
 	        			}
 	        		}
 	        		TargetPlatform sitesTP = this.p2Factory.getTargetPlatformFactory().createTargetPlatform(sites, new MockExecutionEnvironment(), null, null);
-	        		for (String unitId : artifactsWithoutSources) {
-	        			String sourceUnitId = unitId + ".source";
-	        			// ignore .feature.source
-	        			P2ResolutionResult resolvedSource = tpResolver.resolveInstallableUnit(sitesTP, sourceUnitId, null);
+	        		for (DefaultArtifactKey artifactWithoutSources : artifactsWithoutSources) {
+	        		        String sourceUnitId;
+	        		        if (artifactWithoutSources.getId().endsWith(".feature.jar")) {
+	        		            sourceUnitId = artifactWithoutSources.getId().replace(".feature.jar", ".source.feature.group");
+	        		        } else {
+	        		            sourceUnitId = artifactWithoutSources.getId() + ".source";
+	        		        }
+	        		        String sourceUnitVersion = artifactWithoutSources.getVersion();
+	        			P2ResolutionResult resolvedSource = tpResolver.resolveInstallableUnit(sitesTP, sourceUnitId, "[" + sourceUnitVersion + "," + sourceUnitVersion + "]");
 	        			if (resolvedSource.getArtifacts().size() > 0 || resolvedSource.getNonReactorUnits().size() > 0) {
-	        				additionalSourceUnits.add(new IUDescription(sourceUnitId, resolvedSource.getArtifacts().iterator().next().getVersion()));
+	        				additionalSourceUnits.add(new IUDescription(sourceUnitId, sourceUnitVersion));
 	        			}
 	        		}
 	        		if (!additionalSourceUnits.isEmpty()) {
