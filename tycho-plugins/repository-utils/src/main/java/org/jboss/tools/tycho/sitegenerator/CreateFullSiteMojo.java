@@ -40,6 +40,7 @@ public class CreateFullSiteMojo extends AbstractMojo {
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		if (! PackagingType.TYPE_ECLIPSE_REPOSITORY.equals(project.getPackaging())) {
 			getLog().debug("Skipped for projects which have packaging != " + PackagingType.TYPE_ECLIPSE_REPOSITORY);
+			return;
 		}
 		File fullSite = new File(project.getBuild().getDirectory(), FULL_SITE_FOLDER_NAME);
 		fullSite.mkdirs();
