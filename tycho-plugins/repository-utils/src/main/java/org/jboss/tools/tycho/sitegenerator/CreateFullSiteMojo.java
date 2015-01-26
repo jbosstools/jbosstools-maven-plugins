@@ -6,11 +6,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -38,10 +36,10 @@ public class CreateFullSiteMojo extends AbstractMojo {
 	public static final String BUILDINFO_JSON = "buildInfo.json";
 	@Parameter(property = "project", required = true, readonly = true)
 	private MavenProject project;
-	
+
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		if (! PackagingType.TYPE_ECLIPSE_REPOSITORY.equals(project.getPackaging())) {
-			throw new MojoExecutionException("expected packaging=" + PackagingType.TYPE_ECLIPSE_REPOSITORY);
+			getLog().debug("Skipped for projects which have packaging != " + PackagingType.TYPE_ECLIPSE_REPOSITORY);
 		}
 		File fullSite = new File(project.getBuild().getDirectory(), FULL_SITE_FOLDER_NAME);
 		fullSite.mkdirs();
@@ -57,8 +55,8 @@ public class CreateFullSiteMojo extends AbstractMojo {
 		} catch (IOException e) {
 			throw new MojoFailureException("Could not copy p2 repository", e);
 		}
-		
-		
+
+
 		ZipArchiver archiver = new ZipArchiver();
 		archiver.setDestFile(new File(all, "repository.zip"));
 		archiver.addDirectory(repository);
@@ -67,22 +65,22 @@ public class CreateFullSiteMojo extends AbstractMojo {
 		} catch (IOException ex) {
 			throw new MojoFailureException("Could not create zip for p2 repository", ex);
 		}
-		
+
 		JSONObject jsonProperties = new JSONObject();
 		jsonProperties.put("timestamp", System.currentTimeMillis()); // TODO get it from build metadata
-		
+
 		try {
 			jsonProperties.put("revision", createRevisionFile(logs));
 		} catch (Exception ex) {
 			throw new MojoFailureException("Could not generate revision file", ex);
 		}
-		
+
 		try {
 			jsonProperties.put("properties", createBuildProperties(logs));
 		} catch (Exception ex) {
 			throw new MojoFailureException("Could not generate properties file", ex);
 		}
-		
+
 		try {
 			jsonProperties.put(UPSTREAM_ELEMENT, aggregateUpstreamMetadata());
 		} catch (Exception ex) {
@@ -144,7 +142,7 @@ public class CreateFullSiteMojo extends AbstractMojo {
 		gitRevisionOut.close();
 		return res;
 	}
-	
+
 	private JSONObject createBuildProperties(File logFolder) throws IOException {
 		JSONObject res = new JSONObject();
 		StringBuilder content = new StringBuilder();
@@ -153,7 +151,7 @@ public class CreateFullSiteMojo extends AbstractMojo {
 		addPropertyLine(content, res, "BUILD_NUMBER");
 		addPropertyLine(content, res, "BUILD_ID");
 		addPropertyLine(content, res, "HUDSON_SLAVE");
-		addPropertyLine(content, res, "RELEASE"); 
+		addPropertyLine(content, res, "RELEASE");
 		addPropertyLine(content, res, "ZIPSUFFIX");
 		addPropertyLine(content, res, "TARGET_PLATFORM_VERSION");
 		addPropertyLine(content, res, "TARGET_PLATFORM_VERSION_MAXIMUM");
@@ -162,14 +160,14 @@ public class CreateFullSiteMojo extends AbstractMojo {
 		addPropertyLine(content, res, "os.arch");
 		addPropertyLine(content, res, "java.vendor");
 		addPropertyLine(content, res, "java.version");
-		
-		
+
+
 		File targetFile = new File(logFolder, "build.properties");
 		targetFile.createNewFile();
 		FileUtils.writeStringToFile(targetFile, content.toString());
 		return res;
 	}
-	
+
 	private void addPropertyLine(StringBuilder target, JSONObject json, String propertyName) {
 		json.put(propertyName, System.getProperty(propertyName));
 		target.append(propertyName);
@@ -177,7 +175,7 @@ public class CreateFullSiteMojo extends AbstractMojo {
 		target.append(System.getProperty(propertyName));
 		target.append(System.lineSeparator());
 	}
-	
+
 	private JSONObject aggregateUpstreamMetadata() {
 		List<?> repos = this.project.getRepositories();
 		JSONObject res = new JSONObject();
