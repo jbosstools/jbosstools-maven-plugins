@@ -84,7 +84,7 @@ public class TargetToRepoMojo extends AbstractMojo {
 	@Parameter(defaultValue = "${project.build.directory}/${project.artifactId}.target.repo")
     private File outputRepository;
     
-	@Parameter(defaultValue = "JavaSE-1.6")
+	@Parameter(defaultValue = "JavaSE-1.7")
     private String executionEnvironment;
 
     @Component private Logger logger;
