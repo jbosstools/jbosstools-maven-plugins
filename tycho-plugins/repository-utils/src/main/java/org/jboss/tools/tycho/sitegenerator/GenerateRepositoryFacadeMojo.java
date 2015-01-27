@@ -17,10 +17,15 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -39,6 +44,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -51,6 +57,10 @@ import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.io.RawInputStreamFacade;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.tycho.PackagingType;
 import org.eclipse.tycho.ReactorProject;
 import org.eclipse.tycho.core.ArtifactDependencyVisitor;
@@ -62,6 +72,8 @@ import org.eclipse.tycho.model.UpdateSite;
 import org.eclipse.tycho.model.UpdateSite.SiteFeatureRef;
 import org.eclipse.tycho.packaging.AbstractTychoPackagingMojo;
 import org.eclipse.tycho.packaging.UpdateSiteAssembler;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -73,11 +85,31 @@ import org.xml.sax.SAXException;
  */
 @Mojo(name = "generate-repository-facade", defaultPhase = LifecyclePhase.PACKAGE)
 public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
-	
+
 	private enum ReferenceStrategy {
 		embedReferences,
 		compositeReferences
 	}
+
+	public static final Set<String> defaultSystemProperties = new HashSet<String>(Arrays.asList(new String[] {
+		"BUILD_ALIAS",
+		"JOB_NAME",
+		"BUILD_NUMBER",
+		"BUILD_ID",
+		"HUDSON_SLAVE",
+		"RELEASE",
+		"ZIPSUFFIX",
+		"TARGET_PLATFORM_VERSION",
+		"TARGET_PLATFORM_VERSION_MAXIMUM",
+		"os.name",
+		"os.version",
+		"os.arch",
+		"java.vendor",
+		"java.version",
+	}));
+
+	private static final String UPSTREAM_ELEMENT = "upstream";
+	public static final String BUILDINFO_JSON = "buildInfo.json";
 
 	@Parameter(property = "project", required = true, readonly = true)
 	private MavenProject project;
@@ -109,7 +141,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	 */
 	@Parameter
 	private List<String> associateSites;
-	
+
 	/**
 	 * This can have 2 values: embedReferences or compositeReferences.
 	 * "embedReferences" will add the repository references directly to the content.jar
@@ -118,8 +150,8 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	 * and will create a composite that composite both content and references. Then top-level
 	 * repository won't contain any reference to other repo whereas repository in "withreferences"
 	 * will composite the top-level repo, with the additional repo adding references to
-	 * associateSites  
-	 * 
+	 * associateSites
+	 *
 	 * "compositeReferences" is preferred in case your site is used by an upstream project
 	 * that will manage the dependencies since its output is actually 2 sites: one without
 	 * the references for integrators, and one with references for testers/users who just
@@ -159,11 +191,17 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	@Parameter
 	private String p2StatsUrl;
 
+	@Parameter
+	private Set<String> systemProperties;
+
 	private File categoryFile;
 
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		if (!PackagingType.TYPE_ECLIPSE_REPOSITORY.equals(this.project.getPackaging())) {
 			return;
+		}
+		if (systemProperties == null) {
+			systemProperties = defaultSystemProperties;
 		}
 		this.categoryFile = new File(project.getBasedir(), "category.xml");
 		if (!this.categoryFile.isFile()) {
@@ -227,6 +265,8 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			}
 		}
 
+		createBuildInfo(outputRepository);
+
 		File repoZipFile = new File(this.project.getBuild().getDirectory(), this.project.getArtifactId() + "-" + this.project.getVersion() + ".zip");
 		repoZipFile.delete();
 		ZipArchiver archiver = new ZipArchiver();
@@ -266,7 +306,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		content.append("  </references>").append('\n');
 		content.append("</repository>");
 		org.apache.commons.io.FileUtils.writeStringToFile(contentXmlReference, content.toString());
-		
+
 		File compositeWithRefDir = new File(outputRepository, "withreferences");
 		compositeWithRefDir.mkdir();
 		{
@@ -341,7 +381,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	}
 
 	/*
-	 * We'll stop creating site.xml ASAP, but it's still use to generate list of features
+	 * We'll stop creating site.xml ASAP, but it's still used in order to generate list of features
 	 */
 	@Deprecated
 	private File generateSiteXml(File outputRepository) throws MojoExecutionException {
@@ -573,5 +613,106 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			FileUtils.copyStreamToFile(new RawInputStreamFacade(cssStream), new File(webFolder, this.cssName));
 			cssStream.close();
 		}
+	}
+
+
+	/**
+	 * @param outputRepository
+	 * @throws MojoFailureException
+	 * @throws MojoExecutionException
+	 */
+	private void createBuildInfo(File outputRepository) throws MojoFailureException, MojoExecutionException {
+		JSONObject jsonProperties = new JSONObject();
+		jsonProperties.put("timestamp", System.currentTimeMillis()); // TODO get it from build metadata
+
+		try {
+			jsonProperties.put("revision", createRevisionObject());
+		} catch (FileNotFoundException ex) {
+			getLog().error("Could not add revision to " + BUILDINFO_JSON + ": not a Git repository");
+		} catch (Exception ex) {
+			throw new MojoFailureException("Could not add revision to " + BUILDINFO_JSON, ex);
+		}
+
+		JSONObject properties = new JSONObject();
+		for (String propertyName : this.systemProperties) {
+			properties.put(propertyName, System.getProperty(propertyName));
+		}
+		jsonProperties.put("properties", properties);
+
+		try {
+			jsonProperties.put(UPSTREAM_ELEMENT, aggregateUpstreamMetadata());
+		} catch (Exception ex) {
+			throw new MojoExecutionException("Could not get upstream metadata");
+		}
+
+		File jsonFile = new File(outputRepository, BUILDINFO_JSON);
+		try {
+			FileUtils.fileWrite(jsonFile, jsonProperties.toString(4));
+		} catch (Exception ex) {
+			throw new MojoFailureException("Could not generate properties file", ex);
+		}
+	}
+
+	private JSONObject aggregateUpstreamMetadata() {
+		List<?> repos = this.project.getRepositories();
+		JSONObject res = new JSONObject();
+		for (Object item : repos) {
+			org.apache.maven.model.Repository repo = (org.apache.maven.model.Repository)item;
+			if ("p2".equals(repo.getLayout())) {
+				String supposedBuildInfoURL = repo.getUrl();
+				if (!supposedBuildInfoURL.endsWith("/")) {
+					supposedBuildInfoURL += "/";
+				}
+				supposedBuildInfoURL += BUILDINFO_JSON;
+				URL upstreamBuildInfoURL = null;
+				try {
+					upstreamBuildInfoURL = new URL(supposedBuildInfoURL);
+					String content = IOUtils.toString(upstreamBuildInfoURL.openStream());
+					JSONObject obj = new JSONObject(content);
+					obj.remove(UPSTREAM_ELEMENT); // remove upstream of upstream as it would make a HUGE file
+					res.put(repo.getUrl(), obj);
+				} catch (MalformedURLException ex) {
+					// Only log those
+					getLog().error("Incorrect URL " + upstreamBuildInfoURL);
+				} catch (IOException ex) {
+					getLog().error("Could not read build info at " + upstreamBuildInfoURL);
+				}
+			}
+		}
+		return res;
+	}
+
+	private JSONObject createRevisionObject() throws IOException, FileNotFoundException {
+		JSONObject res = new JSONObject();
+		File repoRoot = this.project.getBasedir();
+		while (! new File(repoRoot, ".git").isDirectory()) {
+			repoRoot = repoRoot.getParentFile();
+		}
+		if (repoRoot == null) {
+			throw new FileNotFoundException("Could not find a Git repository (with a .git child folder)");
+		}
+		FileRepositoryBuilder builder = new FileRepositoryBuilder();
+		Repository gitRepo = builder.setGitDir(new File(repoRoot, ".git"))
+		  .readEnvironment() // scan environment GIT_* variables
+		  .findGitDir() // scan up the file system tree
+		  .build();
+		Ref head = gitRepo.getRef(Constants.HEAD);
+		res.put("HEAD", head.getObjectId().getName());
+		JSONArray knownReferences = new JSONArray();
+		for (Entry<String, Ref> entry : gitRepo.getAllRefs().entrySet()) {
+			if (entry.getKey().startsWith(Constants.R_REMOTES) && entry.getValue().getObjectId().getName().equals(head.getObjectId().getName())) {
+				JSONObject reference = new JSONObject();
+				int lastSlashIndex = entry.getKey().lastIndexOf('/');
+				String remoteName = entry.getKey().substring(Constants.R_REMOTES.length(), lastSlashIndex);
+				String remoteUrl = gitRepo.getConfig().getString("remote", remoteName, "url");
+				String branchName = entry.getKey().substring(lastSlashIndex + 1);
+				reference.put("name", remoteName);
+				reference.put("url", remoteUrl);
+				reference.put("ref", branchName);
+				knownReferences.put(reference);
+			}
+		}
+		res.put("knownReferences", knownReferences);
+		return res;
 	}
 }
