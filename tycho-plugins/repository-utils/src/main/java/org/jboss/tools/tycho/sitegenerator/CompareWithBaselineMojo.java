@@ -60,7 +60,7 @@ public class CompareWithBaselineMojo extends AbstractMojo {
 		ReactorProject reactorProject = DefaultReactorProject.adapt(project);
 		Set<?> dependencyMetadata = reactorProject.getDependencyMetadata(true);
 		if (dependencyMetadata == null || dependencyMetadata.isEmpty()) {
-			getLog().info("No p2 artifacts created");
+			getLog().debug("Skipping baseline version comparison, no p2 artifacts created in build.");
 			return;
 		}
 
@@ -84,9 +84,11 @@ public class CompareWithBaselineMojo extends AbstractMojo {
 
 				for (Entry foundInBaseline : res.getArtifacts()) {
 					Version baselineVersion = new Version(foundInBaseline.getVersion());
+					String delta = "" + (version.getMajor()-baselineVersion.getMajor())  + "." + (version.getMinor() - baselineVersion.getMinor()) + "." + (version.getMicro() - baselineVersion.getMicro());
+					
+					getLog().debug("Found " + foundInBaseline.getId() + "/" + foundInBaseline.getVersion() + " with delta: " + delta);
 					if (version.compareTo(baselineVersion) <= 0) {
-						throw new MojoFailureException("Version of '" + id + '/' + version
-								+ ") must be bigger than baseline one (" + baselineVersion.toString() + ")");
+						throw new MojoFailureException("Version have moved backwards for (" + id + "/" + version + "). Baseline has " + baselineVersion + ") with delta: " + delta);
 					} else if (version.equals(baselineVersion)) {
 						File baselineFile = foundInBaseline.getLocation();
 						File currentFile = null;
@@ -98,11 +100,10 @@ public class CompareWithBaselineMojo extends AbstractMojo {
 							currentFile = reactorProject.getArtifact();
 						}
 						if (!FileUtils.contentEquals(currentFile, baselineFile)) {
-							throw new MojoFailureException("An artifact with same id and version (" + id + "/" + version + ") exists in baseline. This is not legal, unless they are exactly same artifacts."
-								+ " TODO: compare jars.");
+							throw new MojoFailureException("Duplicate version but different content found for (" + id + "/" + version + "). Also exists in baseline, but its content is different.");
 						}
 					} else if (version.getMajor() == baselineVersion.getMajor() && version.getMinor() == baselineVersion.getMinor() && version.getMicro() == baselineVersion.getMicro()) {
-						throw new MojoFailureException("Unless artifacts are identical, version of '"+ id + "' must have bigger x.y.z than what's available in baseline (" + baselineVersion + ")");
+						throw new MojoFailureException("Only qualifier changed for (" + id + "/" + version + "). Expected to have bigger x.y.z than what is available in baseline (" + baselineVersion + ")");
 					}
 				}
 
