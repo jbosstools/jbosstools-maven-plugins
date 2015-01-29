@@ -109,7 +109,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	}));
 
 	private static final String UPSTREAM_ELEMENT = "upstream";
-	public static final String BUILDINFO_JSON = "buildInfo.json";
+	public static final String BUILDINFO_JSON = "buildinfo.json";
 
 	@Parameter(property = "project", required = true, readonly = true)
 	private MavenProject project;
@@ -653,7 +653,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		}
 	}
 
-	private JSONObject aggregateUpstreamMetadata() {
+	private JSONObject aggregateUpstreamMetadata() throws MojoFailureException {
 		List<?> repos = this.project.getRepositories();
 		JSONObject res = new JSONObject();
 		for (Object item : repos) {
@@ -672,10 +672,10 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 					obj.remove(UPSTREAM_ELEMENT); // remove upstream of upstream as it would make a HUGE file
 					res.put(repo.getUrl(), obj);
 				} catch (MalformedURLException ex) {
-					// Only log those
-					getLog().error("Incorrect URL " + upstreamBuildInfoURL);
+					throw new MojoFailureException("Incorrect URL: " + upstreamBuildInfoURL, ex);
 				} catch (IOException ex) {
-					getLog().error("Could not read build info at " + upstreamBuildInfoURL);
+					getLog().warn("Could not access build info at " + upstreamBuildInfoURL);
+					res.put(repo.getUrl(), "Build info file not accessible: " + ex.getMessage());
 				}
 			}
 		}
