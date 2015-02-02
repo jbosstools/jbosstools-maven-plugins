@@ -21,7 +21,6 @@ import org.codehaus.plexus.logging.Logger;
 import org.eclipse.sisu.equinox.EquinoxServiceFactory;
 import org.eclipse.tycho.ReactorProject;
 import org.eclipse.tycho.artifacts.TargetPlatform;
-import org.eclipse.tycho.core.ee.shared.ExecutionEnvironmentConfigurationStub;
 import org.eclipse.tycho.core.osgitools.DefaultReactorProject;
 import org.eclipse.tycho.core.shared.TargetEnvironment;
 import org.eclipse.tycho.core.utils.TychoProjectUtils;
@@ -68,6 +67,7 @@ public class CompareWithBaselineMojo extends AbstractMojo {
 		P2Resolver resolver = resolverFactory.createResolver(new MavenLoggerAdapter(this.plexusLogger, true));
 
 		TargetPlatformConfigurationStub baselineTPStub = new TargetPlatformConfigurationStub();
+		baselineTPStub.setForceIgnoreLocalArtifacts(true);
 		baselineTPStub.setEnvironments(Collections.singletonList(TargetEnvironment.getRunningEnvironment()));
 		for (String baselineRepo : this.baselines) {
 			baselineTPStub.addP2Repository(toRepoURI(baselineRepo));
