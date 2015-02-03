@@ -72,8 +72,7 @@ import org.eclipse.tycho.model.UpdateSite;
 import org.eclipse.tycho.model.UpdateSite.SiteFeatureRef;
 import org.eclipse.tycho.packaging.AbstractTychoPackagingMojo;
 import org.eclipse.tycho.packaging.UpdateSiteAssembler;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.jboss.dmr.ModelNode;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -622,40 +621,40 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	 * @throws MojoExecutionException
 	 */
 	private void createBuildInfo(File outputRepository) throws MojoFailureException, MojoExecutionException {
-		JSONObject jsonProperties = new JSONObject();
-		jsonProperties.put("timestamp", System.currentTimeMillis()); // TODO get it from build metadata
+		ModelNode jsonProperties = new ModelNode();
+		jsonProperties.get("timestamp").set(System.currentTimeMillis()); // TODO get it from build metadata
 
 		try {
-			jsonProperties.put("revision", createRevisionObject());
+			jsonProperties.get("revision").set(createRevisionObject());
 		} catch (FileNotFoundException ex) {
 			getLog().error("Could not add revision to " + BUILDINFO_JSON + ": not a Git repository");
 		} catch (Exception ex) {
 			throw new MojoFailureException("Could not add revision to " + BUILDINFO_JSON, ex);
 		}
 
-		JSONObject properties = new JSONObject();
+		ModelNode sysProps = new ModelNode();
 		for (String propertyName : this.systemProperties) {
-			properties.put(propertyName, System.getProperty(propertyName));
+			sysProps.get(propertyName).set(String.valueOf(System.getProperty(propertyName)));
 		}
-		jsonProperties.put("properties", properties);
+		jsonProperties.get("properties").set(sysProps);
 
 		try {
-			jsonProperties.put(UPSTREAM_ELEMENT, aggregateUpstreamMetadata());
+			jsonProperties.get(UPSTREAM_ELEMENT).set(aggregateUpstreamMetadata());
 		} catch (Exception ex) {
 			throw new MojoExecutionException("Could not get upstream metadata");
 		}
 
 		File jsonFile = new File(outputRepository, BUILDINFO_JSON);
 		try {
-			FileUtils.fileWrite(jsonFile, jsonProperties.toString(4));
+			FileUtils.fileWrite(jsonFile, jsonProperties.toJSONString(false));
 		} catch (Exception ex) {
 			throw new MojoFailureException("Could not generate properties file", ex);
 		}
 	}
 
-	private JSONObject aggregateUpstreamMetadata() throws MojoFailureException {
+	private ModelNode aggregateUpstreamMetadata() throws MojoFailureException {
 		List<?> repos = this.project.getRepositories();
-		JSONObject res = new JSONObject();
+		ModelNode res = new ModelNode();
 		for (Object item : repos) {
 			org.apache.maven.model.Repository repo = (org.apache.maven.model.Repository)item;
 			if ("p2".equals(repo.getLayout())) {
@@ -665,25 +664,28 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 				}
 				supposedBuildInfoURL += BUILDINFO_JSON;
 				URL upstreamBuildInfoURL = null;
+				InputStream in = null;
 				try {
 					upstreamBuildInfoURL = new URL(supposedBuildInfoURL);
-					String content = IOUtils.toString(upstreamBuildInfoURL.openStream());
-					JSONObject obj = new JSONObject(content);
+					in = upstreamBuildInfoURL.openStream();
+					ModelNode obj = ModelNode.fromJSONStream(in);
 					obj.remove(UPSTREAM_ELEMENT); // remove upstream of upstream as it would make a HUGE file
-					res.put(repo.getUrl(), obj);
+					res.get(repo.getUrl()).set(obj);
 				} catch (MalformedURLException ex) {
 					throw new MojoFailureException("Incorrect URL: " + upstreamBuildInfoURL, ex);
 				} catch (IOException ex) {
 					getLog().warn("Could not access build info at " + upstreamBuildInfoURL);
-					res.put(repo.getUrl(), "Build info file not accessible: " + ex.getMessage());
+					res.get(repo.getUrl()).set("Build info file not accessible: " + ex.getMessage());
+				} finally {
+					IOUtils.closeQuietly(in);
 				}
 			}
 		}
 		return res;
 	}
 
-	private JSONObject createRevisionObject() throws IOException, FileNotFoundException {
-		JSONObject res = new JSONObject();
+	private ModelNode createRevisionObject() throws IOException, FileNotFoundException {
+		ModelNode res = new ModelNode();
 		File repoRoot = this.project.getBasedir();
 		while (! new File(repoRoot, ".git").isDirectory()) {
 			repoRoot = repoRoot.getParentFile();
@@ -697,22 +699,22 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		  .findGitDir() // scan up the file system tree
 		  .build();
 		Ref head = gitRepo.getRef(Constants.HEAD);
-		res.put("HEAD", head.getObjectId().getName());
-		JSONArray knownReferences = new JSONArray();
+		res.get("HEAD").set(head.getObjectId().getName());
+		ModelNode knownReferences = new ModelNode();
 		for (Entry<String, Ref> entry : gitRepo.getAllRefs().entrySet()) {
 			if (entry.getKey().startsWith(Constants.R_REMOTES) && entry.getValue().getObjectId().getName().equals(head.getObjectId().getName())) {
-				JSONObject reference = new JSONObject();
+				ModelNode reference = new ModelNode();
 				int lastSlashIndex = entry.getKey().lastIndexOf('/');
 				String remoteName = entry.getKey().substring(Constants.R_REMOTES.length(), lastSlashIndex);
 				String remoteUrl = gitRepo.getConfig().getString("remote", remoteName, "url");
 				String branchName = entry.getKey().substring(lastSlashIndex + 1);
-				reference.put("name", remoteName);
-				reference.put("url", remoteUrl);
-				reference.put("ref", branchName);
-				knownReferences.put(reference);
+				reference.get("name").set(remoteName);
+				reference.get("url").set(remoteUrl);
+				reference.get("ref").set(branchName);
+				knownReferences.add(reference);
 			}
 		}
-		res.put("knownReferences", knownReferences);
+		res.get("knownReferences").set(knownReferences);
 		return res;
 	}
 }

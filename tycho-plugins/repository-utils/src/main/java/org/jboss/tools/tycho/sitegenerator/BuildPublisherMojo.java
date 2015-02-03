@@ -3,6 +3,7 @@ package org.jboss.tools.tycho.sitegenerator;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -18,7 +19,7 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.tycho.PackagingType;
-import org.json.JSONObject;
+import org.jboss.dmr.ModelNode;
 
 @Mojo(name="publish-build", requiresProject=true)
 public class BuildPublisherMojo extends AbstractMojo {
@@ -61,13 +62,14 @@ public class BuildPublisherMojo extends AbstractMojo {
 		boolean publish = this.forcePublish;
 		if (!publish && this.publishIfGitChanges) {
 			URL buildInfoURL = null;
-			JSONObject buildInfo = null;
+			ModelNode buildInfo = null;
 			String previousCommitId = null;
+			InputStream in = null;
 			try {
 				buildInfoURL = new URL(this.baselineRepo + "/all/repo/" + GenerateRepositoryFacadeMojo.BUILDINFO_JSON);
-				String content = IOUtils.toString(buildInfoURL.openStream());
-				buildInfo = new JSONObject(content);
-				previousCommitId = buildInfo.getJSONObject("revision").getString("HEAD");
+				in = buildInfoURL.openStream();
+				buildInfo = ModelNode.fromJSONStream(in);
+				previousCommitId = buildInfo.get("revision").get("HEAD").asString();
 
 				File repoRoot = project.getBasedir();
 				while (! new File(repoRoot, ".git").isDirectory()) {
@@ -88,6 +90,8 @@ public class BuildPublisherMojo extends AbstractMojo {
 				throw new MojoFailureException("Incorrect URL for " + GenerateRepositoryFacadeMojo.BUILDINFO_JSON, ex);
 			} catch (IOException ex) {
 				getLog().warn("Could not access " + buildInfoURL.toString(), ex);
+			} finally {
+				IOUtils.closeQuietly(in);
 			}
 		}
 		if (!publish && this.publishIfp2RepoChanges) {
