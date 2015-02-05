@@ -700,6 +700,9 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		  .build();
 		Ref head = gitRepo.getRef(Constants.HEAD);
 		res.get("HEAD").set(head.getObjectId().getName());
+		if (head.getTarget() != null && head.getTarget().getName() != null) {
+			res.get("currentBranch").set(head.getTarget().getName());
+		}
 		ModelNode knownReferences = new ModelNode();
 		for (Entry<String, Ref> entry : gitRepo.getAllRefs().entrySet()) {
 			if (entry.getKey().startsWith(Constants.R_REMOTES) && entry.getValue().getObjectId().getName().equals(head.getObjectId().getName())) {
@@ -708,7 +711,9 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 				String remoteName = entry.getKey().substring(Constants.R_REMOTES.length(), lastSlashIndex);
 				String remoteUrl = gitRepo.getConfig().getString("remote", remoteName, "url");
 				String branchName = entry.getKey().substring(lastSlashIndex + 1);
-				reference.get("name").set(remoteName);
+				if (remoteName != null) {
+					reference.get("name").set(remoteName);
+				}
 				reference.get("url").set(remoteUrl);
 				reference.get("ref").set(branchName);
 				knownReferences.add(reference);
