@@ -707,13 +707,11 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		for (Entry<String, Ref> entry : gitRepo.getAllRefs().entrySet()) {
 			if (entry.getKey().startsWith(Constants.R_REMOTES) && entry.getValue().getObjectId().getName().equals(head.getObjectId().getName())) {
 				ModelNode reference = new ModelNode();
-				int lastSlashIndex = entry.getKey().lastIndexOf('/');
-				String remoteName = entry.getKey().substring(Constants.R_REMOTES.length(), lastSlashIndex);
+				String remoteName = entry.getKey().substring(Constants.R_REMOTES.length());
+				remoteName = remoteName.substring(0, remoteName.indexOf('/'));
 				String remoteUrl = gitRepo.getConfig().getString("remote", remoteName, "url");
-				String branchName = entry.getKey().substring(lastSlashIndex + 1);
-				if (remoteName != null) {
-					reference.get("name").set(remoteName);
-				}
+				String branchName = entry.getKey().substring(Constants.R_REMOTES.length() + 1 + remoteName.length());
+				reference.get("name").set(remoteName);
 				reference.get("url").set(remoteUrl);
 				reference.get("ref").set(branchName);
 				knownReferences.add(reference);
