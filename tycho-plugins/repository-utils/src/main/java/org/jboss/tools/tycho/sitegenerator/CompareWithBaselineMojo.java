@@ -1,3 +1,13 @@
+/*******************************************************************************
+ * Copyright (c) 2015 Red Hat Inc., and others
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *     Mickael Istria (Red Hat Inc.) - initial API and implementation
+ ******************************************************************************/
 package org.jboss.tools.tycho.sitegenerator;
 
 import java.io.File;
@@ -34,7 +44,11 @@ import org.osgi.framework.Version;
 
 @Mojo(defaultPhase=LifecyclePhase.VERIFY, requiresProject=false, name="compare-version-with-baselines")
 public class CompareWithBaselineMojo extends AbstractMojo {
-
+	
+	public static enum ReportBehavior {
+		fail, warn
+	}
+	
 	@Parameter(property="project", readonly=true)
 	private MavenProject project;
 
@@ -43,6 +57,9 @@ public class CompareWithBaselineMojo extends AbstractMojo {
 
 	@Parameter(property="skip")
 	private boolean skip;
+	
+	@Parameter(property="onIllegalVersion", defaultValue="fail")
+	private ReportBehavior onIllegalVersion;
 
 	@Requirement
 	@Component
@@ -88,7 +105,13 @@ public class CompareWithBaselineMojo extends AbstractMojo {
 					
 					getLog().debug("Found " + foundInBaseline.getId() + "/" + foundInBaseline.getVersion() + " with delta: " + delta);
 					if (version.compareTo(baselineVersion) <= 0) {
-						throw new MojoFailureException("Version have moved backwards for (" + id + "/" + version + "). Baseline has " + baselineVersion + ") with delta: " + delta);
+						String message = "Version have moved backwards for (" + id + "/" + version + "). Baseline has " + baselineVersion + ") with delta: " + delta;
+						if (this.onIllegalVersion == ReportBehavior.warn) {
+							getLog().warn(message);
+							return;
+						} else {
+							throw new MojoFailureException(message);
+						}
 					} else if (version.equals(baselineVersion)) {
 						File baselineFile = foundInBaseline.getLocation();
 						File currentFile = null;
@@ -100,10 +123,22 @@ public class CompareWithBaselineMojo extends AbstractMojo {
 							currentFile = reactorProject.getArtifact();
 						}
 						if (!FileUtils.contentEquals(currentFile, baselineFile)) {
-							throw new MojoFailureException("Duplicate version but different content found for (" + id + "/" + version + "). Also exists in baseline, but its content is different.");
+							String message = "Duplicate version but different content found for (" + id + "/" + version + "). Also exists in baseline, but its content is different.";
+							if (this.onIllegalVersion == ReportBehavior.warn) {
+								getLog().warn(message);
+								return;
+							} else {
+								throw new MojoFailureException(message);
+							}
 						}
 					} else if (version.getMajor() == baselineVersion.getMajor() && version.getMinor() == baselineVersion.getMinor() && version.getMicro() == baselineVersion.getMicro()) {
-						throw new MojoFailureException("Only qualifier changed for (" + id + "/" + version + "). Expected to have bigger x.y.z than what is available in baseline (" + baselineVersion + ")");
+						String message = "Only qualifier changed for (" + id + "/" + version + "). Expected to have bigger x.y.z than what is available in baseline (" + baselineVersion + ")";
+						if (this.onIllegalVersion == ReportBehavior.warn) {
+							getLog().warn(message);
+							return;
+						} else {
+							throw new MojoFailureException(message);
+						}
 					}
 				}
 
