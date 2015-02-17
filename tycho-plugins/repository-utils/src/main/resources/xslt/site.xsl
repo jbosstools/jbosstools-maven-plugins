@@ -118,6 +118,8 @@
 				<td class="rowLine" colspan="1">
 				<xsl:if test="count(feature[contains(@id,'jboss')])>0">
 					<a href="site.properties" style="font-size:x-small">site.properties</a>
+					::
+					<a href="buildinfo.json" style="font-size:x-small">buildinfo.json</a>
 				</xsl:if>
 				</td>
 			</tr>

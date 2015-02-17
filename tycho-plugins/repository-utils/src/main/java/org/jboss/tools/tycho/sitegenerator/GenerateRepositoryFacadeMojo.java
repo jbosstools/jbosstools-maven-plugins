@@ -91,15 +91,18 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	}
 
 	public static final Set<String> defaultSystemProperties = new HashSet<String>(Arrays.asList(new String[] {
+		// these are all parameters of the Jenkins job; if not set they'll be null
 		"BUILD_ALIAS",
 		"JOB_NAME",
 		"BUILD_NUMBER",
 		"BUILD_ID",
-		"HUDSON_SLAVE",
 		"RELEASE",
 		"ZIPSUFFIX",
 		"TARGET_PLATFORM_VERSION",
 		"TARGET_PLATFORM_VERSION_MAXIMUM",
+		
+		// these are environment variables so should be valid when run in Jenkins or for local builds
+		"HOSTNAME", // replaces HUDSON_SLAVE
 		"os.name",
 		"os.version",
 		"os.arch",
