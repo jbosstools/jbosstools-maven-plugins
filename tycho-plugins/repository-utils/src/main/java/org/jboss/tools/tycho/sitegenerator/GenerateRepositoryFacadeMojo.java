@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -91,20 +93,26 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	}
 
 	public static final Set<String> defaultSystemProperties = new HashSet<String>(Arrays.asList(new String[] {
+		// these are all parameters of the Jenkins job; if not set they'll be null
 		"BUILD_ALIAS",
 		"JOB_NAME",
 		"BUILD_NUMBER",
 		"BUILD_ID",
-		"HUDSON_SLAVE",
 		"RELEASE",
 		"ZIPSUFFIX",
 		"TARGET_PLATFORM_VERSION",
 		"TARGET_PLATFORM_VERSION_MAXIMUM",
+		"NODE_NAME", // The name of the node the current build is running on
+		
+		// these are environment variables so should be valid when run in Jenkins or for local builds
+		"HOSTNAME", // replaces HUDSON_SLAVE: more portable & means the same thing
+		"WORKSPACE", // likely the same as user.dir, unless -DWORKSPACE= used to override
 		"os.name",
 		"os.version",
 		"os.arch",
 		"java.vendor",
 		"java.version",
+		"user.dir"
 	}));
 
 	private static final String UPSTREAM_ELEMENT = "upstream";
@@ -630,6 +638,21 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			getLog().error("Could not add revision to " + BUILDINFO_JSON + ": not a Git repository");
 		} catch (Exception ex) {
 			throw new MojoFailureException("Could not add revision to " + BUILDINFO_JSON, ex);
+		}
+
+		// get hostname and load into HOSTNAME
+		java.net.InetAddress localMachine;
+		try {
+			localMachine = java.net.InetAddress.getLocalHost();
+			System.setProperty("HOSTNAME",localMachine.getHostName());
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
+		
+		// if WORKSPACE is null, use current directory
+		if (System.getProperty("WORKSPACE") == null || System.getProperty("WORKSPACE").equals(""))
+		{
+			System.setProperty("WORKSPACE",Paths.get("").toAbsolutePath().toString());
 		}
 
 		ModelNode sysProps = new ModelNode();
