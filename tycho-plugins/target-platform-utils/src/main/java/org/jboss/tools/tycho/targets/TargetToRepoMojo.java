@@ -58,6 +58,7 @@ import org.eclipse.tycho.p2.tools.mirroring.facade.MirrorOptions;
  * Mirrors a target file as a p2 repo. Suitable for sharing/caching target/dependency sites.
  *
  * @author mistria
+ * @author rbioteau
  */
 @Mojo(name = "mirror-target-to-repo")
 public class TargetToRepoMojo extends AbstractMojo {
@@ -87,6 +88,24 @@ public class TargetToRepoMojo extends AbstractMojo {
 	@Parameter(defaultValue = "JavaSE-1.7")
     private String executionEnvironment;
 
+	@Parameter(defaultValue = "true")
+    private boolean followStrictOnly;
+
+    @Parameter(defaultValue = "false")
+    private boolean followOnlyFilteredRequirements;
+
+    @Parameter(defaultValue = "true")
+    private boolean includeNonGreedy;
+
+    @Parameter(defaultValue = "true")
+    private boolean includeFeature;
+
+    @Parameter(defaultValue = "true")
+    private boolean includeOptional;
+
+    @Parameter(defaultValue = "false")
+    private boolean latestVersionOnly;
+	
     @Component private Logger logger;
     @Component private EquinoxServiceFactory equinox;
     
@@ -208,14 +227,14 @@ public class TargetToRepoMojo extends AbstractMojo {
 		}
 	}
 
-    private static MirrorOptions createMirrorOptions() {
+    private MirrorOptions createMirrorOptions() {
         MirrorOptions options = new MirrorOptions();
-        options.setFollowOnlyFilteredRequirements(false);
-        options.setFollowStrictOnly(true);
-        options.setIncludeFeatures(true);
-        options.setIncludeNonGreedy(true);
-        options.setIncludeOptional(true);
-        options.setLatestVersionOnly(false);
+        options.setFollowOnlyFilteredRequirements(this.followOnlyFilteredRequirements);
+        options.setFollowStrictOnly(this.followStrictOnly);
+        options.setIncludeFeatures(this.includeFeature);
+        options.setIncludeNonGreedy(this.includeNonGreedy);
+        options.setIncludeOptional(this.includeOptional);
+        options.setLatestVersionOnly(this.latestVersionOnly);
         return options;
     }
 
