@@ -4,9 +4,8 @@
  * This program is made available under the terms of the
  * Eclipse Public License v1.0 which accompanies this distribution,
  * and is available at http://www.eclipse.org/legal/epl-v10.html
- *
  * Contributor:
- *     Mickael Istria (Red Hat, Inc.) - initial API and implementation
+ * Mickael Istria (Red Hat, Inc.) - initial API and implementation
  */
 package org.jboss.tools.tycho.targets;
 
@@ -58,163 +57,191 @@ import org.eclipse.tycho.p2.tools.mirroring.facade.MirrorOptions;
  * Mirrors a target file as a p2 repo. Suitable for sharing/caching target/dependency sites.
  *
  * @author mistria
+ * @author rbioteau
  */
 @Mojo(name = "mirror-target-to-repo")
 public class TargetToRepoMojo extends AbstractMojo {
 
-	@Parameter(property = "project", readonly = true)
+    @Parameter(property = "project", readonly = true)
     private MavenProject project;
 
-	@Parameter(property = "session", readonly = true)
-	private MavenSession session;
+    @Parameter(property = "session", readonly = true)
+    private MavenSession session;
 
-	@Requirement
-	@Component
+    @Requirement
+    @Component
     private RepositorySystem repositorySystem;
 
-	@Parameter
+    @Parameter
     private File sourceTargetFile;
 
-	@Parameter
-	private TargetArtifact sourceTargetArtifact;
+    @Parameter
+    private TargetArtifact sourceTargetArtifact;
 
-	@Parameter(property = "mirror-target-to-repo.includeSources")
+    @Parameter(property = "mirror-target-to-repo.includeSources")
     private boolean includeSources;
 
-	@Parameter(defaultValue = "${project.build.directory}/${project.artifactId}.target.repo")
+    @Parameter(defaultValue = "${project.build.directory}/${project.artifactId}.target.repo")
     private File outputRepository;
-    
-	@Parameter(defaultValue = "JavaSE-1.7")
+
+    @Parameter(defaultValue = "JavaSE-1.7")
     private String executionEnvironment;
 
-    @Component private Logger logger;
-    @Component private EquinoxServiceFactory equinox;
-    
+    @Component
+    private Logger logger;
+    @Component
+    private EquinoxServiceFactory equinox;
+
     private P2ResolverFactory p2Factory;
 
     @Component
     private Logger plexusLogger;
 
-	public void execute() throws MojoExecutionException, MojoFailureException {
-		try {
-			if (this.sourceTargetArtifact != null && this.sourceTargetFile != null) {
-				getLog().debug("sourceTargetArtifact: " + this.sourceTargetArtifact.toString());
-				getLog().debug("sourceTargetFile; " + this.sourceTargetFile.toString());
-				throw new MojoExecutionException("Set either 'sourceTargetArtifact' XOR 'sourceTargetFile'");
-			}
-			if (this.sourceTargetFile == null && this.sourceTargetArtifact == null) {
-				this.sourceTargetFile = new File(this.project.getBasedir(), this.project.getArtifactId() + ".target");
-			}
-			if (this.sourceTargetArtifact != null) {
-				this.sourceTargetFile = this.sourceTargetArtifact.getFile(this.repositorySystem, this.session, this.project);
-			}
-			if (!this.sourceTargetFile.isFile()) {
-				throw new MojoExecutionException("Specified 'targetFile' (value: " + sourceTargetFile + ") is not a valid file");
-			}
-			this.outputRepository.mkdirs();
+    @Parameter(defaultValue = "true")
+    private boolean followStrictOnly;
 
-			final MirrorApplicationService mirrorService = equinox.getService(MirrorApplicationService.class);
+    @Parameter(defaultValue = "false")
+    private boolean followOnlyFilteredRequirements;
 
-			TargetDefinitionFile target = TargetDefinitionFile.read(sourceTargetFile, IncludeSourceMode.ignore);
-	        final RepositoryReferences sourceDescriptor = new RepositoryReferences();
-	        for (final Location loc : target.getLocations()) {
-	        	if (loc instanceof InstallableUnitLocation) {
-	        		for (Repository repo : ((InstallableUnitLocation)loc).getRepositories()) {
-	                    sourceDescriptor.addMetadataRepository(repo.getLocation());
-	                    sourceDescriptor.addArtifactRepository(repo.getLocation());
-	        		}
-	        	}
-	        }
+    @Parameter(defaultValue = "true")
+    private boolean includeNonGreedy;
 
-	        final DestinationRepositoryDescriptor destinationDescriptor = new DestinationRepositoryDescriptor(this.outputRepository, this.sourceTargetFile.getName(), true, false, true);
+    @Parameter(defaultValue = "true")
+    private boolean includeFeature;
 
-	        List<IUDescription> initialIUs = new ArrayList<IUDescription>();
-	        for (final Location loc : target.getLocations()) {
-	        	if (loc instanceof InstallableUnitLocation) {
-	        		for (Unit unit : ((InstallableUnitLocation)loc).getUnits()) {
-	        			initialIUs.add(new IUDescription(unit.getId(), unit.getVersion()));
-	        		}
-	        	}
-	        }	        
-	        mirrorService.mirrorStandalone(sourceDescriptor, destinationDescriptor, initialIUs, createMirrorOptions(), new BuildOutputDirectory(this.project.getBuild().getOutputDirectory()));
-	        
-	        if (this.includeSources) {
-	        	getLog().info("Computing missing sources...");
-	            // create resolver
-	            TargetPlatformConfigurationStub tpConfiguration = new TargetPlatformConfigurationStub();
-	            tpConfiguration.setEnvironments(Collections.singletonList(TargetEnvironment.getRunningEnvironment()));
-	            tpConfiguration.addTargetDefinition(target);
-	            this.p2Factory = this.equinox.getService(P2ResolverFactory.class);
-	            P2Resolver tpResolver = this.p2Factory.createResolver(new MavenLoggerAdapter(this.logger, getLog().isDebugEnabled()));
-	            tpResolver.setEnvironments(Arrays.asList(new TargetEnvironment[] { TargetEnvironment.getRunningEnvironment() }));
-	            
-	            for (Location loc : target.getLocations()) {
-	            	if (loc instanceof InstallableUnitLocation) {
-	            		InstallableUnitLocation p2Loc = (InstallableUnitLocation) loc;
-	            		for (Unit unit : p2Loc.getUnits()) {
-	            			// resolve everything in TP
-	            			tpResolver.addDependency(ArtifactType.TYPE_INSTALLABLE_UNIT, unit.getId(), "[" + unit.getVersion() + "," + unit.getVersion() + "]");
-	            		}
-	            	}
-	            }
-	            P2ResolutionResult result = tpResolver.resolveMetadata(tpConfiguration, this.executionEnvironment);
-	            
-	            Set<DefaultArtifactKey> sourcesFound = new HashSet<DefaultArtifactKey>();
-	            Set<DefaultArtifactKey> regularArtifacts = new HashSet<DefaultArtifactKey>();
-	        	for (Entry entry : result.getArtifacts()) {
-	        		if (entry.getId().endsWith(".source")) {
-	        			sourcesFound.add(new DefaultArtifactKey(entry.getType(), entry.getId().substring(0, entry.getId().length() - ".source".length()), entry.getVersion()));
-	        		} else if (entry.getId().endsWith(".source.feature.group")) {
-	        			sourcesFound.add(new DefaultArtifactKey(entry.getType(), entry.getId().replace(".source.feature.group", ".feature.group"), entry.getVersion()));
-	        		} else {
-	        			regularArtifacts.add(new DefaultArtifactKey(entry.getType(), entry.getId(), entry.getVersion()));
-	        		}
-	        	}
-	        	Set<DefaultArtifactKey> artifactsWithoutSources = new HashSet<DefaultArtifactKey>(regularArtifacts);
-	        	artifactsWithoutSources.removeAll(sourcesFound);
-	        	if (!artifactsWithoutSources.isEmpty()) {
-	        		TargetPlatformConfigurationStub sites = new TargetPlatformConfigurationStub();
-	        		Set<IUDescription> additionalSourceUnits = new HashSet<IUDescription>();
-	        		for (Location loc : target.getLocations()) {
-	        			if (loc instanceof InstallableUnitLocation) {
-	        				InstallableUnitLocation location = (InstallableUnitLocation)loc;
-	        				for (Repository repo : location.getRepositories()) {
-	        					sites.addP2Repository(new MavenRepositoryLocation(repo.getId(), repo.getLocation()));
-	                		}
-	        			}
-	        		}
-	        		TargetPlatform sitesTP = this.p2Factory.getTargetPlatformFactory().createTargetPlatform(sites, new MockExecutionEnvironment(), null, null);
-	        		for (DefaultArtifactKey artifactWithoutSources : artifactsWithoutSources) {
-	        		        String sourceUnitId;
-	        		        if (artifactWithoutSources.getId().endsWith(".feature.jar")) {
-	        		            sourceUnitId = artifactWithoutSources.getId().replace(".feature.jar", ".source.feature.group");
-	        		        } else {
-	        		            sourceUnitId = artifactWithoutSources.getId() + ".source";
-	        		        }
-	        		        String sourceUnitVersion = artifactWithoutSources.getVersion();
-	        			P2ResolutionResult resolvedSource = tpResolver.resolveInstallableUnit(sitesTP, sourceUnitId, "[" + sourceUnitVersion + "," + sourceUnitVersion + "]");
-	        			if (resolvedSource.getArtifacts().size() > 0 || resolvedSource.getNonReactorUnits().size() > 0) {
-	        				additionalSourceUnits.add(new IUDescription(sourceUnitId, sourceUnitVersion));
-	        			}
-	        		}
-	        		if (!additionalSourceUnits.isEmpty()) {
-	        			mirrorService.mirrorStandalone(sourceDescriptor, destinationDescriptor, additionalSourceUnits, createMirrorOptions(), new BuildOutputDirectory(this.project.getBuild().getOutputDirectory()));
-	        		}
-	        	}
-	        }
-		} catch (Exception ex) {
-			throw new MojoExecutionException("Internal error", ex);
-		}
-	}
+    @Parameter(defaultValue = "true")
+    private boolean includeOptional;
 
-    private static MirrorOptions createMirrorOptions() {
-        MirrorOptions options = new MirrorOptions();
-        options.setFollowOnlyFilteredRequirements(false);
-        options.setFollowStrictOnly(true);
-        options.setIncludeFeatures(true);
-        options.setIncludeNonGreedy(true);
-        options.setIncludeOptional(true);
-        options.setLatestVersionOnly(false);
+    @Parameter(defaultValue = "false")
+    private boolean latestVersionOnly;
+
+    @Override
+    public void execute() throws MojoExecutionException, MojoFailureException {
+        try {
+            if (sourceTargetArtifact != null && sourceTargetFile != null) {
+                getLog().debug("sourceTargetArtifact: " + sourceTargetArtifact.toString());
+                getLog().debug("sourceTargetFile; " + sourceTargetFile.toString());
+                throw new MojoExecutionException("Set either 'sourceTargetArtifact' XOR 'sourceTargetFile'");
+            }
+            if (sourceTargetFile == null && sourceTargetArtifact == null) {
+                sourceTargetFile = new File(project.getBasedir(), project.getArtifactId() + ".target");
+            }
+            if (sourceTargetArtifact != null) {
+                sourceTargetFile = sourceTargetArtifact.getFile(repositorySystem, session, project);
+            }
+            if (!sourceTargetFile.isFile()) {
+                throw new MojoExecutionException("Specified 'targetFile' (value: " + sourceTargetFile + ") is not a valid file");
+            }
+            outputRepository.mkdirs();
+
+            final MirrorApplicationService mirrorService = equinox.getService(MirrorApplicationService.class);
+
+            final TargetDefinitionFile target = TargetDefinitionFile.read(sourceTargetFile, IncludeSourceMode.ignore);
+            final RepositoryReferences sourceDescriptor = new RepositoryReferences();
+            for (final Location loc : target.getLocations()) {
+                if (loc instanceof InstallableUnitLocation) {
+                    for (final Repository repo : ((InstallableUnitLocation) loc).getRepositories()) {
+                        sourceDescriptor.addMetadataRepository(repo.getLocation());
+                        sourceDescriptor.addArtifactRepository(repo.getLocation());
+                    }
+                }
+            }
+
+            final DestinationRepositoryDescriptor destinationDescriptor = new DestinationRepositoryDescriptor(outputRepository, sourceTargetFile.getName(),
+                    true, false, true);
+
+            final List<IUDescription> initialIUs = new ArrayList<IUDescription>();
+            for (final Location loc : target.getLocations()) {
+                if (loc instanceof InstallableUnitLocation) {
+                    for (final Unit unit : ((InstallableUnitLocation) loc).getUnits()) {
+                        initialIUs.add(new IUDescription(unit.getId(), unit.getVersion()));
+                    }
+                }
+            }
+            mirrorService.mirrorStandalone(sourceDescriptor, destinationDescriptor, initialIUs, createMirrorOptions(), new BuildOutputDirectory(project
+                    .getBuild().getOutputDirectory()));
+
+            if (includeSources) {
+                getLog().info("Computing missing sources...");
+                // create resolver
+                final TargetPlatformConfigurationStub tpConfiguration = new TargetPlatformConfigurationStub();
+                tpConfiguration.setEnvironments(Collections.singletonList(TargetEnvironment.getRunningEnvironment()));
+                tpConfiguration.addTargetDefinition(target);
+                p2Factory = equinox.getService(P2ResolverFactory.class);
+                final P2Resolver tpResolver = p2Factory.createResolver(new MavenLoggerAdapter(logger, getLog().isDebugEnabled()));
+                tpResolver.setEnvironments(Arrays.asList(new TargetEnvironment[] { TargetEnvironment.getRunningEnvironment() }));
+
+                for (final Location loc : target.getLocations()) {
+                    if (loc instanceof InstallableUnitLocation) {
+                        final InstallableUnitLocation p2Loc = (InstallableUnitLocation) loc;
+                        for (final Unit unit : p2Loc.getUnits()) {
+                            // resolve everything in TP
+                            tpResolver.addDependency(ArtifactType.TYPE_INSTALLABLE_UNIT, unit.getId(), "[" + unit.getVersion() + "," + unit.getVersion() + "]");
+                        }
+                    }
+                }
+                final P2ResolutionResult result = tpResolver.resolveMetadata(tpConfiguration, executionEnvironment);
+
+                final Set<DefaultArtifactKey> sourcesFound = new HashSet<DefaultArtifactKey>();
+                final Set<DefaultArtifactKey> regularArtifacts = new HashSet<DefaultArtifactKey>();
+                for (final Entry entry : result.getArtifacts()) {
+                    if (entry.getId().endsWith(".source")) {
+                        sourcesFound.add(new DefaultArtifactKey(entry.getType(), entry.getId().substring(0, entry.getId().length() - ".source".length()), entry
+                                .getVersion()));
+                    } else if (entry.getId().endsWith(".source.feature.group")) {
+                        sourcesFound.add(new DefaultArtifactKey(entry.getType(), entry.getId().replace(".source.feature.group", ".feature.group"), entry
+                                .getVersion()));
+                    } else {
+                        regularArtifacts.add(new DefaultArtifactKey(entry.getType(), entry.getId(), entry.getVersion()));
+                    }
+                }
+                final Set<DefaultArtifactKey> artifactsWithoutSources = new HashSet<DefaultArtifactKey>(regularArtifacts);
+                artifactsWithoutSources.removeAll(sourcesFound);
+                if (!artifactsWithoutSources.isEmpty()) {
+                    final TargetPlatformConfigurationStub sites = new TargetPlatformConfigurationStub();
+                    final Set<IUDescription> additionalSourceUnits = new HashSet<IUDescription>();
+                    for (final Location loc : target.getLocations()) {
+                        if (loc instanceof InstallableUnitLocation) {
+                            final InstallableUnitLocation location = (InstallableUnitLocation) loc;
+                            for (final Repository repo : location.getRepositories()) {
+                                sites.addP2Repository(new MavenRepositoryLocation(repo.getId(), repo.getLocation()));
+                            }
+                        }
+                    }
+                    final TargetPlatform sitesTP = p2Factory.getTargetPlatformFactory().createTargetPlatform(sites, new MockExecutionEnvironment(), null, null);
+                    for (final DefaultArtifactKey artifactWithoutSources : artifactsWithoutSources) {
+                        String sourceUnitId;
+                        if (artifactWithoutSources.getId().endsWith(".feature.jar")) {
+                            sourceUnitId = artifactWithoutSources.getId().replace(".feature.jar", ".source.feature.group");
+                        } else {
+                            sourceUnitId = artifactWithoutSources.getId() + ".source";
+                        }
+                        final String sourceUnitVersion = artifactWithoutSources.getVersion();
+                        final P2ResolutionResult resolvedSource = tpResolver.resolveInstallableUnit(sitesTP, sourceUnitId, "[" + sourceUnitVersion + ","
+                                + sourceUnitVersion + "]");
+                        if (resolvedSource.getArtifacts().size() > 0 || resolvedSource.getNonReactorUnits().size() > 0) {
+                            additionalSourceUnits.add(new IUDescription(sourceUnitId, sourceUnitVersion));
+                        }
+                    }
+                    if (!additionalSourceUnits.isEmpty()) {
+                        mirrorService.mirrorStandalone(sourceDescriptor, destinationDescriptor, additionalSourceUnits, createMirrorOptions(),
+                                new BuildOutputDirectory(project.getBuild().getOutputDirectory()));
+                    }
+                }
+            }
+        } catch (final Exception ex) {
+            throw new MojoExecutionException("Internal error", ex);
+        }
+    }
+
+    private MirrorOptions createMirrorOptions() {
+        final MirrorOptions options = new MirrorOptions();
+        options.setFollowOnlyFilteredRequirements(followOnlyFilteredRequirements);
+        options.setFollowStrictOnly(followStrictOnly);
+        options.setIncludeFeatures(includeFeature);
+        options.setIncludeNonGreedy(includeNonGreedy);
+        options.setIncludeOptional(includeOptional);
+        options.setLatestVersionOnly(latestVersionOnly);
         return options;
     }
 
