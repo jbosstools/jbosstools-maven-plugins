@@ -198,6 +198,14 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	@Parameter
 	private String p2StatsUrl;
 
+	/**
+	 * Use alternate URL pattern as fallback, if provided. Eg., search
+	 * http://download.jboss.org/jbosstools/mars/snapshots/builds/jbosstools-base_master/latest/all/repo/buildinfo.json instead of
+	 * http://download.jboss.org/jbosstools/mars/snapshots/builds/jbosstools-base_master/buildinfo.json
+	 */
+	@Parameter
+	private String buildInfoJSONPathSuffix;
+
 	@Parameter
 	private Set<String> systemProperties;
 
@@ -584,6 +592,10 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			if (!this.siteTemplateFolder.isDirectory()) {
 				throw new MojoExecutionException("'siteTemplateFolder' not correctly set. " + this.siteTemplateFolder.getAbsolutePath() + " is not a directory");
 			}
+			if (!outputSite.isDirectory())
+			{
+				outputSite.mkdirs();
+			}
 			FileUtils.copyDirectoryStructure(this.siteTemplateFolder, outputSite);
 
 			// verify we have everything we need after copying from the
@@ -697,8 +709,39 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 				} catch (MalformedURLException ex) {
 					throw new MojoFailureException("Incorrect URL: " + upstreamBuildInfoURL, ex);
 				} catch (IOException ex) {
-					getLog().warn("Could not access build info at " + upstreamBuildInfoURL);
-					res.get(repo.getUrl()).set("Build info file not accessible: " + ex.getMessage());
+					supposedBuildInfoURL = repo.getUrl();
+					if (buildInfoJSONPathSuffix != null && !buildInfoJSONPathSuffix.equals("")) {
+						supposedBuildInfoURL = repo.getUrl();
+						if (!supposedBuildInfoURL.endsWith("/")) {
+							supposedBuildInfoURL += "/";
+						}
+						if (!supposedBuildInfoURL.endsWith(buildInfoJSONPathSuffix)) {
+							supposedBuildInfoURL += buildInfoJSONPathSuffix;
+						}
+						if (!supposedBuildInfoURL.endsWith("/")) {
+							supposedBuildInfoURL += "/";
+						}
+						supposedBuildInfoURL += BUILDINFO_JSON;
+						upstreamBuildInfoURL = null;
+						in = null;
+						try {
+							upstreamBuildInfoURL = new URL(supposedBuildInfoURL);
+							in = upstreamBuildInfoURL.openStream();
+							ModelNode obj = ModelNode.fromJSONStream(in);
+							obj.remove(UPSTREAM_ELEMENT); // remove upstream of upstream as it would make a HUGE file
+							res.get(repo.getUrl()).set(obj);
+						} catch (MalformedURLException ex2) {
+							throw new MojoFailureException("Incorrect URL: " + upstreamBuildInfoURL, ex);
+						} catch (IOException ex2) {
+							getLog().warn("Could not access build info at " + upstreamBuildInfoURL + " or " + upstreamBuildInfoURL.toString().replaceAll(buildInfoJSONPathSuffix,""));
+							res.get(repo.getUrl()).set("Build info file not accessible: " + ex.getMessage());
+						} finally {
+							IOUtils.closeQuietly(in);
+						}
+					} else {
+						getLog().warn("Could not access build info at " + upstreamBuildInfoURL + "; try setting <buildInfoJSONPathSuffix>latest/all/repo</buildInfoJSONPathSuffix> in your pom.xml");
+						res.get(repo.getUrl()).set("Build info file not accessible: " + ex.getMessage());
+					}
 				} finally {
 					IOUtils.closeQuietly(in);
 				}
