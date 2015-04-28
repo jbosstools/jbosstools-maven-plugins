@@ -316,7 +316,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 					}*/
 
 					allBuildProperties.put(outputZipName + ".filename", outputZipName);
-					allBuildProperties.put(outputZipName + ".filensize", Long.toString(outputZipName.length()));
+					allBuildProperties.put(outputZipName + ".filesize", Long.toString(outputZipName.length()));
 //					allBuildProperties.put(outputZipName + ".filemd5", md5);
 					zipFiles.add(new File(outputZipName));
 				}

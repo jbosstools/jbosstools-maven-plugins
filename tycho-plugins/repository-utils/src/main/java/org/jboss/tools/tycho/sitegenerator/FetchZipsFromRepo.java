@@ -210,7 +210,7 @@ public class FetchZipsFromRepo extends AbstractMojo {
 						}
 
 						allBuildProperties.put(zipName + ".filename", zip);
-						allBuildProperties.put(zipName + ".filensize", Long.toString(outputZipFile.length()));
+						allBuildProperties.put(zipName + ".filesize", Long.toString(outputZipFile.length()));
 						allBuildProperties.put(zipName + ".filemd5", md5);
 						writtenFiles.add(outputMD5File);
 						writtenFiles.add(outputZipFile);
