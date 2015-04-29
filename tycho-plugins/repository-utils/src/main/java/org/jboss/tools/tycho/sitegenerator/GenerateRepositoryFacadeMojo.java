@@ -735,7 +735,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 							IOUtils.closeQuietly(in);
 						}
 					} else {
-						getLog().warn("Could not access build info at " + upstreamBuildInfoURL + "; try setting <failbackToChild>latest/all/repo</failbackToChild> in your pom.xml");
+						getLog().warn("Could not access build info at " + upstreamBuildInfoURL + "; try setting <fallbackToChild>latest/all/repo</fallbackToChild> in your pom.xml");
 						res.get(repo.getUrl()).set("Build info file not accessible: " + ex.getMessage());
 					}
 				} finally {
