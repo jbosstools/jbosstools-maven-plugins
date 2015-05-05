@@ -17,7 +17,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -34,11 +33,6 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import net.lingala.zip4j.core.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
-import net.lingala.zip4j.model.ZipParameters;
-import net.lingala.zip4j.util.Zip4jConstants;
-
 import org.apache.maven.artifact.manager.WagonManager;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -51,6 +45,11 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.wagon.Wagon;
 import org.apache.maven.wagon.repository.Repository;
 import org.codehaus.plexus.util.FileUtils;
+
+import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+import net.lingala.zip4j.model.ZipParameters;
+import net.lingala.zip4j.util.Zip4jConstants;
 
 /**
  * This class performs the following:
@@ -72,7 +71,7 @@ import org.codehaus.plexus.util.FileUtils;
  * 
  * e) fetch source zips for those SHAs, eg.,
  * https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip and save as
- * jbosstools-base_Alpha2-v20140221-1555-B437_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
+ * jbosstools-base_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
  * 
  * digest file listing:
  * 
@@ -80,7 +79,7 @@ import org.codehaus.plexus.util.FileUtils;
  * 
  * jbosstools-base, org.jboss.tools.usage, 1.2.100.Alpha2-v20140221-1555-B437, 184e18cc3ac7c339ce406974b6a4917f73909cc4,
  * origin/jbosstools-4.1.x@184e18cc3ac7c339ce406974b6a4917f73909cc4, https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip,
- * jbosstools-base_Alpha2-v20140221-1555-B437_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
+ * jbosstools-base_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
  * 
  * f) unpack each source zip and combine them into a single zip
  */
@@ -140,8 +139,13 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 	@Parameter(property = "fetch-sources-from-manifests.outputFolder", defaultValue = "${basedir}/zips")
 	private File outputFolder;
 
+	// the zip file to be created; default is "jbosstools-src.zip" but can override here
 	@Parameter(property = "fetch-sources-from-manifests.sourcesZip", defaultValue = "${project.build.directory}/fullSite/all/jbosstools-src.zip")
 	private File sourcesZip;
+
+	// the folder at the root of the zip; default is "jbosstools-src.zip!sources/" but can override here
+	@Parameter(property = "fetch-sources-from-manifests.sourcesZipRootFolder", defaultValue="sources")
+	private String sourcesZipRootFolder;
 
 	@Parameter(property = "fetch-sources-from-manifests.columnSeparator", defaultValue = ",")
 	private String columnSeparator;
@@ -259,16 +263,15 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 			manifestFile.delete();
 
 			// fetch github source archive for that SHA, eg., https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip
-			// to jbosstools-base_Alpha2-v20140221-1555-B437_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
+			// to jbosstools-base_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
 			String URL = "";
 			String outputZipName = "";
 			try {
 				if (SHA == null || SHA.equals("UNKNOWN")) {
 					getLog().warn("Cannot fetch " + projectName + " sources: no Eclipse-SourceReferences in " + removePrefix(jarFile.toString(), pluginPath) + " " + MANIFEST);
 				} else {
-					String shortQualifier = getQualifier(pluginName, jarFile.toString(), false);
 					URL = "https://github.com/jbosstools/" + projectName + "/archive/" + SHA + ".zip";
-					outputZipName = projectName + "_" + shortQualifier + "_" + SHA + "_sources.zip";
+					outputZipName = projectName + "_" + SHA + "_sources.zip";
 					File outputZipFile = new File(zipsDirectory, outputZipName);
 
 					boolean diduseCache = false;
@@ -303,21 +306,8 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 						doGet(URL, outputZipFile, true);
 					}
 
-					// generate MD5 file too, if necessary
-					/*String md5 = null; // use NULL if we didn't download a file
-					File outputMD5File = new File(outputZipFile.getAbsolutePath() + ".MD5");
-					if (outputZipFile.exists()) {
-						md5 = getMD5(outputZipFile); // if we did download a file, generate MD5
-						if (!outputMD5File.exists()) { // don't write to file if we already have one
-							FileWriter fw = new FileWriter(outputMD5File);
-							fw.write(md5);
-							fw.close();
-						}
-					}*/
-
 					allBuildProperties.put(outputZipName + ".filename", outputZipName);
 					allBuildProperties.put(outputZipName + ".filesize", Long.toString(outputZipName.length()));
-//					allBuildProperties.put(outputZipName + ".filemd5", md5);
 					zipFiles.add(new File(outputZipName));
 				}
 			} catch (Exception ex) {
@@ -388,35 +378,17 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		} catch (ZipException ex) {
 			throw new MojoExecutionException ("Error creating " + combinedZipName, ex);
 		}
+
+		String fullUnzipPath = zipsDirectory.getAbsolutePath() + File.separator + sourcesZipRootFolder;
+
+		// unpack the zips into a temp folder
 		for (File outputFile : zipFiles) {
-			String fullUnzipPath = "";
 			try {
-				String prettyFolderName = outputFile.getName().replaceAll("_sources.zip",""); // jbosstools-openshift_Alpha2-v20150318-1052-B740_89a7dae47ed944b437fb25071f8467a5768fa5b9
-				fullUnzipPath = zipsDirectory.getAbsolutePath() + File.separator + prettyFolderName;
 				String zipFileName = zipsDirectory.getAbsolutePath() + File.separator + outputFile.getName();
 				getLog().debug("Unpacking: " + zipFileName);
 				getLog().debug("Unpack to: " + fullUnzipPath);
 				// unpack zip
 				(new ZipFile(zipFileName)).extractAll(fullUnzipPath);
-				// find subfolder name, eg., directories[0] = jbosstools-openshift-89a7dae47ed944b437fb25071f8467a5768fa5b9
-				File outputZipFolder = new File(fullUnzipPath);
-				String[] directories = outputZipFolder.list(new FilenameFilter() {
-					@Override
-					public boolean accept(File current, String name) { return new File(current, name).isDirectory(); } 
-				}); 
-				String prettyOutputZipFolder = fullUnzipPath + File.separator + prettyFolderName; // /full/path/to/fullSite/all/jbosstools-openshift_Alpha2-v20150318-1052-B740_89a7dae47ed944b437fb25071f8467a5768fa5b9/jbosstools-openshift_Alpha2-v20150318-1052-B740_89a7dae47ed944b437fb25071f8467a5768fa5b9
-				// rename directories[0] to  prettyOutputZipFolder
-				(new File(fullUnzipPath + File.separator + directories[0])).renameTo(new File(prettyOutputZipFolder));
-				// add source contents to combined zip
-				getLog().debug("Pack from: " + prettyOutputZipFolder);
-				combinedZipFile.addFolder(prettyOutputZipFolder, parameters);
-				double filesize = combinedZipFile.getFile().length();
-				getLog().debug("Packed to: " + combinedZipFile.getFile().getAbsolutePath());
-				// this is a long running operation so give some feedback in the log
-				getLog().info(sourcesZip + ": " + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M" : String.format("%.1f", filesize / 1024) + " k"));
-				// delete temp folder
-				getLog().debug("Delete dir: " + fullUnzipPath);
-				FileUtils.deleteDirectory(new File(fullUnzipPath));
 				File zipFile = new File(zipFileName);
 				if (mode == PURGE_ZIPS) {
 					// delete downloaded zip
@@ -431,10 +403,29 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 				}
 			} catch (ZipException ex) {
 				throw new MojoExecutionException ("Error unpacking " + outputFile.toString() + " to " + fullUnzipPath, ex);
-			} catch (IOException ex) {
-				throw new MojoExecutionException ("IO Exception:", ex);
 			}
 		}
+
+		// pack the sources into a new zip
+		try {
+			getLog().debug("Pack from: " + fullUnzipPath);
+			double filesize = combinedZipFile.getFile().length();
+			combinedZipFile.addFolder(fullUnzipPath, parameters);
+			getLog().debug("Packed to: " + combinedZipFile.getFile().getAbsolutePath());
+			// this is a long running operation so give some feedback in the log
+			getLog().info(sourcesZip + ": " + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M" : String.format("%.1f", filesize / 1024) + " k"));
+		} catch (ZipException e) {
+			throw new MojoExecutionException ("Error packing " + combinedZipFile, e);
+		}
+		
+		// delete temp folder with sources
+		try {
+			getLog().debug("Delete dir: " + fullUnzipPath);
+			FileUtils.deleteDirectory(new File(fullUnzipPath));
+		} catch (IOException ex) {
+			throw new MojoExecutionException ("IO Exception:", ex);
+		}
+
 	}
 
 	private String removePrefix(String stringToTrim, String prefix) {
@@ -492,21 +483,6 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		// wagon.removeTransferListener(downloadMonitor);
 		double filesize = outputFile.length();
 		getLog().info("Downloaded:  " + outputFile.getName() + " (" + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M)" : String.format("%.1f", filesize / 1024) + " k)"));
-	}
-
-	private static String getMD5(File outputZipFile) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
-		MessageDigest digest = MessageDigest.getInstance("MD5");
-		InputStream zipIs = new FileInputStream(outputZipFile);
-		byte[] buffer = new byte[8192];
-		int read = 0;
-		while ((read = zipIs.read(buffer)) > 0) {
-			digest.update(buffer, 0, read);
-		}
-		byte[] md5sum = digest.digest();
-		BigInteger bigInt = new BigInteger(1, md5sum);
-		String computedMD5 = bigInt.toString(16);
-		zipIs.close();
-		return computedMD5;
 	}
 
 }
