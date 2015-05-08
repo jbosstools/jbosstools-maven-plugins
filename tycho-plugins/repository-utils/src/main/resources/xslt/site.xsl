@@ -101,8 +101,6 @@
 			</tr>
 			<tr style="background-color:#EEEEEE">
 				<td class="rowLine" colspan="1">
-					<a href="site.xml" style="font-size:x-small">site.xml</a>
-					::
 					<a href="artifacts.jar" style="font-size:x-small">artifacts.jar</a>
 					::
 					<a href="content.jar" style="font-size:x-small">content.jar</a>
@@ -117,9 +115,11 @@
 				</td>
 				<td class="rowLine" colspan="1">
 				<xsl:if test="count(feature[contains(@id,'jboss')])>0">
-					<a href="site.properties" style="font-size:x-small">site.properties</a>
+					<a href="category.xml" style="font-size:x-small">category.xml</a>
 					::
 					<a href="buildinfo.json" style="font-size:x-small">buildinfo.json</a>
+					::
+					<a href="site.properties" style="font-size:x-small">site.properties</a>
 				</xsl:if>
 				</td>
 			</tr>

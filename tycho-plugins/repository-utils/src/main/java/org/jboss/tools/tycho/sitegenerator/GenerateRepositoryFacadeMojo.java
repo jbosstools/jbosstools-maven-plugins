@@ -255,11 +255,11 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
                 }
             }
 
-            File outputSiteXml = generateSiteXml(outputRepository);
+            File outputCategoryXml = generateCategoryXml(outputRepository);
             if (new File(outputRepository, "features").isDirectory()) { //$NON-NLS-1$
-                generateSiteProperties(outputRepository, outputSiteXml);
+                generateSiteProperties(outputRepository, outputCategoryXml);
             }
-            generateWebStuff(outputRepository, outputSiteXml);
+            generateWebStuff(outputRepository, outputCategoryXml);
 		}
 		try {
 			alterContentJar(outputRepository);
@@ -358,7 +358,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		}
 	}
 
-	private void generateWebStuff(File outputRepository, File outputSiteXml) throws TransformerFactoryConfigurationError, MojoExecutionException {
+	private void generateWebStuff(File outputRepository, File outputCategoryXml) throws TransformerFactoryConfigurationError, MojoExecutionException {
 		// Generate index.html
 		try {
 			InputStream siteXsl = getClass().getResourceAsStream("/xslt/site.xsl");
@@ -366,7 +366,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			Transformer transformer = TransformerFactory.newInstance().newTransformer(xsltSource);
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			Result res = new StreamResult(out);
-			transformer.transform(new StreamSource(outputSiteXml), res);
+			transformer.transform(new StreamSource(outputCategoryXml), res);
 			siteXsl.close();
 			this.symbols.put("${site.contents}", out.toString());
 			out.close();
@@ -380,7 +380,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		}
 	}
 
-	private void generateSiteProperties(File outputRepository, File outputSiteXml) throws TransformerFactoryConfigurationError, MojoExecutionException {
+	private void generateSiteProperties(File outputRepository, File outputCategoryXml) throws TransformerFactoryConfigurationError, MojoExecutionException {
 		// Generate site.properties
 		try {
 			InputStream siteXsl = getClass().getResourceAsStream("/xslt/site.properties.xsl");
@@ -388,7 +388,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			Transformer transformer = TransformerFactory.newInstance().newTransformer(xsltSource);
 			FileOutputStream out = new FileOutputStream(new File(outputRepository, "site.properties"));
 			Result res = new StreamResult(out);
-			transformer.transform(new StreamSource(outputSiteXml), res);
+			transformer.transform(new StreamSource(outputCategoryXml), res);
 			siteXsl.close();
 			out.close();
 		} catch (Exception ex) {
@@ -397,11 +397,10 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	}
 
 	/*
-	 * We'll stop creating site.xml ASAP, but it's still used in order to generate list of features
+	 * This version of category.xml (including feature/bundle versions) is used to generate list of features in site.properties and index.html
 	 */
-	@Deprecated
-	private File generateSiteXml(File outputRepository) throws MojoExecutionException {
-		// Generate site.xml
+	private File generateCategoryXml(File outputRepository) throws MojoExecutionException {
+		// Generate category.xml
 		UpdateSite site = null;
 		try {
 			site = UpdateSite.read(this.categoryFile);
@@ -427,17 +426,17 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			}
 		});
 
-		File outputSiteXml = new File(outputRepository, "site.xml");
+		File outputCategoryXml = new File(outputRepository, "category.xml");
 		try {
-			if (!outputSiteXml.exists()) {
-				outputSiteXml.createNewFile();
+			if (!outputCategoryXml.exists()) {
+				outputCategoryXml.createNewFile();
 			}
-			UpdateSite.write(site, outputSiteXml);
+			UpdateSite.write(site, outputCategoryXml);
 		} catch (IOException ex) {
 			ex.printStackTrace();
-			throw new MojoExecutionException("Could not write site.xml to '" + outputSiteXml.getAbsolutePath() + "'", ex);
+			throw new MojoExecutionException("Could not write category.xml to '" + outputCategoryXml.getAbsolutePath() + "'", ex);
 		}
-		return outputSiteXml;
+		return outputCategoryXml;
 	}
 
 	private void alterContentJar(File p2repository) throws FileNotFoundException, IOException, SAXException, ParserConfigurationException, TransformerFactoryConfigurationError,
