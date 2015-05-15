@@ -14,15 +14,10 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
@@ -409,11 +404,10 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		// pack the sources into a new zip
 		try {
 			getLog().debug("Pack from: " + fullUnzipPath);
-			double filesize = combinedZipFile.getFile().length();
 			combinedZipFile.addFolder(fullUnzipPath, parameters);
 			getLog().debug("Packed to: " + combinedZipFile.getFile().getAbsolutePath());
-			// this is a long running operation so give some feedback in the log
-			getLog().info(sourcesZip + ": " + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M" : String.format("%.1f", filesize / 1024) + " k"));
+			double filesize = combinedZipFile.getFile().length();
+			getLog().debug("Pack size: " + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M" : String.format("%.1f", filesize / 1024) + " k"));
 		} catch (ZipException e) {
 			throw new MojoExecutionException ("Error packing " + combinedZipFile, e);
 		}
