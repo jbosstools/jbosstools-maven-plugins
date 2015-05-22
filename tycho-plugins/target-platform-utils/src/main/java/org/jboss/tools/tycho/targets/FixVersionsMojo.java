@@ -60,6 +60,7 @@ public class FixVersionsMojo extends AbstractMojo {
     private Logger plexusLogger;
 
 
+	@SuppressWarnings("deprecation")
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		if (this.targetFile == null) {
 			if (this.project != null && this.project.getPackaging().equals("eclipse-target-definition")) {
