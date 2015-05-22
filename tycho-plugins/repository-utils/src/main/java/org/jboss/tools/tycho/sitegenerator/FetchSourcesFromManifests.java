@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, Red Hat, Inc.
+ * Copyright (c) 2014-2015, Red Hat, Inc.
  * Distributed under license by Red Hat, Inc. All rights reserved.
  * This program is made available under the terms of the
  * Eclipse Public License v1.0 which accompanies this distribution,
@@ -401,7 +401,14 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 			}
 		}
 
-		// pack the sources into a new zip
+		// TODO: JBIDE-19814 - include local sources in jbosstools-project-SHA folder (jbosstools-build-sites or jbdevstudio-product)
+		// TODO: compute SHA from .git metadata if not available from a plugin's MANIFEST.MF
+		
+		// TODO: JBIDE-19798 - include buildinfo.json from target/repository/ or target/fullSite/all/repo/
+		
+		// TODO: include upstream buildinfo.json files from all the projects, too, renamed as jbosstools-projectname-buildinfo.json in root folder
+		
+		// pack the unzipped sources into the new zip
 		try {
 			getLog().debug("Pack from: " + fullUnzipPath);
 			combinedZipFile.addFolder(fullUnzipPath, parameters);
@@ -454,12 +461,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		});
 	}
 
-	// sourced from
-	// https://github.com/maven-download-plugin/maven-download-plugin/blob/master/download-maven-plugin/src/main/java/com/googlecode/WGet.java
-	private void doGet(String url, File outputFile) throws Exception {
-		doGet(url,outputFile,false);
-	}
-
+	// sourced from https://github.com/maven-download-plugin/maven-download-plugin/blob/master/download-maven-plugin/src/main/java/com/googlecode/WGet.java
 	private void doGet(String url, File outputFile, boolean unpack) throws Exception {
 		String[] segments = url.split("/");
 		String file = segments[segments.length - 1];
