@@ -10,14 +10,10 @@ import org.junit.Test;
 public class SystemPropertiesTest {
 
 	@Test
-	public void testHostName() {
+	public void testHostName() throws UnknownHostException {
 		java.net.InetAddress localMachine;
-		try {
-			localMachine = java.net.InetAddress.getLocalHost();
-			System.setProperty("HOSTNAME",localMachine.getHostName());
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
+		localMachine = java.net.InetAddress.getLocalHost();
+		System.setProperty("HOSTNAME",localMachine.getHostName());
 		assertNotNull(System.getProperty("HOSTNAME"));
 	}
 

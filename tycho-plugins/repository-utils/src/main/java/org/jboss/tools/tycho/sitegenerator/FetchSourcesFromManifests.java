@@ -14,6 +14,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -45,6 +46,8 @@ import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
 import net.lingala.zip4j.util.Zip4jConstants;
+
+import org.jboss.tools.tycho.sitegenerator.GenerateRepositoryFacadeMojo;
 
 /**
  * This class performs the following:
@@ -192,129 +195,132 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		String pluginPath = project.getBasedir() + File.separator + "target" + File.separator + "repository" + File.separator + "plugins";
 		String sep = " " + columnSeparator + " ";
 
-		for (String projectName : this.sourceFetchMap.keySet()) {
-			String pluginName = this.sourceFetchMap.get(projectName);
-			// jbosstools-base = org.jboss.tools.common
-			// getLog().info(projectName + " = " + pluginName);
-
-			// find the first matching plugin jar, eg., target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
-			File[] matchingFiles = listFilesMatching(new File(pluginPath), pluginName + "_.+\\.jar");
-			// for (File file : matchingFiles) getLog().debug(file.toString());
-			if (matchingFiles.length < 1) {
-				throw new MojoExecutionException("No matching plugin found in " + pluginPath + " for " + pluginName + "_.+\\.jar.\nCheck your pom.xml for this line: <" + projectName + ">" + pluginName + "</" + projectName + ">");
-			}
-			File jarFile = matchingFiles[0];
-			File manifestFile = null;
-
-			try {
-				FileInputStream fin = new FileInputStream(jarFile);
-				manifestFile = File.createTempFile(MANIFEST, "");
-				OutputStream out = new FileOutputStream(manifestFile);
-				BufferedInputStream bin = new BufferedInputStream(fin);
-				ZipInputStream zin = new ZipInputStream(bin);
-				ZipEntry ze = null;
-				while ((ze = zin.getNextEntry()) != null) {
-					// getLog().info(ze.getName());
-					if (ze.getName().equals("META-INF/" + MANIFEST)) {
-						// getLog().info("Found " + ze.getName() + " in " +
-						// jarFile);
-						byte[] buffer = new byte[8192];
-						int len;
-						while ((len = zin.read(buffer)) != -1) {
-							out.write(buffer, 0, len);
-						}
-						out.close();
-						break;
-					}
+		if (sourceFetchMap == null) {
+			getLog().warn("No <sourceFetchMap> defined in pom. Can't fetch sources without a list of plugins. Did you forget to enable fetch-source-zips profile?");
+		} else {
+			for (String projectName : this.sourceFetchMap.keySet()) {
+				String pluginName = this.sourceFetchMap.get(projectName);
+				// jbosstools-base = org.jboss.tools.common
+				// getLog().info(projectName + " = " + pluginName);
+	
+				// find the first matching plugin jar, eg., target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
+				File[] matchingFiles = listFilesMatching(new File(pluginPath), pluginName + "_.+\\.jar");
+				// for (File file : matchingFiles) getLog().debug(file.toString());
+				if (matchingFiles.length < 1) {
+					throw new MojoExecutionException("No matching plugin found in " + pluginPath + " for " + pluginName + "_.+\\.jar.\nCheck your pom.xml for this line: <" + projectName + ">" + pluginName + "</" + projectName + ">");
 				}
-				zin.close();
-				// getLog().info("Saved " + jarFile + "!/META-INF/" + MANIFEST);
-			} catch (Exception ex) {
-				throw new MojoExecutionException("Error extracting " + MANIFEST + " from " + jarFile, ex);
-			}
-
-			// retrieve the MANIFEST.MF file, eg., org.jboss.tools.usage_1.2.100.Alpha2-v20140221-1555-B437.jar!/META-INF/MANIFEST.MF
-			Manifest manifest;
-			try {
-				manifest = new Manifest(new FileInputStream(manifestFile));
-			} catch (Exception ex) {
-				throw new MojoExecutionException("Error while reading manifest file " + MANIFEST, ex);
-			}
-
-			// parse out the commitId from Eclipse-SourceReferences:
-			// scm:git:https://github.com/jbosstools/jbosstools-base.git;path="usage/plugins/org.jboss.tools.usage";commitId=184e18cc3ac7c339ce406974b6a4917f73909cc4
-			Attributes attr = manifest.getMainAttributes();
-			String ESR = null;
-			String SHA = null;
-			ESR = attr.getValue("Eclipse-SourceReferences");
-			// getLog().info(ESR);
-			if (ESR != null) {
-				SHA = ESR.substring(ESR.lastIndexOf(";commitId=") + 10);
-				// getLog().info(SHA);
-			} else {
-				SHA = "UNKNOWN";
-			}
-			// cleanup
-			manifestFile.delete();
-
-			// fetch github source archive for that SHA, eg., https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip
-			// to jbosstools-base_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
-			String URL = "";
-			String outputZipName = "";
-			try {
-				if (SHA == null || SHA.equals("UNKNOWN")) {
-					getLog().warn("Cannot fetch " + projectName + " sources: no Eclipse-SourceReferences in " + removePrefix(jarFile.toString(), pluginPath) + " " + MANIFEST);
+				File jarFile = matchingFiles[0];
+				File manifestFile = null;
+	
+				try {
+					FileInputStream fin = new FileInputStream(jarFile);
+					manifestFile = File.createTempFile(MANIFEST, "");
+					OutputStream out = new FileOutputStream(manifestFile);
+					BufferedInputStream bin = new BufferedInputStream(fin);
+					ZipInputStream zin = new ZipInputStream(bin);
+					ZipEntry ze = null;
+					while ((ze = zin.getNextEntry()) != null) {
+						// getLog().info(ze.getName());
+						if (ze.getName().equals("META-INF/" + MANIFEST)) {
+							// getLog().info("Found " + ze.getName() + " in " +
+							// jarFile);
+							byte[] buffer = new byte[8192];
+							int len;
+							while ((len = zin.read(buffer)) != -1) {
+								out.write(buffer, 0, len);
+							}
+							out.close();
+							break;
+						}
+					}
+					zin.close();
+					// getLog().info("Saved " + jarFile + "!/META-INF/" + MANIFEST);
+				} catch (Exception ex) {
+					throw new MojoExecutionException("Error extracting " + MANIFEST + " from " + jarFile, ex);
+				}
+	
+				// retrieve the MANIFEST.MF file, eg., org.jboss.tools.usage_1.2.100.Alpha2-v20140221-1555-B437.jar!/META-INF/MANIFEST.MF
+				Manifest manifest;
+				try {
+					manifest = new Manifest(new FileInputStream(manifestFile));
+				} catch (Exception ex) {
+					throw new MojoExecutionException("Error while reading manifest file " + MANIFEST, ex);
+				}
+	
+				// parse out the commitId from Eclipse-SourceReferences:
+				// scm:git:https://github.com/jbosstools/jbosstools-base.git;path="usage/plugins/org.jboss.tools.usage";commitId=184e18cc3ac7c339ce406974b6a4917f73909cc4
+				Attributes attr = manifest.getMainAttributes();
+				String ESR = null;
+				String SHA = null;
+				ESR = attr.getValue("Eclipse-SourceReferences");
+				// getLog().info(ESR);
+				if (ESR != null) {
+					SHA = ESR.substring(ESR.lastIndexOf(";commitId=") + 10);
+					// getLog().info(SHA);
 				} else {
-					URL = "https://github.com/jbosstools/" + projectName + "/archive/" + SHA + ".zip";
-					outputZipName = projectName + "_" + SHA + "_sources.zip";
-					File outputZipFile = new File(zipsDirectory, outputZipName);
-
-					boolean diduseCache = false;
-					if (this.zipCacheFolder != null && this.zipCacheFolder.exists()) {
-						File cachedZip = new File(this.zipCacheFolder, outputZipName);
-						if (cachedZip.exists()) {
-							FileUtils.copyFile(cachedZip, outputZipFile);
-							getLog().debug("Copied " + removePrefix(outputZipFile.getAbsolutePath(), project.getBasedir().toString()));
-							getLog().debug("  From " + removePrefix(cachedZip.getAbsolutePath(), project.getBasedir().toString()));
-							diduseCache = true;
-						}
-					}
-					// scrub out old versions that we don't want in the cache anymore
-					File[] matchingSourceZips = listFilesMatching(zipsDirectory, projectName + "_.+\\.zip");
-					for (int i = 0; i < matchingSourceZips.length; i++) {
-						// don't delete the file we want, only all others matching projectName_.zip
-						if (!outputZipFile.getName().equals(matchingSourceZips[i].getName())) {
-							getLog().warn("Delete " + matchingSourceZips[i].getName());
-							matchingSourceZips[i].delete();
-						}
-					}
-					File[] matchingSourceMD5s = listFilesMatching(zipsDirectory, projectName + "_.+\\.zip\\.MD5");
-					for (int i = 0; i < matchingSourceMD5s.length; i++) {
-						// don't delete the file we want, only all others matching projectName_.zip or .MD5
-						if (!(outputZipFile.getName() + ".MD5").equals(matchingSourceMD5s[i].getName())) {
-							getLog().warn("Delete " + matchingSourceMD5s[i].getName());
-							matchingSourceMD5s[i].delete();
-						}
-					}
-					String outputZipFolder = outputZipFile.toString().replaceAll("_sources.zip","");
-					if (!diduseCache && (!outputZipFile.exists() || !(new File(outputZipFolder).exists()))) {
-						doGet(URL, outputZipFile, true);
-					}
-
-					allBuildProperties.put(outputZipName + ".filename", outputZipName);
-					allBuildProperties.put(outputZipName + ".filesize", Long.toString(outputZipName.length()));
-					zipFiles.add(new File(outputZipName));
+					SHA = "UNKNOWN";
 				}
-			} catch (Exception ex) {
-				throw new MojoExecutionException("Error while downloading github source archive", ex);
+				// cleanup
+				manifestFile.delete();
+	
+				// fetch github source archive for that SHA, eg., https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip
+				// to jbosstools-base_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
+				String URL = "";
+				String outputZipName = "";
+				try {
+					if (SHA == null || SHA.equals("UNKNOWN")) {
+						getLog().warn("Cannot fetch " + projectName + " sources: no Eclipse-SourceReferences in " + removePrefix(jarFile.toString(), pluginPath) + " " + MANIFEST);
+					} else {
+						URL = "https://github.com/jbosstools/" + projectName + "/archive/" + SHA + ".zip";
+						outputZipName = projectName + "_" + SHA + "_sources.zip";
+						File outputZipFile = new File(zipsDirectory, outputZipName);
+	
+						boolean diduseCache = false;
+						if (this.zipCacheFolder != null && this.zipCacheFolder.exists()) {
+							File cachedZip = new File(this.zipCacheFolder, outputZipName);
+							if (cachedZip.exists()) {
+								FileUtils.copyFile(cachedZip, outputZipFile);
+								getLog().debug("Copied " + removePrefix(outputZipFile.getAbsolutePath(), project.getBasedir().toString()));
+								getLog().debug("  From " + removePrefix(cachedZip.getAbsolutePath(), project.getBasedir().toString()));
+								diduseCache = true;
+							}
+						}
+						// scrub out old versions that we don't want in the cache anymore
+						File[] matchingSourceZips = listFilesMatching(zipsDirectory, projectName + "_.+\\.zip");
+						for (int i = 0; i < matchingSourceZips.length; i++) {
+							// don't delete the file we want, only all others matching projectName_.zip
+							if (!outputZipFile.getName().equals(matchingSourceZips[i].getName())) {
+								getLog().warn("Delete " + matchingSourceZips[i].getName());
+								matchingSourceZips[i].delete();
+							}
+						}
+						File[] matchingSourceMD5s = listFilesMatching(zipsDirectory, projectName + "_.+\\.zip\\.MD5");
+						for (int i = 0; i < matchingSourceMD5s.length; i++) {
+							// don't delete the file we want, only all others matching projectName_.zip or .MD5
+							if (!(outputZipFile.getName() + ".MD5").equals(matchingSourceMD5s[i].getName())) {
+								getLog().warn("Delete " + matchingSourceMD5s[i].getName());
+								matchingSourceMD5s[i].delete();
+							}
+						}
+						String outputZipFolder = outputZipFile.toString().replaceAll("_sources.zip","");
+						if (!diduseCache && (!outputZipFile.exists() || !(new File(outputZipFolder).exists()))) {
+							doGet(URL, outputZipFile, true);
+						}
+	
+						allBuildProperties.put(outputZipName + ".filename", outputZipName);
+						allBuildProperties.put(outputZipName + ".filesize", Long.toString(outputZipName.length()));
+						zipFiles.add(new File(outputZipName));
+					}
+				} catch (Exception ex) {
+					throw new MojoExecutionException("Error while downloading github source archive", ex);
+				}
+	
+				// github project, plugin, version, SHA, origin/branch@SHA, remote zipfile, local zipfile
+				String revisionLine = projectName + sep + pluginName + sep + getQualifier(pluginName, jarFile.toString(), true) + sep + SHA + sep + "origin/" + branch + "@" + SHA + sep + URL + sep + outputZipName + "\n";
+				// getLog().info(revisionLine);
+				sb.append(revisionLine);
 			}
-
-			// github project, plugin, version, SHA, origin/branch@SHA, remote zipfile, local zipfile
-			String revisionLine = projectName + sep + pluginName + sep + getQualifier(pluginName, jarFile.toString(), true) + sep + SHA + sep + "origin/" + branch + "@" + SHA + sep + URL + sep + outputZipName + "\n";
-			// getLog().info(revisionLine);
-			sb.append(revisionLine);
 		}
-		
 		// JBDS-3364 JBDS-3208 JBIDE-19467 when not using publish.sh, unpack downloaded source zips and combine them into a single zip
 		createCombinedZipFile(zipFiles, CACHE_ZIPS);
 
@@ -375,6 +381,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		}
 
 		String fullUnzipPath = zipsDirectory.getAbsolutePath() + File.separator + sourcesZipRootFolder;
+		(new File(fullUnzipPath)).mkdirs();
 
 		// unpack the zips into a temp folder
 		for (File outputFile : zipFiles) {
@@ -401,14 +408,83 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 			}
 		}
 
-		// TODO: JBIDE-19814 - include local sources in jbosstools-project-SHA folder (jbosstools-build-sites or jbdevstudio-product)
-		// TODO: compute SHA from .git metadata if not available from a plugin's MANIFEST.MF
+		// TODO: extract whole process of getting local sources into a zip into a new mojo that can be called by ALL aggregates, not just jbosstools site (reusable for JBDS and other projects too)
+		// JBIDE-19814 - include local sources in jbosstools-project-SHA folder (jbosstools-build-sites or jbdevstudio-product)
+		// get project name & SHA (from .git metadata) - needed for sourcesZipRootFolder/projectName-SHA folder
+	    Properties properties = new Properties();
+	    String projectURL = null;
+	    String projectName = null;
+	    String projectSHA = null;
+	      try {
+	    	  //properties.load(getClass().getClassLoader().getResourceAsStream("git.properties")); // local version for junit tests
+	    	  properties.load(new FileInputStream(this.project.getBuild().getDirectory() + File.separator + "git.properties")); // as defined by build-sites/aggregate/site/pom.xml
+	    	  getLog().debug("git.remote.origin.url = " + properties.get("git.remote.origin.url").toString()); // git@github.com:jbosstools/jbosstools-build-sites.git
+	    	  projectURL = properties.get("git.remote.origin.url").toString();
+	    	  projectName = projectURL.replaceAll(".+/([^/]+).git","$1");
+	    	  getLog().debug("git.commit.id = " + properties.get("git.commit.id").toString()); //5bfba37d042200ae71089678b6a441b57dd00d1f
+	    	  projectSHA = properties.get("git.commit.id").toString();
+		} catch (IOException ex) {
+			throw new MojoExecutionException ("Error loading " + this.project.getBuild().getDirectory() + File.separator + "git.properties", ex);
+		}
+
+	    // Note: trailing slash is mandatory here so that subdir is created within the git archive zip
+	    String localCleanSourcesDir = null;
+	    if (projectName != null) {
+	    	if (projectSHA != null) {
+	    		localCleanSourcesDir = sourcesZipRootFolder + "/" + projectName + "-" + projectSHA + "/";
+	    	} else {
+	    		// this should never happen
+	    		localCleanSourcesDir = sourcesZipRootFolder + "/" + projectName + "-" + "local/";
+	    	}
+	    } else {
+    		// this should never happen
+	    	localCleanSourcesDir = sourcesZipRootFolder + "/projectName-local/";
+	    }
+	    getLog().debug("localCleanSourcesDir = " + localCleanSourcesDir);
+	    
+		File repoRoot = null;
+		try {
+			repoRoot = GenerateRepositoryFacadeMojo.findRepoRoot(this.project.getBasedir());
+		} catch (FileNotFoundException ex) {
+			throw new MojoExecutionException ("Repo root not found in " + this.project.getBasedir(), ex);
+		}
+		getLog().debug("repoRoot = " + repoRoot);
+			    
+		// clone local sources into combinedZipFile (dirty files revert to their clean state)
+	    getLog().info("cd " + repoRoot + "; git archive --prefix=" + localCleanSourcesDir + " -o " + combinedZipFile.getFile().getAbsolutePath() + " HEAD");
+	    String command = "git archive --prefix=" + localCleanSourcesDir + " -o " + combinedZipFile.getFile().getAbsolutePath() + " HEAD";
+	    try {
+	    	// Note: this can be run from any subfolder in the project tree, but if we run from the root we get everything (not just site/ but jbosstools-build-sites/aggregate/site/)
+			Runtime.getRuntime().exec(command, null, repoRoot);
+			getLog().debug("Packed to: " + combinedZipFile.getFile().getAbsolutePath());
+			double filesize = combinedZipFile.getFile().length();
+			getLog().debug("Pack size: " + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M" : String.format("%.1f", filesize / 1024) + " k"));
+		} catch (IOException ex) {
+			throw new MojoExecutionException ("Error cloning from " + repoRoot.toString() + " to " + combinedZipFile.getFile().getAbsolutePath(), ex);
+		}
 		
-		// TODO: JBIDE-19798 - include buildinfo.json from target/repository/ or target/fullSite/all/repo/
-		
-		// TODO: include upstream buildinfo.json files from all the projects, too, renamed as jbosstools-projectname-buildinfo.json in root folder
-		
-		// pack the unzipped sources into the new zip
+		// JBIDE-19798 - copy target/buildinfo/buildinfo*.json into sourcesZipRootFolder/buildinfo/
+		File buildinfoFolder = new File(this.project.getBuild().getDirectory(), "buildinfo");
+		if (buildinfoFolder.isDirectory()) {
+			try {
+				File buildinfoFolderCopy = new File(fullUnzipPath,"buildinfo");
+				FileUtils.copyDirectory(buildinfoFolder, buildinfoFolderCopy);
+				getLog().debug("Pack from: " + buildinfoFolderCopy);
+				
+				// remove dupe buildinfo/buildinfo_jbosstools-build-sites.json if projectName = jbosstools-build-sites (should not have an upstream that's the same as the local project)
+				File dupeUpstreamBuildinfoFile = new File (buildinfoFolderCopy + File.separator + "buildinfo_" + projectName  + ".json");
+			    if (dupeUpstreamBuildinfoFile.isFile())
+			    {
+			    	dupeUpstreamBuildinfoFile.delete();
+			    }
+			} catch (IOException e) {
+				throw new MojoExecutionException ("Error copying buildinfo files to " + fullUnzipPath + File.separator + "buildinfo", e);
+			}
+		} else {
+			getLog().warn("No buildinfo files found in " + buildinfoFolder.toString());
+		}
+
+		// add the unzipped upstream sources & buildinfo into the existing local sources zip
 		try {
 			getLog().debug("Pack from: " + fullUnzipPath);
 			combinedZipFile.addFolder(fullUnzipPath, parameters);
@@ -418,7 +494,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		} catch (ZipException e) {
 			throw new MojoExecutionException ("Error packing " + combinedZipFile, e);
 		}
-		
+
 		// delete temp folder with sources
 		try {
 			getLog().debug("Delete dir: " + fullUnzipPath);
@@ -428,7 +504,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		}
 
 	}
-
+	
 	private String removePrefix(String stringToTrim, String prefix) {
 		return stringToTrim.substring(stringToTrim.lastIndexOf(prefix) + prefix.length() + 1);
 	}

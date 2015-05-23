@@ -65,23 +65,44 @@
 			<artifactId>org.eclipse.jgit</artifactId>
 			<version>3.6.0.201411121045-m1</version>
 		</dependency>
-		<!-- Available under Apache License 2.0. http://www.lingala.net/zip4j/about.php  -->
+		<!-- Available under Apache License 2.0. http://www.lingala.net/zip4j/about.php -->
 		<dependency>
-		    <groupId>net.lingala.zip4j</groupId>
-		    <artifactId>zip4j</artifactId>
-		    <version>1.3.2</version>
+			<groupId>net.lingala.zip4j</groupId>
+			<artifactId>zip4j</artifactId>
+			<version>1.3.2</version>
+		</dependency>
+		<!-- Available under GNU LESSER GENERAL PUBLIC LICENSE Version 3, 29 June 
+			2007 https://github.com/ktoso/maven-git-commit-id-plugin/blob/master/LICENSE -->
+		<dependency>
+			<groupId>pl.project13.maven</groupId>
+			<artifactId>git-commit-id-plugin</artifactId>
+			<version>2.1.13</version>
 		</dependency>
 	</dependencies>
 
-	<!-- build>
-    	<extensions>
-			<extension>
-				<groupId>org.apache.maven.wagon</groupId>
-				<artifactId>wagon-http</artifactId>
-				<version>2.4</version>
-			</extension>
-		</extensions>
-	</build-->
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>pl.project13.maven</groupId>
+				<artifactId>git-commit-id-plugin</artifactId>
+				<version>2.1.13</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>revision</goal>
+						</goals>
+					</execution>
+				</executions>
+				<!-- see https://github.com/ktoso/maven-git-commit-id-plugin#using-the-plugin -->
+				<configuration>
+					<dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+				    <generateGitPropertiesFile>true</generateGitPropertiesFile>
+				    <!-- The path for the to be generated properties file, it's relative to ${project.basedir} -->
+				    <generateGitPropertiesFilename>src/test/resources/git.properties</generateGitPropertiesFilename>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 	<repositories>
 		<repository>

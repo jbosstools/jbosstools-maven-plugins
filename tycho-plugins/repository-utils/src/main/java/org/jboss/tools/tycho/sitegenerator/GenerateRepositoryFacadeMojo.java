@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2012-2014, Red Hat, Inc.
+ * Copyright (c) 2012-2015, Red Hat, Inc.
  * Distributed under license by Red Hat, Inc. All rights reserved.
  * This program is made available under the terms of the
  * Eclipse Public License v1.0 which accompanies this distribution,
@@ -75,6 +75,7 @@ import org.eclipse.tycho.model.UpdateSite.SiteFeatureRef;
 import org.eclipse.tycho.packaging.AbstractTychoPackagingMojo;
 import org.eclipse.tycho.packaging.UpdateSiteAssembler;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -94,6 +95,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
 	public static final Set<String> defaultSystemProperties = new HashSet<String>(Arrays.asList(new String[] {
 		// these are all parameters of the Jenkins job; if not set they'll be null
+		// TODO should default to null or "" ?
 		"BUILD_ALIAS",
 		"JOB_NAME",
 		"BUILD_NUMBER",
@@ -232,6 +234,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		// ${update.site.description}
 
 		File outputRepository = new File(this.project.getBuild().getDirectory(), "repository");
+		File buildinfoFolder = new File(this.project.getBuild().getDirectory(), "buildinfo");
 
 		// If a siteTemplateFolder is set, pull index.html and site.css from
 		// there; otherwise use defaults
@@ -281,7 +284,9 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			}
 		}
 
-		createBuildInfo(outputRepository);
+		// collect buildinfo.json files from upstream and store them in target/buildinfo/
+		// also save a copy of the merged buildinfo.json in target/repository/
+		createBuildInfo(outputRepository, buildinfoFolder);
 
 		File repoZipFile = new File(this.project.getBuild().getDirectory(), this.project.getArtifactId() + "-" + this.project.getVersion() + ".zip");
 		repoZipFile.delete();
@@ -294,7 +299,6 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		} catch (IOException ex) {
 			throw new MojoFailureException("Could not create " + repoZipFile.getName(), ex);
 		}
-
 	}
 
 	private void createCompositeReferences(File outputRepository, List<String> associateSites2) throws IOException {
@@ -634,20 +638,19 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		}
 	}
 
-
 	/**
 	 * @param outputRepository
 	 * @throws MojoFailureException
 	 * @throws MojoExecutionException
 	 */
-	private void createBuildInfo(File outputRepository) throws MojoFailureException, MojoExecutionException {
+	private void createBuildInfo(File outputRepository, File buildinfoFolder) throws MojoFailureException, MojoExecutionException {
 		ModelNode jsonProperties = new ModelNode();
 		jsonProperties.get("timestamp").set(System.currentTimeMillis()); // TODO get it from build metadata
 
 		try {
 			jsonProperties.get("revision").set(createRevisionObject());
 		} catch (FileNotFoundException ex) {
-			getLog().error("Could not add revision to " + BUILDINFO_JSON + ": not a Git repository");
+			getLog().error("Could not add revision to " + BUILDINFO_JSON + ": not a Git repository", ex);
 		} catch (Exception ex) {
 			throw new MojoFailureException("Could not add revision to " + BUILDINFO_JSON, ex);
 		}
@@ -671,23 +674,26 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		for (String propertyName : this.systemProperties) {
 			sysProps.get(propertyName).set(String.valueOf(System.getProperty(propertyName)));
 		}
+
 		jsonProperties.get("properties").set(sysProps);
 
 		try {
-			jsonProperties.get(UPSTREAM_ELEMENT).set(aggregateUpstreamMetadata());
+			jsonProperties.get(UPSTREAM_ELEMENT).set(aggregateUpstreamMetadata(buildinfoFolder));
 		} catch (Exception ex) {
-			throw new MojoExecutionException("Could not get upstream metadata");
+			throw new MojoExecutionException("Could not get upstream metadata", ex);
 		}
 
-		File jsonFile = new File(outputRepository, BUILDINFO_JSON);
 		try {
-			FileUtils.fileWrite(jsonFile, jsonProperties.toJSONString(false));
+			// put buildinfo.json inside the target/buildinfo/ folder
+			FileUtils.fileWrite(new File(buildinfoFolder, BUILDINFO_JSON), jsonProperties.toJSONString(false));
+			// put a copy inside the target/repository/ folder (and site zip)
+			FileUtils.fileWrite(new File(outputRepository, BUILDINFO_JSON), jsonProperties.toJSONString(false));
 		} catch (Exception ex) {
 			throw new MojoFailureException("Could not generate properties file", ex);
 		}
 	}
 
-	private ModelNode aggregateUpstreamMetadata() throws MojoFailureException {
+	private ModelNode aggregateUpstreamMetadata(File buildinfoFolder) throws MojoFailureException {
 		List<?> repos = this.project.getRepositories();
 		ModelNode res = new ModelNode();
 		for (Object item : repos) {
@@ -702,9 +708,11 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 				InputStream in = null;
 				ModelNode obj = null;
 				try {
+					getLog().debug("Read JSON (1) from: " + supposedBuildInfoURL);
 					upstreamBuildInfoURL = new URL(supposedBuildInfoURL);
 					in = upstreamBuildInfoURL.openStream();
-					obj = ModelNode.fromJSONStream(in);					
+					obj = ModelNode.fromJSONStream(in);
+					writeUpstreamBuildinfoJSONFile(obj, buildinfoFolder);
 				} catch (MalformedURLException ex) {
 					throw new MojoFailureException("Incorrect URL: " + upstreamBuildInfoURL, ex);
 				} catch (IOException ex) {
@@ -722,9 +730,11 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 						}
 						supposedBuildInfoURL += BUILDINFO_JSON;
 						try {
+							getLog().debug("Read JSON (2) from: " + supposedBuildInfoURL);
 							upstreamBuildInfoURL = new URL(supposedBuildInfoURL);
 							in = upstreamBuildInfoURL.openStream();
 							obj = ModelNode.fromJSONStream(in);
+							writeUpstreamBuildinfoJSONFile(obj, buildinfoFolder);
 						} catch (MalformedURLException ex2) {
 							throw new MojoFailureException("Incorrect URL: " + upstreamBuildInfoURL, ex);
 						} catch (IOException ex2) {
@@ -750,15 +760,41 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		return res;
 	}
 
+	// write upstream buildinfo.json files into target/buildinfo/ folder
+	private void writeUpstreamBuildinfoJSONFile(ModelNode obj, File buildinfoFolder) throws MojoFailureException {
+		String projectName;
+		projectName = getProjectName(obj);
+		if (projectName != null)
+		{
+			String upstreamJSONFile = buildinfoFolder.toString() + File.separator + "buildinfo_" + projectName + ".json";
+			getLog().debug("Save to: " + upstreamJSONFile);
+			try {
+				buildinfoFolder.mkdirs();
+				FileUtils.fileWrite(new File(upstreamJSONFile), obj.toJSONString(false));
+			} catch (Exception ex) {
+				throw new MojoFailureException("Could not save JSON to " + upstreamJSONFile, ex);
+			}
+		}
+	}
+
+	// for a given JSON object, find /revision/knownReferences[0]/url, then extract the project name from the git repo URL
+	private String getProjectName(ModelNode obj) {
+		String projectURL = null;
+		String projectName = null;
+		for (Property prop: obj.get("revision").asPropertyList()) {
+			if (projectURL == null && prop.getName().equals("knownReferences")) { // this is a ModelNode; want the zeroth named key "url"
+				projectURL=prop.getValue().asList().get(0).get("url").asString();
+				getLog().debug("Upstream repo: " + projectURL);
+				projectName=projectURL.replaceAll(".+/([^/]+).git","$1");
+				getLog().debug("Upstream proj: " + projectName);
+			}
+		}
+		return projectName;
+	}
+
 	private ModelNode createRevisionObject() throws IOException, FileNotFoundException {
 		ModelNode res = new ModelNode();
-		File repoRoot = this.project.getBasedir();
-		while (! new File(repoRoot, ".git").isDirectory()) {
-			repoRoot = repoRoot.getParentFile();
-		}
-		if (repoRoot == null) {
-			throw new FileNotFoundException("Could not find a Git repository (with a .git child folder)");
-		}
+		File repoRoot = findRepoRoot(this.project.getBasedir());
 		FileRepositoryBuilder builder = new FileRepositoryBuilder();
 		Repository gitRepo = builder.setGitDir(new File(repoRoot, ".git"))
 		  .readEnvironment() // scan environment GIT_* variables
@@ -785,5 +821,15 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		}
 		res.get("knownReferences").set(knownReferences);
 		return res;
+	}
+
+	protected static File findRepoRoot(File repoRoot) throws FileNotFoundException {
+		while (! new File(repoRoot, ".git").isDirectory()) {
+			repoRoot = repoRoot.getParentFile();
+		}
+		if (repoRoot == null) {
+			throw new FileNotFoundException("Could not find a Git repository (with a .git child folder) in " + repoRoot);
+		}
+		return repoRoot;
 	}
 }
