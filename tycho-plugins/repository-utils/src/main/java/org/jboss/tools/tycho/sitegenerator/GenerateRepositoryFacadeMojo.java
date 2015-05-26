@@ -235,6 +235,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
 		File outputRepository = new File(this.project.getBuild().getDirectory(), "repository");
 		File buildinfoFolder = new File(this.project.getBuild().getDirectory(), "buildinfo");
+		buildinfoFolder.mkdirs();
 
 		// If a siteTemplateFolder is set, pull index.html and site.css from
 		// there; otherwise use defaults
