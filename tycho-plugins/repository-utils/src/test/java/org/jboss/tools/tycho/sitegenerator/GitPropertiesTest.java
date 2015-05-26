@@ -21,7 +21,9 @@ public class GitPropertiesTest {
 	@Test
 	public void testOriginUrl() throws IOException {
 		properties.load(getClass().getClassLoader().getResourceAsStream("git.properties"));
-	  	assertNotNull(properties.get("git.remote.origin.url").toString());
-	  	assertEquals("git@github.com:jbosstools/jbosstools-maven-plugins.git", properties.get("git.remote.origin.url").toString());
+		// could be git@github.com:jbosstools/jbosstools... or git://github.com/jbosstools/jbosstools...
+		String projectURL = properties.get("git.remote.origin.url").toString();
+	  	String projectName = projectURL.replaceAll(".+/([^/]+).git","$1");
+	  	assertEquals("jbosstools-maven-plugins", projectName);
 	}
 }
