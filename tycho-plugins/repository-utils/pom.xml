@@ -65,14 +65,7 @@
 			<artifactId>org.eclipse.jgit</artifactId>
 			<version>3.6.0.201411121045-m1</version>
 		</dependency>
-		<!-- Available under Apache License 2.0. http://www.lingala.net/zip4j/about.php -->
-		<dependency>
-			<groupId>net.lingala.zip4j</groupId>
-			<artifactId>zip4j</artifactId>
-			<version>1.3.2</version>
-		</dependency>
-		<!-- Available under GNU LESSER GENERAL PUBLIC LICENSE Version 3, 29 June 
-			2007 https://github.com/ktoso/maven-git-commit-id-plugin/blob/master/LICENSE -->
+ 		<!-- Available under GNU LESSER GENERAL PUBLIC LICENSE Version 3, 29 June 2007 https://github.com/ktoso/maven-git-commit-id-plugin/blob/master/LICENSE -->
 		<dependency>
 			<groupId>pl.project13.maven</groupId>
 			<artifactId>git-commit-id-plugin</artifactId>

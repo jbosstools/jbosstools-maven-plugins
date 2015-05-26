@@ -11,6 +11,7 @@
 package org.jboss.tools.tycho.sitegenerator;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -19,6 +20,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
@@ -27,7 +29,10 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.maven.artifact.manager.WagonManager;
 import org.apache.maven.plugin.AbstractMojo;
@@ -41,13 +46,6 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.wagon.Wagon;
 import org.apache.maven.wagon.repository.Repository;
 import org.codehaus.plexus.util.FileUtils;
-
-import net.lingala.zip4j.core.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
-import net.lingala.zip4j.model.ZipParameters;
-import net.lingala.zip4j.util.Zip4jConstants;
-
-import org.jboss.tools.tycho.sitegenerator.GenerateRepositoryFacadeMojo;
 
 /**
  * This class performs the following:
@@ -369,19 +367,10 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 			throws MojoExecutionException {
 		File zipsDirectory = new File(this.outputFolder, "all");
 		String combinedZipName = sourcesZip.getAbsolutePath();
-		ZipFile combinedZipFile = null;
-		ZipParameters parameters = new ZipParameters();
-		parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
-		parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_FAST);
-		parameters.setEncryptFiles(false);
-		try {
-			combinedZipFile = new ZipFile(combinedZipName);
-		} catch (ZipException ex) {
-			throw new MojoExecutionException ("Error creating " + combinedZipName, ex);
-		}
-
+		File combinedZipFile = new File(combinedZipName);
 		String fullUnzipPath = zipsDirectory.getAbsolutePath() + File.separator + sourcesZipRootFolder;
-		(new File(fullUnzipPath)).mkdirs();
+		File fullUnzipDir = new File(fullUnzipPath);
+		fullUnzipDir.mkdirs();
 
 		// unpack the zips into a temp folder
 		for (File outputFile : zipFiles) {
@@ -390,7 +379,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 				getLog().debug("Unpacking: " + zipFileName);
 				getLog().debug("Unpack to: " + fullUnzipPath);
 				// unpack zip
-				(new ZipFile(zipFileName)).extractAll(fullUnzipPath);
+				unzipToDirectory(zipFileName,fullUnzipPath);
 				File zipFile = new File(zipFileName);
 				if (mode == PURGE_ZIPS) {
 					// delete downloaded zip
@@ -405,6 +394,8 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 				}
 			} catch (ZipException ex) {
 				throw new MojoExecutionException ("Error unpacking " + outputFile.toString() + " to " + fullUnzipPath, ex);
+			} catch (IOException ex) {
+				throw new MojoExecutionException ("Error unpacking " + outputFile.toString() + " to " + fullUnzipPath, ex);
 			}
 		}
 
@@ -416,9 +407,8 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 	    String projectName = null;
 	    String projectSHA = null;
 	      try {
-	    	  //properties.load(getClass().getClassLoader().getResourceAsStream("git.properties")); // local version for junit tests
 	    	  properties.load(new FileInputStream(this.project.getBuild().getDirectory() + File.separator + "git.properties")); // as defined by build-sites/aggregate/site/pom.xml
-	    	  getLog().debug("git.remote.origin.url = " + properties.get("git.remote.origin.url").toString()); // git@github.com:jbosstools/jbosstools-build-sites.git
+	    	  getLog().debug("git.remote.origin.url = " + properties.get("git.remote.origin.url").toString()); // could be git@github.com:jbosstools/jbosstools... or git://github.com/jbosstools/jbosstools...
 	    	  projectURL = properties.get("git.remote.origin.url").toString();
 	    	  projectName = projectURL.replaceAll(".+/([^/]+).git","$1");
 	    	  getLog().debug("git.commit.id = " + properties.get("git.commit.id").toString()); //5bfba37d042200ae71089678b6a441b57dd00d1f
@@ -433,15 +423,13 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 	    	if (projectSHA != null) {
 	    		localCleanSourcesDir = sourcesZipRootFolder + "/" + projectName + "-" + projectSHA + "/";
 	    	} else {
-	    		// this should never happen
-	    		localCleanSourcesDir = sourcesZipRootFolder + "/" + projectName + "-" + "local/";
+				throw new MojoExecutionException ("Could not compute projectSHA!");
 	    	}
 	    } else {
-    		// this should never happen
-	    	localCleanSourcesDir = sourcesZipRootFolder + "/projectName-local/";
+			throw new MojoExecutionException ("Could not compute projectName or projectSHA!");
 	    }
 	    getLog().debug("localCleanSourcesDir = " + localCleanSourcesDir);
-	    
+
 		File repoRoot = null;
 		try {
 			repoRoot = GenerateRepositoryFacadeMojo.findRepoRoot(this.project.getBasedir());
@@ -449,20 +437,20 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 			throw new MojoExecutionException ("Repo root not found in " + this.project.getBasedir(), ex);
 		}
 		getLog().debug("repoRoot = " + repoRoot);
-			    
+
 		// clone local sources into combinedZipFile (dirty files revert to their clean state)
-	    getLog().info("cd " + repoRoot + "; git archive --prefix=" + localCleanSourcesDir + " -o " + combinedZipFile.getFile().getAbsolutePath() + " HEAD");
-	    String command = "git archive --prefix=" + localCleanSourcesDir + " -o " + combinedZipFile.getFile().getAbsolutePath() + " HEAD";
+	    getLog().info("cd " + repoRoot + "; git archive --prefix=" + localCleanSourcesDir + " -o " + combinedZipFile.getAbsolutePath() + " HEAD");
+	    String command = "git archive --prefix=" + localCleanSourcesDir + " -o " + combinedZipFile.getAbsolutePath() + " HEAD";
 	    try {
 	    	// Note: this can be run from any subfolder in the project tree, but if we run from the root we get everything (not just site/ but jbosstools-build-sites/aggregate/site/)
 			Runtime.getRuntime().exec(command, null, repoRoot);
-			getLog().debug("Packed to: " + combinedZipFile.getFile().getAbsolutePath());
-			double filesize = combinedZipFile.getFile().length();
+			getLog().debug("Packed to: " + combinedZipFile.getAbsolutePath());
+			double filesize = combinedZipFile.length();
 			getLog().debug("Pack size: " + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M" : String.format("%.1f", filesize / 1024) + " k"));
 		} catch (IOException ex) {
-			throw new MojoExecutionException ("Error cloning from " + repoRoot.toString() + " to " + combinedZipFile.getFile().getAbsolutePath(), ex);
+			throw new MojoExecutionException ("Error cloning from " + repoRoot.toString() + " to " + combinedZipFile.getAbsolutePath(), ex);
 		}
-		
+
 		// JBIDE-19798 - copy target/buildinfo/buildinfo*.json into sourcesZipRootFolder/buildinfo/
 		File buildinfoFolder = new File(this.project.getBuild().getDirectory(), "buildinfo");
 		if (buildinfoFolder.isDirectory()) {
@@ -487,11 +475,11 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		// add the unzipped upstream sources & buildinfo into the existing local sources zip
 		try {
 			getLog().debug("Pack from: " + fullUnzipPath);
-			combinedZipFile.addFolder(fullUnzipPath, parameters);
-			getLog().debug("Packed to: " + combinedZipFile.getFile().getAbsolutePath());
-			double filesize = combinedZipFile.getFile().length();
+			zipDirectory(fullUnzipDir.getParentFile(), combinedZipFile);
+			getLog().debug("Packed to: " + combinedZipFile.getAbsolutePath());
+			double filesize = combinedZipFile.length();
 			getLog().debug("Pack size: " + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M" : String.format("%.1f", filesize / 1024) + " k"));
-		} catch (ZipException e) {
+		} catch (IOException e) {
 			throw new MojoExecutionException ("Error packing " + combinedZipFile, e);
 		}
 
@@ -505,6 +493,80 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 
 	}
 	
+	// from http://stackoverflow.com/questions/981578/how-to-unzip-files-recursively-in-java
+	static public void unzipToDirectory(String zipFile, String newPath) throws ZipException, IOException 
+	{
+	    System.out.println(zipFile);
+	    int BUFFER = 2048;
+	    File file = new File(zipFile);
+	    ZipFile zip = new ZipFile(file);
+	    (new File(newPath)).mkdirs();
+	    Enumeration<? extends ZipEntry> zipFileEntries = zip.entries();
+	    // Process each entry
+	    while (zipFileEntries.hasMoreElements())
+	    {
+	        // grab a zip file entry
+	        ZipEntry entry = (ZipEntry) zipFileEntries.nextElement();
+	        String currentEntry = entry.getName();
+	        File destFile = new File(newPath, currentEntry);
+	        File destinationParent = destFile.getParentFile();
+	        // create the parent directory structure if needed
+	        destinationParent.mkdirs();
+	        if (!entry.isDirectory())
+	        {
+	            BufferedInputStream is = new BufferedInputStream(zip.getInputStream(entry));
+	            int currentByte;
+	            // establish buffer for writing file
+	            byte data[] = new byte[BUFFER];
+
+	            // write the current file to disk
+	            FileOutputStream fos = new FileOutputStream(destFile);
+	            BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER);
+
+	            // read and write until last byte is encountered
+	            while ((currentByte = is.read(data, 0, BUFFER)) != -1) {
+	                dest.write(data, 0, currentByte);
+	            }
+	            dest.flush();
+	            dest.close();
+	            is.close();
+	        }
+	    }
+	    zip.close();
+	}
+
+	// from http://stackoverflow.com/questions/2403830/recursively-zip-a-directory-containing-any-number-of-files-and-subdirectories-in?rq=1
+    public static void zipDirectory(File dir, File zipFile) throws IOException {
+        FileOutputStream fout = new FileOutputStream(zipFile);
+        ZipOutputStream zout = new ZipOutputStream(fout);
+        zipSubDirectory("", dir, zout);
+        zout.flush();
+        zout.close();
+    }
+
+    // from http://stackoverflow.com/questions/2403830/recursively-zip-a-directory-containing-any-number-of-files-and-subdirectories-in?rq=1
+    private static void zipSubDirectory(String basePath, File dir, ZipOutputStream zout) throws IOException {
+        byte[] buffer = new byte[4096];
+        File[] files = dir.listFiles();
+        for (File file : files) {
+            if (file.isDirectory()) {
+                String path = basePath + file.getName() + "/";
+                zout.putNextEntry(new ZipEntry(path));
+                zipSubDirectory(path, file, zout);
+                zout.closeEntry();
+            } else {
+                FileInputStream fin = new FileInputStream(file);
+                zout.putNextEntry(new ZipEntry(basePath + file.getName()));
+                int length;
+                while ((length = fin.read(buffer)) > 0) {
+                    zout.write(buffer, 0, length);
+                }
+                zout.closeEntry();
+                fin.close();
+            }
+        }
+    }
+
 	private String removePrefix(String stringToTrim, String prefix) {
 		return stringToTrim.substring(stringToTrim.lastIndexOf(prefix) + prefix.length() + 1);
 	}
