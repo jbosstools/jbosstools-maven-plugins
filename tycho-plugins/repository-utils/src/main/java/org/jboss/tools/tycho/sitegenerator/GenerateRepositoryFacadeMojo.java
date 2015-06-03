@@ -783,7 +783,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		String projectURL = null;
 		String projectName = null;
 		for (Property prop: obj.get("revision").asPropertyList()) {
-			if (projectURL == null && prop.getName().equals("knownReferences")) { // this is a ModelNode; want the zeroth named key "url"
+			if (projectURL == null && prop.getName().equals("knownReferences") && prop.getValue().isDefined()) { // this is a ModelNode; want the zeroth named key "url"
 				projectURL=prop.getValue().asList().get(0).get("url").asString();
 				getLog().debug("Upstream repo: " + projectURL);
 				projectName=projectURL.replaceAll(".+/([^/]+).git","$1");
