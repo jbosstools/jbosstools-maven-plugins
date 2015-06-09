@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Map;
@@ -37,6 +39,7 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.manager.WagonManager;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -49,6 +52,8 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.wagon.Wagon;
 import org.apache.maven.wagon.repository.Repository;
 import org.codehaus.plexus.util.FileUtils;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 
 /**
  * This class performs the following:
@@ -151,6 +156,9 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 
 	@Parameter(property = "fetch-sources-from-manifests.skip", defaultValue = "false")
 	private boolean skip;
+	
+	@Parameter(property = "skipCheckSHAs", defaultValue = "false")
+	private boolean skipCheckSHAs;
 
 	/**
 	 * @component
@@ -184,6 +192,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		if (!zipsDirectory.exists()) {
 			zipsDirectory.mkdirs();
 		}
+
 		Set<File> zipFiles = new HashSet<File>();
 		Properties allBuildProperties = new Properties();
 
@@ -322,8 +331,69 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 				sb.append(revisionLine);
 			}
 		}
+
+		/*
+		JBIDE-19467 check if SHA in buildinfo_projectName.json matches projectName_65cb06bb81773714b9e3fc1c312e33aaa068dc33_sources.zip.
+		Note: this may fail if you've built stuff locally because those plugins will use different SHAs (eg., from a pull-request topic branch)
+
+		To test this is working via commandline shell equivalent
+
+		cd jbosstools-build-sites/aggregate/site
+		for j in target/buildinfo/buildinfo_jbosstools-*; do
+			echo -n $j; k=${j##*_}; k=${k/.json}; echo " :: $k";
+			cat $j | grep HEAD | head -1 | sed "s#[\t\w\ ]\+\"HEAD\" : \"\(.\+\)\",#0: \1#";
+			ls cache/${k}_*_sources.zip  | sed -e "s#cache/${k}_\(.\+\)_sources.zip#1: \1#";
+			echo "";
+		done
+		*/
+		if (skipCheckSHAs) {
+			getLog().warn("skipCheckSHAs=true :: Skip check that buildinfo_*.json HEAD SHA matches MANIFEST.MF Eclipse-SourceReferences commitId SHA.");
+		} else {
+			File buildinfoFolder = new File(this.project.getBuild().getDirectory(), "buildinfo");
+			if (buildinfoFolder.isDirectory()) {
+				try {
+					File[] buildInfoFiles = listFilesMatching(buildinfoFolder,"buildinfo_.+.json");
+					for (int i = 0; i < buildInfoFiles.length; i++) {
+						InputStream in = null;
+						ModelNode obj = null;
+						String upstreamSHA = null;
+						String upstreamProjectName = buildInfoFiles[i].toString().replaceAll(".+buildinfo_(.+).json", "$1");
+						getLog().debug(i + ": " + buildInfoFiles[i].toString() + " :: " + upstreamProjectName);
+						try {
+							getLog().debug("Read JSON from: " + buildInfoFiles[i].toString());
+							in = new FileInputStream(buildInfoFiles[i]);
+							obj = ModelNode.fromJSONStream(in);
+							upstreamSHA = getSHA(obj);
+							getLog().debug("Found SHA = " + upstreamSHA);
+							// check if there's a file called upstreamProjectName_upstreamSHA_sources.zip
+							String outputZipName = upstreamProjectName + "_" + upstreamSHA + "_sources.zip";
+							File outputZipFile = new File(zipsDirectory, outputZipName);
+							if (!outputZipFile.isFile()) {
+								getLog().debug("Check " + outputFolder.toString() + " for " + upstreamProjectName + "_.+_sources.zip");
+								// find the sources we DID download, eg., jbosstools-browsersim_9255a5b7c04fb10768c14942e60092e860881d6b_sources.zip
+								File[] wrongZipFiles = listFilesMatching(zipsDirectory,upstreamProjectName + "_.+_sources.zip");
+								String wrongZips = "";
+								for (int j = 0; j < wrongZipFiles.length; j++) {
+									getLog().debug(wrongZipFiles[j].toString());
+									wrongZips += (wrongZips.isEmpty() ? "" : ", ") + wrongZipFiles[j].toString().replaceAll(".+" + upstreamProjectName + "_(.+)_sources.zip", "$1");
+								}
+								throw new MojoFailureException("\n" + buildInfoFiles[i].toString() + "\ncontains " + upstreamSHA + 
+										", but upstream project's MANIFEST.MF has Eclipse-SourceReferences\ncommitId " + wrongZips + 
+										". \nIf you have locally built projects which are aggregated here, \nensure they are built from the latest SHA from HEAD, not a local topic branch.\n"
+										+ "Or, use -DskipCheckSHAs=true to bypass this check.");
+							}
+						} finally {
+							IOUtils.closeQuietly(in);
+						}
+					}
+				} catch (Exception ex) {
+					throw new MojoExecutionException("Problem occurred checking upstream buildinfo.json files!",ex);
+				}
+			}
+		}
+
 		// JBDS-3364 JBDS-3208 JBIDE-19467 when not using publish.sh, unpack downloaded source zips and combine them into a single zip
-		createCombinedZipFile(zipFiles, CACHE_ZIPS);
+		createCombinedZipFile(zipsDirectory, zipFiles, CACHE_ZIPS);
 
 		// getLog().debug("Generating aggregate site metadata");
 		try {
@@ -366,9 +436,8 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 	 * If mode == CACHE_ZIPS, move zips into cache folder
 	 * 
 	 */
-	private void createCombinedZipFile(Set<File> zipFiles, int mode)
+	private void createCombinedZipFile(File zipsDirectory, Set<File> zipFiles, int mode)
 			throws MojoExecutionException {
-		File zipsDirectory = new File(this.outputFolder, "all");
 		String combinedZipName = sourcesZip.getAbsolutePath();
 		File combinedZipFile = new File(combinedZipName);
 		String fullUnzipPath = zipsDirectory.getAbsolutePath() + File.separator + sourcesZipRootFolder;
@@ -636,6 +705,18 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		// wagon.removeTransferListener(downloadMonitor);
 		double filesize = outputFile.length();
 		getLog().info("Downloaded:  " + outputFile.getName() + " (" + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M)" : String.format("%.1f", filesize / 1024) + " k)"));
+	}
+
+	// for a given JSON object, find /revision/HEAD, then extract the latest revision SHA from the git repo URL
+	private String getSHA(ModelNode obj) {
+		String projectSHA = null;
+		for (Property prop: obj.get("revision").asPropertyList()) {
+			if (projectSHA == null && prop.getName().equals("HEAD")) { // this is a ModelNode; want the zeroth named key "url"
+				projectSHA = prop.getValue().asString();
+				getLog().debug("Upstream SHA: " + projectSHA);
+			}
+		}
+		return projectSHA;
 	}
 
 }
