@@ -128,20 +128,28 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 	 * Alternative location to look for zips. Here is the order to process zip
 	 * research
 	 * 
-	 * 1. Look for zip in zipCacheFolder
-	 * 2. Look for zip in outputFolder
+	 * 1. Look for zip in zipCacheFolder = ${basedir}/cache
+	 * 2. Look for zip in outputFolder = ${basedir}/zips
 	 * 3. Look for zip at expected URL
 	 */
 	@Parameter(property = "fetch-sources-from-manifests.zipCacheFolder", defaultValue = "${basedir}/cache")
 	private File zipCacheFolder;
 
 	/**
-	 * Location where to put zips
-	 * 
+	 * Location where to put zips and other metadata
+	 *
 	 * @parameter default-value="${basedir}/zips" property="fetch-sources-from-manifests.outputFolder"
 	 */
 	@Parameter(property = "fetch-sources-from-manifests.outputFolder", defaultValue = "${basedir}/zips")
 	private File outputFolder;
+
+	/**
+	 * Location where to put zips
+	 *
+	 * @parameter default-value="${basedir}/zips/all" property="fetch-sources-from-manifests.zipsDirectory"
+	 */
+	@Parameter(property = "fetch-sources-from-manifests.zipsDirectory", defaultValue = "${basedir}/zips/all")
+	private File zipsDirectory;
 
 	// the zip file to be created; default is "jbosstools-src.zip" but can override here
 	@Parameter(property = "fetch-sources-from-manifests.sourcesZip", defaultValue = "${project.build.directory}/fullSite/all/jbosstools-src.zip")
@@ -159,6 +167,9 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 	
 	@Parameter(property = "skipCheckSHAs", defaultValue = "false")
 	private boolean skipCheckSHAs;
+
+	Properties allBuildProperties = new Properties();
+	Set<File> zipFiles = new HashSet<File>();
 
 	/**
 	 * @component
@@ -188,13 +199,10 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 			throw new MojoExecutionException("zipCacheFolder and outputFolder can not be the same folder");
 		}
 
-		File zipsDirectory = new File(this.outputFolder, "all");
+		zipsDirectory = new File(this.outputFolder, "all");
 		if (!zipsDirectory.exists()) {
 			zipsDirectory.mkdirs();
 		}
-
-		Set<File> zipFiles = new HashSet<File>();
-		Properties allBuildProperties = new Properties();
 
 		File digestFile = new File(this.outputFolder, "ALL_REVISIONS.txt");
 		FileWriter dfw;
@@ -283,43 +291,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 					} else {
 						URL = "https://github.com/jbosstools/" + projectName + "/archive/" + SHA + ".zip";
 						outputZipName = projectName + "_" + SHA + "_sources.zip";
-						File outputZipFile = new File(zipsDirectory, outputZipName);
-	
-						boolean diduseCache = false;
-						if (this.zipCacheFolder != null && this.zipCacheFolder.exists()) {
-							File cachedZip = new File(this.zipCacheFolder, outputZipName);
-							if (cachedZip.exists()) {
-								FileUtils.copyFile(cachedZip, outputZipFile);
-								getLog().debug("Copied " + removePrefix(outputZipFile.getAbsolutePath(), project.getBasedir().toString()));
-								getLog().debug("  From " + removePrefix(cachedZip.getAbsolutePath(), project.getBasedir().toString()));
-								diduseCache = true;
-							}
-						}
-						// scrub out old versions that we don't want in the cache anymore
-						File[] matchingSourceZips = listFilesMatching(this.zipCacheFolder, projectName + "_.+\\.zip");
-						for (int i = 0; i < matchingSourceZips.length; i++) {
-							// don't delete the file we want, only all others matching projectName_.zip
-							if (!outputZipFile.getName().equals(matchingSourceZips[i].getName())) {
-								getLog().warn("Delete " + matchingSourceZips[i].getName());
-								matchingSourceZips[i].delete();
-							}
-						}
-						File[] matchingSourceMD5s = listFilesMatching(this.zipCacheFolder, projectName + "_.+\\.zip\\.MD5");
-						for (int i = 0; i < matchingSourceMD5s.length; i++) {
-							// don't delete the file we want, only all others matching projectName_.zip or .MD5
-							if (!(outputZipFile.getName() + ".MD5").equals(matchingSourceMD5s[i].getName())) {
-								getLog().warn("Delete " + matchingSourceMD5s[i].getName());
-								matchingSourceMD5s[i].delete();
-							}
-						}
-						String outputZipFolder = outputZipFile.toString().replaceAll("_sources.zip","");
-						if (!diduseCache && (!outputZipFile.exists() || !(new File(outputZipFolder).exists()))) {
-							doGet(URL, outputZipFile, true);
-						}
-	
-						allBuildProperties.put(outputZipName + ".filename", outputZipName);
-						allBuildProperties.put(outputZipName + ".filesize", Long.toString(outputZipName.length()));
-						zipFiles.add(new File(outputZipName));
+						fetchUpstreamSourcesZip(projectName, SHA);
 					}
 				} catch (Exception ex) {
 					throw new MojoExecutionException("Error while downloading github source archive", ex);
@@ -377,10 +349,19 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 									getLog().debug(wrongZipFiles[j].toString());
 									wrongZips += (wrongZips.isEmpty() ? "" : ", ") + wrongZipFiles[j].toString().replaceAll(".+" + upstreamProjectName + "_(.+)_sources.zip", "$1");
 								}
-								throw new MojoFailureException("\n" + buildInfoFiles[i].toString() + "\ncontains " + upstreamSHA + 
-										", but upstream project's MANIFEST.MF has Eclipse-SourceReferences\ncommitId " + wrongZips + 
+								if (!wrongZips.isEmpty())
+								{
+									throw new MojoFailureException("\n" + buildInfoFiles[i].toString() + "\ncontains " + upstreamSHA + 
+										", but upstream " + upstreamProjectName + " project's MANIFEST.MF has Eclipse-SourceReferences\ncommitId " + wrongZips + 
 										". \nIf you have locally built projects which are aggregated here, \nensure they are built from the latest SHA from HEAD, not a local topic branch.\n"
 										+ "Or, use -DskipCheckSHAs=true to bypass this check.");
+								} else {
+									getLog().warn("\n" + buildInfoFiles[i].toString() + "\ncontains " + upstreamSHA + 
+										", but upstream " + upstreamProjectName + " project's MANIFEST.MF has no Eclipse-SourceReferences commitId.\n" +
+										"Using sources from " + upstreamSHA + ".");
+									// fetch sources from upstreamProjectName's upstreamSHA (but do not log in the digestFile)
+									fetchUpstreamSourcesZip(upstreamProjectName, upstreamSHA);
+								}
 							}
 						} finally {
 							IOUtils.closeQuietly(in);
@@ -428,6 +409,48 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 			throw new MojoExecutionException("Error writing to " + digestFile.toString(), ex);
 		}
 		// getLog().debug("Written to " + digestFile.toString() + ":\n\n" + sb.toString());
+	}
+
+	private void fetchUpstreamSourcesZip(String projectName, String SHA) throws Exception
+	{
+		String URL = "https://github.com/jbosstools/" + projectName + "/archive/" + SHA + ".zip";
+		String outputZipName = projectName + "_" + SHA + "_sources.zip";
+		File outputZipFile = new File(zipsDirectory, outputZipName);
+
+		boolean diduseCache = false;
+		if (this.zipCacheFolder != null && this.zipCacheFolder.exists()) {
+			File cachedZip = new File(this.zipCacheFolder, outputZipName);
+			if (cachedZip.exists()) {
+				FileUtils.copyFile(cachedZip, outputZipFile);
+				getLog().debug("Copied " + removePrefix(outputZipFile.getAbsolutePath(), project.getBasedir().toString()));
+				getLog().debug("  From " + removePrefix(cachedZip.getAbsolutePath(), project.getBasedir().toString()));
+				diduseCache = true;
+			}
+		}
+		// scrub out old versions that we don't want in the cache anymore
+		File[] matchingSourceZips = listFilesMatching(this.zipCacheFolder, projectName + "_.+\\.zip");
+		for (int i = 0; i < matchingSourceZips.length; i++) {
+			// don't delete the file we want, only all others matching projectName_.zip
+			if (!outputZipFile.getName().equals(matchingSourceZips[i].getName())) {
+				getLog().warn("Delete " + matchingSourceZips[i].getName());
+				matchingSourceZips[i].delete();
+			}
+		}
+		File[] matchingSourceMD5s = listFilesMatching(this.zipCacheFolder, projectName + "_.+\\.zip\\.MD5");
+		for (int i = 0; i < matchingSourceMD5s.length; i++) {
+			// don't delete the file we want, only all others matching projectName_.zip or .MD5
+			if (!(outputZipFile.getName() + ".MD5").equals(matchingSourceMD5s[i].getName())) {
+				getLog().warn("Delete " + matchingSourceMD5s[i].getName());
+				matchingSourceMD5s[i].delete();
+			}
+		}
+		String outputZipFolder = outputZipFile.toString().replaceAll("_sources.zip","");
+		if (!diduseCache && (!outputZipFile.exists() || !(new File(outputZipFolder).exists()))) {
+			doGet(URL, outputZipFile, true);
+		}
+		allBuildProperties.put(outputZipName + ".filename", outputZipName);
+		allBuildProperties.put(outputZipName + ".filesize", Long.toString(outputZipName.length()));
+		zipFiles.add(new File(outputZipName));
 	}
 
 	/*
