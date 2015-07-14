@@ -217,77 +217,102 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 			getLog().warn("No <sourceFetchMap> defined in pom. Can't fetch sources without a list of plugins. Did you forget to enable fetch-source-zips profile?");
 		} else {
 			for (String projectName : this.sourceFetchMap.keySet()) {
-				String pluginName = this.sourceFetchMap.get(projectName);
+				String pluginNameOrBuildInfoJsonUrl = this.sourceFetchMap.get(projectName);
 				// jbosstools-base = org.jboss.tools.common
-				// getLog().debug(projectName + " = " + pluginName);
-	
-				// find the first matching plugin jar, eg., target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
-				File[] matchingFiles = listFilesMatching(new File(pluginPath), pluginName + "_.+\\.jar");
-				// for (File file : matchingFiles) getLog().debug(file.toString());
-				if (matchingFiles.length < 1) {
-					throw new MojoExecutionException("No matching plugin found in " + pluginPath + " for " + pluginName + "_.+\\.jar.\nCheck your pom.xml for this line: <" + projectName + ">" + pluginName + "</" + projectName + ">");
-				}
-				File jarFile = matchingFiles[0];
-				File manifestFile = null;
-	
-				try {
-					FileInputStream fin = new FileInputStream(jarFile);
-					manifestFile = File.createTempFile(MANIFEST, "");
-					OutputStream out = new FileOutputStream(manifestFile);
-					BufferedInputStream bin = new BufferedInputStream(fin);
-					ZipInputStream zin = new ZipInputStream(bin);
-					ZipEntry ze = null;
-					while ((ze = zin.getNextEntry()) != null) {
-						// getLog().debug(ze.getName());
-						if (ze.getName().equals("META-INF/" + MANIFEST)) {
-							// getLog().debug("Found " + ze.getName() + " in " +
-							// jarFile);
-							byte[] buffer = new byte[8192];
-							int len;
-							while ((len = zin.read(buffer)) != -1) {
-								out.write(buffer, 0, len);
-							}
-							out.close();
-							break;
-						}
-					}
-					zin.close();
-					// getLog().debug("Saved " + jarFile + "!/META-INF/" + MANIFEST);
-				} catch (Exception ex) {
-					throw new MojoExecutionException("Error extracting " + MANIFEST + " from " + jarFile, ex);
-				}
-	
-				// retrieve the MANIFEST.MF file, eg., org.jboss.tools.usage_1.2.100.Alpha2-v20140221-1555-B437.jar!/META-INF/MANIFEST.MF
-				Manifest manifest;
-				try {
-					manifest = new Manifest(new FileInputStream(manifestFile));
-				} catch (Exception ex) {
-					throw new MojoExecutionException("Error while reading manifest file " + MANIFEST, ex);
-				}
-	
-				// parse out the commitId from Eclipse-SourceReferences:
-				// scm:git:https://github.com/jbosstools/jbosstools-base.git;path="usage/plugins/org.jboss.tools.usage";commitId=184e18cc3ac7c339ce406974b6a4917f73909cc4
-				Attributes attr = manifest.getMainAttributes();
-				String ESR = null;
+				getLog().debug("For project " + projectName + ": plugin name or buildinfo.json = " + pluginNameOrBuildInfoJsonUrl);
+
 				String SHA = null;
-				ESR = attr.getValue("Eclipse-SourceReferences");
-				// getLog().debug(ESR);
-				if (ESR != null) {
-					SHA = ESR.substring(ESR.lastIndexOf(";commitId=") + 10);
-					// getLog().debug(SHA);
-				} else {
-					SHA = "UNKNOWN";
+				String qualifier = null;
+				String SHASource = null;
+
+				// if the value is a buildinfo.json URL, not a plugin name
+				if ((pluginNameOrBuildInfoJsonUrl.startsWith("http") || pluginNameOrBuildInfoJsonUrl.startsWith("ftp")) && pluginNameOrBuildInfoJsonUrl.matches(".+buildinfo.*json")) { 
+					getLog().debug("Read JSON from: " + pluginNameOrBuildInfoJsonUrl);
+					ModelNode obj;
+					try {
+						obj = ModelNode.fromJSONStream((new URL(pluginNameOrBuildInfoJsonUrl)).openStream());
+					} catch (IOException e) {
+						throw new MojoExecutionException("Problem occurred reading " + pluginNameOrBuildInfoJsonUrl, e);
+					}
+					SHA = getSHA(obj);
+					getLog().debug("Found SHA = " + SHA);
+					// create qualifier from buildinfo.json BUILD_ALIAS and ZIPSUFFIX
+					qualifier = getProperty(obj,"BUILD_ALIAS") + "-" + getProperty(obj,"ZIPSUFFIX");
+					getLog().debug("Found qualifier = " + qualifier);
+					SHASource = pluginNameOrBuildInfoJsonUrl;
 				}
-				// cleanup
-				manifestFile.delete();
-	
+				else
+				{
+					// find the first matching plugin jar, eg., target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
+					File[] matchingFiles = listFilesMatching(new File(pluginPath), pluginNameOrBuildInfoJsonUrl + "_.+\\.jar");
+					// for (File file : matchingFiles) getLog().debug(file.toString());
+					if (matchingFiles.length < 1) {
+						throw new MojoExecutionException("No matching plugin found in " + pluginPath + " for " + pluginNameOrBuildInfoJsonUrl + "_.+\\.jar.\nCheck your pom.xml for this line: <" + projectName + ">" + pluginNameOrBuildInfoJsonUrl + "</" + projectName + ">");
+					}
+					File jarFile = matchingFiles[0];
+					File manifestFile = null;
+		
+					try {
+						FileInputStream fin = new FileInputStream(jarFile);
+						manifestFile = File.createTempFile(MANIFEST, "");
+						OutputStream out = new FileOutputStream(manifestFile);
+						BufferedInputStream bin = new BufferedInputStream(fin);
+						ZipInputStream zin = new ZipInputStream(bin);
+						ZipEntry ze = null;
+						while ((ze = zin.getNextEntry()) != null) {
+							// getLog().debug(ze.getName());
+							if (ze.getName().equals("META-INF/" + MANIFEST)) {
+								// getLog().debug("Found " + ze.getName() + " in " +
+								// jarFile);
+								byte[] buffer = new byte[8192];
+								int len;
+								while ((len = zin.read(buffer)) != -1) {
+									out.write(buffer, 0, len);
+								}
+								out.close();
+								break;
+							}
+						}
+						zin.close();
+						// getLog().debug("Saved " + jarFile + "!/META-INF/" + MANIFEST);
+					} catch (Exception ex) {
+						throw new MojoExecutionException("Error extracting " + MANIFEST + " from " + jarFile, ex);
+					}
+		
+					// retrieve the MANIFEST.MF file, eg., org.jboss.tools.usage_1.2.100.Alpha2-v20140221-1555-B437.jar!/META-INF/MANIFEST.MF
+					Manifest manifest;
+					try {
+						manifest = new Manifest(new FileInputStream(manifestFile));
+					} catch (Exception ex) {
+						throw new MojoExecutionException("Error while reading manifest file " + MANIFEST, ex);
+					}
+		
+					// parse out the commitId from Eclipse-SourceReferences:
+					// scm:git:https://github.com/jbosstools/jbosstools-base.git;path="usage/plugins/org.jboss.tools.usage";commitId=184e18cc3ac7c339ce406974b6a4917f73909cc4
+					Attributes attr = manifest.getMainAttributes();
+					String ESR = null;
+					SHA = null;
+					ESR = attr.getValue("Eclipse-SourceReferences");
+					// getLog().debug(ESR);
+					if (ESR != null) {
+						SHA = ESR.substring(ESR.lastIndexOf(";commitId=") + 10);
+						// getLog().debug(SHA);
+					} else {
+						SHA = "UNKNOWN";
+					}
+					// cleanup
+					manifestFile.delete();
+					
+					qualifier = getQualifier(pluginNameOrBuildInfoJsonUrl, jarFile.toString(), true);
+					SHASource = removePrefix(jarFile.toString(), pluginPath) + " " + MANIFEST;
+				}
 				// fetch github source archive for that SHA, eg., https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip
 				// to jbosstools-base_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
 				String URL = "";
 				String outputZipName = "";
 				try {
 					if (SHA == null || SHA.equals("UNKNOWN")) {
-						getLog().warn("Cannot fetch " + projectName + " sources: no Eclipse-SourceReferences in " + removePrefix(jarFile.toString(), pluginPath) + " " + MANIFEST);
+						getLog().warn("Cannot fetch " + projectName + " sources: no Eclipse-SourceReferences in " + SHASource);
 					} else {
 						URL = "https://github.com/jbosstools/" + projectName + "/archive/" + SHA + ".zip";
 						outputZipName = projectName + "_" + SHA + "_sources.zip";
@@ -296,11 +321,80 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 				} catch (Exception ex) {
 					throw new MojoExecutionException("Error while downloading github source archive", ex);
 				}
-	
+
 				// github project, plugin, version, SHA, origin/branch@SHA, remote zipfile, local zipfile
-				String revisionLine = projectName + sep + pluginName + sep + getQualifier(pluginName, jarFile.toString(), true) + sep + SHA + sep + "origin/" + branch + "@" + SHA + sep + URL + sep + outputZipName + "\n";
+				String revisionLine = projectName + sep + pluginNameOrBuildInfoJsonUrl + sep + qualifier + sep + SHA + sep + "origin/" + branch + "@" + SHA + sep + URL + sep + outputZipName + "\n";
 				// getLog().debug(revisionLine);
 				sb.append(revisionLine);
+			}
+		}
+
+		/*
+		JBIDE-19467 check if SHA in buildinfo_projectName.json matches projectName_65cb06bb81773714b9e3fc1c312e33aaa068dc33_sources.zip.
+		Note: this may fail if you've built stuff locally because those plugins will use different SHAs (eg., from a pull-request topic branch)
+
+		To test this is working via commandline shell equivalent
+
+		cd jbosstools-build-sites/aggregate/site
+		for j in target/buildinfo/buildinfo_jbosstools-*; do
+			echo -n $j; k=${j##*_}; k=${k/.json}; echo " :: $k";
+			cat $j | grep HEAD | head -1 | sed "s#[\t\w\ ]\+\"HEAD\" : \"\(.\+\)\",#0: \1#";
+			ls cache/${k}_*_sources.zip  | sed -e "s#cache/${k}_\(.\+\)_sources.zip#1: \1#";
+			echo "";
+		done
+		*/
+		if (skipCheckSHAs) {
+			getLog().warn("skipCheckSHAs=true :: Skip check that buildinfo_*.json HEAD SHA matches MANIFEST.MF Eclipse-SourceReferences commitId SHA.");
+		} else {
+			File buildinfoFolder = new File(this.project.getBuild().getDirectory(), "buildinfo");
+			if (buildinfoFolder.isDirectory()) {
+				try {
+					File[] buildInfoFiles = listFilesMatching(buildinfoFolder,"buildinfo_.+.json");
+					for (int i = 0; i < buildInfoFiles.length; i++) {
+						InputStream in = null;
+						ModelNode obj = null;
+						String upstreamSHA = null;
+						String upstreamProjectName = buildInfoFiles[i].toString().replaceAll(".+buildinfo_(.+).json", "$1");
+						getLog().debug(i + ": " + buildInfoFiles[i].toString() + " :: " + upstreamProjectName);
+						try {
+							getLog().debug("Read JSON from: " + buildInfoFiles[i].toString());
+							in = new FileInputStream(buildInfoFiles[i]);
+							obj = ModelNode.fromJSONStream(in);
+							upstreamSHA = getSHA(obj);
+							getLog().debug("Found SHA = " + upstreamSHA);
+							// check if there's a file called upstreamProjectName_upstreamSHA_sources.zip
+							String outputZipName = upstreamProjectName + "_" + upstreamSHA + "_sources.zip";
+							File outputZipFile = new File(zipsDirectory, outputZipName);
+							if (!outputZipFile.isFile()) {
+								getLog().debug("Check " + outputFolder.toString() + " for " + upstreamProjectName + "_.+_sources.zip");
+								// find the sources we DID download, eg., jbosstools-browsersim_9255a5b7c04fb10768c14942e60092e860881d6b_sources.zip
+								File[] wrongZipFiles = listFilesMatching(zipsDirectory,upstreamProjectName + "_.+_sources.zip");
+								String wrongZips = "";
+								for (int j = 0; j < wrongZipFiles.length; j++) {
+									getLog().debug(wrongZipFiles[j].toString());
+									wrongZips += (wrongZips.isEmpty() ? "" : ", ") + wrongZipFiles[j].toString().replaceAll(".+" + upstreamProjectName + "_(.+)_sources.zip", "$1");
+								}
+								if (!wrongZips.isEmpty())
+								{
+									throw new MojoFailureException("\n" + buildInfoFiles[i].toString() + "\ncontains " + upstreamSHA + 
+										", but upstream " + upstreamProjectName + " project's MANIFEST.MF has Eclipse-SourceReferences\ncommitId " + wrongZips + 
+										". \nIf you have locally built projects which are aggregated here, \nensure they are built from the latest SHA from HEAD, not a local topic branch.\n"
+										+ "Or, use -DskipCheckSHAs=true to bypass this check.");
+								} else {
+									getLog().warn("\n" + buildInfoFiles[i].toString() + "\ncontains " + upstreamSHA + 
+										", but upstream " + upstreamProjectName + " project's MANIFEST.MF has no Eclipse-SourceReferences commitId.\n" +
+										"Using sources from " + upstreamSHA + ".");
+									// fetch sources from upstreamProjectName's upstreamSHA (but do not log in the digestFile)
+									fetchUpstreamSourcesZip(upstreamProjectName, upstreamSHA);
+								}
+							}
+						} finally {
+							IOUtils.closeQuietly(in);
+						}
+					}
+				} catch (Exception ex) {
+					throw new MojoExecutionException("Problem occurred checking upstream buildinfo.json files!",ex);
+				}
 			}
 		}
 
@@ -450,7 +544,9 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		}
 		allBuildProperties.put(outputZipName + ".filename", outputZipName);
 		allBuildProperties.put(outputZipName + ".filesize", Long.toString(outputZipName.length()));
+		getLog().debug("Add " + outputZipName + " to zipFiles(" + zipFiles.size() + ") ...");
 		zipFiles.add(new File(outputZipName));
+		getLog().debug("Added to zipFiles(" + zipFiles.size() + ").");
 	}
 
 	/*
@@ -494,7 +590,6 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 			}
 		}
 
-		// TODO: extract whole process of getting local sources into a zip into a new mojo that can be called by ALL aggregates, not just jbosstools site (reusable for JBDS and other projects too)
 		// JBIDE-19814 - include local sources in jbosstools-project-SHA folder (jbosstools-build-sites or jbdevstudio-product)
 		// get project name & SHA (from .git metadata) - needed for sourcesZipRootFolder/projectName-SHA folder
 		Properties properties = new Properties();
@@ -678,13 +773,15 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		}
 	}
 
+	// given: prefix = org.jboss.tools.common
+	// given: stringToTrim = target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
+	// return: 3.6.0.Alpha2-v20140304-0055-B440.jar
 	private String removePrefix(String stringToTrim, String prefix) {
 		return stringToTrim.substring(stringToTrim.lastIndexOf(prefix) + prefix.length() + 1);
 	}
 
 	// given: pluginName = org.jboss.tools.common
-	// given: jarFileName =
-	// target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
+	// given: jarFileName = target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
 	// return 3.6.0.Alpha2-v20140304-0055-B440 (if full = true)
 	// return Alpha2-v20140304-0055-B440 (if full = false)
 	private String getQualifier(String pluginName, String jarFileName, boolean full) {
@@ -740,6 +837,18 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 			}
 		}
 		return projectSHA;
+	}
+
+	// for a given JSON object, find /properties/BUILD_ALIAS
+	private String getProperty(ModelNode obj, String propertyName) {
+		String theProperty = null;
+		for (Property prop: obj.get("properties").asPropertyList()) {
+			if (theProperty == null && prop.getName().equals(propertyName)) { // this is a ModelNode; want the zeroth named key "url"
+				theProperty = prop.getValue().asString();
+				getLog().debug("Upstream " + propertyName + ": " + theProperty);
+			}
+		}
+		return theProperty;
 	}
 
 }
