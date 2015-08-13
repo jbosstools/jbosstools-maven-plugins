@@ -15,35 +15,36 @@
 	<groupId>org.jboss.tools</groupId>
 	<artifactId>tycho-plugins</artifactId>
 	<packaging>pom</packaging>
-	<version>0.22.1-SNAPSHOT</version>
 	<name>jbosstools-tycho-plugins-parent</name>
-        <description>In-House Maven plugins for JBT/JBDS build</description>
-        <url>http://jboss.org/tools</url>
-        <licenses>
-	  <license>
-	    <name>Eclipse Public License</name>
-	    <url>http://www.eclipse.org/legal/epl-v10.html</url>
-	  </license>
+	<version>0.23.1-SNAPSHOT</version>
+	<properties>
+		<tychoVersion>0.23.1</tychoVersion>
+	</properties>
+
+	<description>In-House Maven plugins for JBT/JBDS build</description>
+	<url>http://jboss.org/tools</url>
+	<licenses>
+		<license>
+			<name>Eclipse Public License</name>
+			<url>http://www.eclipse.org/legal/epl-v10.html</url>
+		</license>
 	</licenses>
  
-        <scm>
-           <connection>scm:git:git://git@github.com:jbosstools/jbosstools-maven-plugins.git</connection>
-           <developerConnection>scm:git:ssh://git@github.com:jbosstools/jbosstools-maven-plugins.git</developerConnection>
-           <url>git://github.com/jbosstools/jbosstools-maven-plugins.git</url>
-        </scm>
+	<scm>
+		 <connection>scm:git:git://git@github.com:jbosstools/jbosstools-maven-plugins.git</connection>
+		 <developerConnection>scm:git:ssh://git@github.com:jbosstools/jbosstools-maven-plugins.git</developerConnection>
+		 <url>git://github.com/jbosstools/jbosstools-maven-plugins.git</url>
+	</scm>
 
-        <developers>
-           <developer>
-	     <id>tools.jboss.org</id>
-             <name>JBoss Tools</name>
-	     <organization>jboss.org/tools</organization>
-	     <organizationUrl>http://jboss.org/tools</organizationUrl>
-	   </developer>
+	<developers>
+		<developer>
+ 			<id>tools.jboss.org</id>
+			<name>JBoss Tools</name>
+			<organization>jboss.org/tools</organization>
+			<organizationUrl>http://jboss.org/tools</organizationUrl>
+		</developer>
 	</developers>
 
-	<properties>
-		<tychoVersion>0.22.0</tychoVersion>
-	</properties>
 
 	<modules>
 		<module>repository-utils</module>
@@ -65,22 +66,22 @@
 					</configuration>
 				</plugin>
 				<plugin>
-        			<groupId>org.apache.maven.plugins</groupId>
-        			<artifactId>maven-plugin-plugin</artifactId>
-        			<version>3.3</version>
-        			<configuration>
-          				<!-- see http://jira.codehaus.org/browse/MNG-5346 -->
-          				<skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
-        			</configuration>
-        			<executions>
-          				<execution>
-            				<id>mojo-descriptor</id>
-            				<goals>
-              					<goal>descriptor</goal>
-            				</goals>
-          				</execution>
-          			</executions>
-          		</plugin>
+							<groupId>org.apache.maven.plugins</groupId>
+							<artifactId>maven-plugin-plugin</artifactId>
+							<version>3.3</version>
+							<configuration>
+									<!-- see http://jira.codehaus.org/browse/MNG-5346 -->
+									<skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
+							</configuration>
+							<executions>
+									<execution>
+										<id>mojo-descriptor</id>
+										<goals>
+												<goal>descriptor</goal>
+										</goals>
+									</execution>
+								</executions>
+							</plugin>
 				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
@@ -117,34 +118,34 @@
 	</build>
 
 	<dependencies>
-	    <dependency>
-	      <groupId>org.apache.maven</groupId>
-	      <artifactId>maven-plugin-api</artifactId>
-	      <version>3.0</version>
-	    </dependency>
-	    <dependency>
-	      <groupId>org.apache.maven</groupId>
-	      <artifactId>maven-core</artifactId>
-	      <version>3.0</version>
-	    </dependency>
-	    <dependency>
-	      <groupId>org.apache.maven.plugin-tools</groupId>
-	      <artifactId>maven-plugin-annotations</artifactId>
-	      <version>3.3</version>
-	      <scope>provided</scope>
-	    </dependency>
-	    <dependency>
-	    	<groupId>org.codehaus.plexus</groupId>
-	    	<artifactId>plexus-component-annotations</artifactId>
-	    	<version>1.5.4</version>
-	    </dependency>
-	    <dependency>
-	      <groupId>junit</groupId>
-	      <artifactId>junit</artifactId>
-	      <version>4.7</version>
-	      <scope>test</scope>
-	    </dependency>
-	    <dependency>
+			<dependency>
+				<groupId>org.apache.maven</groupId>
+				<artifactId>maven-plugin-api</artifactId>
+				<version>3.0</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.maven</groupId>
+				<artifactId>maven-core</artifactId>
+				<version>3.0</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.maven.plugin-tools</groupId>
+				<artifactId>maven-plugin-annotations</artifactId>
+				<version>3.3</version>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.codehaus.plexus</groupId>
+				<artifactId>plexus-component-annotations</artifactId>
+				<version>1.5.4</version>
+			</dependency>
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<version>4.7</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
 			<groupId>org.apache.maven.plugin-testing</groupId>
 			<artifactId>maven-plugin-testing-harness</artifactId>
 			<version>1.2</version>
