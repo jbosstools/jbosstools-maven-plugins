@@ -197,6 +197,12 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
     @Parameter(defaultValue = "false")
     private boolean skipWebContentGeneration;
 
+    /**
+     * Whether to skip generation of buildinfo.json
+     */
+    @Parameter(defaultValue = "false")
+    private boolean skipBuildInfo;
+
 	@Parameter
 	private String p2StatsUrl;
 
@@ -235,7 +241,9 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
 		File outputRepository = new File(this.project.getBuild().getDirectory(), "repository");
 		File buildinfoFolder = new File(this.project.getBuild().getDirectory(), "buildinfo");
-		buildinfoFolder.mkdirs();
+		if (!skipBuildInfo) {
+			buildinfoFolder.mkdirs();
+		}
 
 		// If a siteTemplateFolder is set, pull index.html and site.css from
 		// there; otherwise use defaults
@@ -285,9 +293,11 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			}
 		}
 
-		// collect buildinfo.json files from upstream and store them in target/buildinfo/
-		// also save a copy of the merged buildinfo.json in target/repository/
-		createBuildInfo(outputRepository, buildinfoFolder);
+		if (!skipBuildInfo) {
+			// collect buildinfo.json files from upstream and store them in target/buildinfo/
+			// also save a copy of the merged buildinfo.json in target/repository/
+			createBuildInfo(outputRepository, buildinfoFolder);
+		}
 
 		File repoZipFile = new File(this.project.getBuild().getDirectory(), this.project.getArtifactId() + "-" + this.project.getVersion() + ".zip");
 		repoZipFile.delete();
