@@ -16,7 +16,7 @@
 	<artifactId>tycho-plugins</artifactId>
 	<packaging>pom</packaging>
 	<name>jbosstools-tycho-plugins-parent</name>
-	<version>0.23.2-SNAPSHOT</version>
+	<version>0.23.2</version>
 	<properties>
 		<tychoVersion>0.23.1</tychoVersion>
 	</properties>
