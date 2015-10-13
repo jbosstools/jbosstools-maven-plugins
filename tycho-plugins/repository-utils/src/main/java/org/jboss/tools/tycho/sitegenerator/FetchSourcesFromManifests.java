@@ -610,14 +610,16 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 		String localCleanSourcesDir = null;
 		if (projectName != null) {
 			if (projectSHA != null) {
-				localCleanSourcesDir = projectName + "-" + projectSHA;
+				// might get projectName = git@github.com:dgolovin/jbdevstudio-product so scrub out invalid characters
+				getLog().debug("projectName = " + projectName);
+				localCleanSourcesDir = projectName.replaceAll("[@:/]+", "_") + "-" + projectSHA;
+				getLog().debug("localCleanSourcesDir = " + localCleanSourcesDir);
 			} else {
 				throw new MojoExecutionException ("Could not compute projectSHA!");
 			}
 		} else {
 			throw new MojoExecutionException ("Could not compute projectName or projectSHA!");
 		}
-		getLog().debug("localCleanSourcesDir = " + localCleanSourcesDir);
 
 		File repoRoot = null;
 		try {
