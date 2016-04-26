@@ -40,6 +40,7 @@ If you set a siteTemplateFolder value, ensure that the folder exists as site/sit
 							<goal>generate-repository-facade</goal>
 						</goals>
 						<configuration>
+							<!-- configuration options for the generated HTML page -->
 							<symbols>
 								<siteTemplateFolder>siteTemplateFolder/</siteTemplateFolder>
 								<update.site.name>${update.site.name}</update.site.name>
@@ -47,6 +48,21 @@ If you set a siteTemplateFolder value, ensure that the folder exists as site/sit
 								<update.site.version>${update.site.version}</update.site.version>
 								<target.eclipse.version>${target.eclipse.version}</target.eclipse.version>
 							</symbols>
+
+							<!-- this adds repository references to the update site's content.xml -->
+							<associateSites>
+								<site>http://download.server.org/path/to/updates/</site>
+								<site>http://download.server.org/path/to/more/updates/</site>
+							</associateSites>
+
+							<!-- to include other files in the update site zip, list them here -->
+							<additionalWebResources>
+								<resource>../relative/path/some.file.to.include.in.update.site.zip.archive.txt</resource>
+								<resource>../another.file.txt</resource>
+							</additionalWebResources>
+
+							<!-- to remove the default category created for any uncategorized features or bundles, set this to true -->
+							<removeDefaultCategory>true</removeDefaultCategory>
 						</configuration>
 					</execution>
 					<!-- fetches source zips and produces related metadata -->
@@ -58,10 +74,13 @@ If you set a siteTemplateFolder value, ensure that the folder exists as site/sit
 						</goals>
 						<configuration>
 							<!-- 
-							<zipCacheFolder>cache</zipCacheFolder> 
-							<outputFolder>zips</outputFolder> 
+							<zipCacheFolder>${basedir}/cache</zipCacheFolder> 
+							<outputFolder>${project.build.directory}/fullSite</outputFolder> 
+							<sourcesZip>${project.build.directory}/path/to/src.zip</sourcesZip>
+							<sourcesZipRootFolder>folder-at-root-of-src-zip</sourcesZipRootFolder>
 							-->
 							<sourceFetchMap>
+								<!-- pick a plugin available in the project's update site from which we can deduce the Eclipse-SourceReference -->
 								<jbosstools-base>org.jboss.tools.common</jbosstools-base>
 								<jbosstools-aerogear>org.jboss.tools.aerogear.hybrid.core</jbosstools-aerogear>
 								<jbosstools-arquillian>org.jboss.tools.arquillian.core</jbosstools-arquillian>
@@ -79,6 +98,8 @@ If you set a siteTemplateFolder value, ensure that the folder exists as site/sit
 								<jbosstools-server>org.jboss.ide.eclipse.as.core</jbosstools-server>
 								<jbosstools-vpe>org.jboss.tools.vpe</jbosstools-vpe>
 								<jbosstools-webservices>org.jboss.tools.ws.core</jbosstools-webservices>
+								<!-- instead of pulling from a plugin, pull source info from a URL containing the buildinfo.json file -->
+								<jbosstools-xulrunner>http://path/to/buildinfo.json</jbosstools-xulrunner>
 							</sourceFetchMap>
 						</configuration>
 					</execution>
