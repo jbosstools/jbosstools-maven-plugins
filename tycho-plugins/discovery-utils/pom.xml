@@ -1,5 +1,5 @@
 <!--
-- Copyright (c) 2012-2014 Red Hat Inc.
+- Copyright (c) 2012-2016 Red Hat Inc.
 - All rights reserved. This program and the accompanying materials
 - are made available under the terms of the Eclipse Public License v1.0
 - which accompanies this distribution, and is available at
@@ -56,28 +56,5 @@
 			<version>1.2.0</version>
 		</dependency>
 	</dependencies>
-
-	<!-- build>
-    	<extensions>
-			<extension>
-				<groupId>org.apache.maven.wagon</groupId>
-				<artifactId>wagon-http</artifactId>
-				<version>2.4</version>
-			</extension>
-		</extensions>
-	</build-->
-
-	<repositories>
-		<repository>
-			<id>jboss-snapshots-repository</id>
-			<name>JBoss Snapshots Repository</name>
-			<url>https://repository.jboss.org/nexus/content/repositories/snapshots/</url>
-		</repository>
-		<repository>
-			<id>jboss-staging-repository</id>
-			<name>JBoss Staging Repository</name>
-			<url>https://repository.jboss.org/nexus/content/groups/staging/</url>
-		</repository>
-	</repositories>
 
 </project>
