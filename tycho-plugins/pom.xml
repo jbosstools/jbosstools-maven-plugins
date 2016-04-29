@@ -19,6 +19,9 @@
 	<version>0.23.4-SNAPSHOT</version>
 	<properties>
 		<tychoVersion>0.23.1</tychoVersion>
+		<!-- workaround for https://issues.jboss.org/browse/JBIDE-22248 and https://engineering.redhat.com/rt/Ticket/Display.html?id=401756 -->
+		<!-- <jbossNexus>repository.jboss.org</jbossNexus> -->
+		<jbossNexus>origin-repository.jboss.org</jbossNexus>
 	</properties>
 
 	<description>In-House Maven plugins for JBT/JBDS build</description>
@@ -44,12 +47,6 @@
 			<organizationUrl>http://jboss.org/tools</organizationUrl>
 		</developer>
 	</developers>
-
-	<properties>
-		<!-- workaround for https://issues.jboss.org/browse/JBIDE-22248 and https://engineering.redhat.com/rt/Ticket/Display.html?id=401756 -->
-		<!-- <jbossNexus>repository.jboss.org</jbossNexus> -->
-		<jbossNexus>origin-repository.jboss.org</jbossNexus>
-	</properties>
 
 	<modules>
 		<module>repository-utils</module>
