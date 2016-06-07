@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.jboss.tools.tycho.sitegenerator;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,6 +47,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -520,6 +522,29 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		contentStream.close();
 		outContentStream.closeEntry();
 		outContentStream.close();
+
+		// JBDS-3929 overwrite the content.xml.xz file too
+		// see also https://bugs.eclipse.org/bugs/show_bug.cgi?id=464614
+		//getLog().debug("delete old content.xml.xz");
+		FileUtils.forceDelete(new File(p2repository,"content.xml.xz"));
+		//getLog().debug("create content.xml from transformed XML");
+		File contentXML = new File(p2repository, "content.xml");
+		FileOutputStream outContentStreamXML = new FileOutputStream(contentXML);
+		StreamResult resultXML = new StreamResult(outContentStreamXML);
+		transformer.transform(source, resultXML);
+		outContentStreamXML.close();
+		//getLog().debug("stream content.xml to content.xml.xz");
+		BufferedInputStream in = new BufferedInputStream(new FileInputStream(contentXML));
+		XZCompressorOutputStream out = new XZCompressorOutputStream(new FileOutputStream(new File(p2repository,"content.xml.xz")));
+		final byte[] buffer = new byte[1024];
+		int n = 0;
+		while (-1 != (n = in.read(buffer))) {
+		    out.write(buffer, 0, n);
+		}
+		out.close();
+		in.close();
+		//getLog().debug("new content.xml.xz written; remove content.xml");
+		FileUtils.forceDelete(new File(p2repository,"content.xml"));
 	}
 
 	/**
