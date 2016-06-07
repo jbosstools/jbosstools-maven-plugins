@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.jboss.tools.tycho.sitegenerator;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,6 +47,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -454,8 +456,24 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		return outputCategoryXml;
 	}
 
+	/**
+	 * Alter content.xml, content.jar, content.xml.xz to:
+	 * remove default "Uncategorized" category, 
+	 * remove 3rd party associate sites, and 
+	 * add associate sites defined in site's pom.xml
+	 *
+	 * @param p2repository
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws ParserConfigurationException
+	 * @throws TransformerFactoryConfigurationError
+	 * @throws TransformerConfigurationException
+	 * @throws TransformerException
+	 * @throws MojoFailureException
+	 */
 	private void alterContentJar(File p2repository) throws FileNotFoundException, IOException, SAXException, ParserConfigurationException, TransformerFactoryConfigurationError,
-			TransformerConfigurationException, TransformerException {
+			TransformerConfigurationException, TransformerException, MojoFailureException {
 		File contentJar = new File(p2repository, "content.jar");
 		ZipInputStream contentStream = new ZipInputStream(new FileInputStream(contentJar));
 		ZipEntry entry = null;
@@ -472,7 +490,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 						Node currentRef = references.item(i);
 						currentRef.getParentNode().removeChild(currentRef);
 					}
-					// add assiciateSites
+					// add associateSites
 					if (this.associateSites != null && this.associateSites.size() > 0 && this.referenceStrategy == ReferenceStrategy.embedReferences) {
 						Element refElement = contentDoc.createElement("references");
 						refElement.setAttribute("size", Integer.valueOf(2 * associateSites.size()).toString());
@@ -490,6 +508,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 						repoElement.appendChild(refElement);
 					}
 				}
+				// remove default "Uncategorized" category
 				if (this.removeDefaultCategory) {
 					Element unitsElement = (Element) repoElement.getElementsByTagName("units").item(0);
 					NodeList units = unitsElement.getElementsByTagName("unit");
@@ -520,16 +539,25 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		contentStream.close();
 		outContentStream.closeEntry();
 		outContentStream.close();
+		alterXzFile(new File(p2repository, "content.xml"), new File(p2repository,"content.xml.xz"), transformer, source);
 	}
 
 	/**
-	 * Add p2 stats to the repository See
-	 * http://wiki.eclipse.org/Equinox_p2_download_stats
+	 * Add p2 stats to the repository's artifacts.xml (and .jar and .xml.xz) 
+	 * See http://wiki.eclipse.org/Equinox_p2_download_stats
 	 *
 	 * @param p2repository
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws ParserConfigurationException
+	 * @throws TransformerFactoryConfigurationError
+	 * @throws TransformerConfigurationException
+	 * @throws TransformerException
+	 * @throws MojoFailureException
 	 */
 	private void addP2Stats(File p2repository) throws FileNotFoundException, IOException, SAXException, ParserConfigurationException, TransformerFactoryConfigurationError,
-			TransformerConfigurationException, TransformerException {
+			TransformerConfigurationException, TransformerException, MojoFailureException {
 		File artifactsJar = new File(p2repository, "artifacts.jar");
 		ZipInputStream contentStream = new ZipInputStream(new FileInputStream(artifactsJar));
 		ZipEntry entry = null;
@@ -579,6 +607,49 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		contentStream.close();
 		outContentStream.closeEntry();
 		outContentStream.close();
+		alterXzFile(new File(p2repository, "artifacts.xml"), new File(p2repository,"artifacts.xml.xz"), transformer, source);
+
+	}
+
+	/**
+	 * Add p2 stats to the repository's artifacts.xml (and .jar and .xml.xz) 
+	 * See http://wiki.eclipse.org/Equinox_p2_download_stats
+	 * 
+	 * @param theXml
+	 * @param theXmlXz
+	 * @param transformer
+	 * @param source
+	 * @throws MojoFailureException
+	 * 
+	 * */
+
+	private void alterXzFile(File theXml, File theXmlXz, Transformer transformer, DOMSource source) throws MojoFailureException {
+		try {
+			// JBDS-3929 overwrite the artifacts.xml.xz file too
+			// see also https://bugs.eclipse.org/bugs/show_bug.cgi?id=464614
+			//getLog().debug("delete " + theXmlXz.toString());
+			FileUtils.forceDelete(theXmlXz);
+			//getLog().debug("create " + theXml.toString() + " from transformed XML");
+			FileOutputStream outStreamXml = new FileOutputStream(theXml);
+			StreamResult resultXml = new StreamResult(outStreamXml);
+			transformer.transform(source, resultXml);
+			outStreamXml.close();
+			//getLog().debug("stream " + theXml.toString() + " to " + theXmlXz.toString());
+			BufferedInputStream in = new BufferedInputStream(new FileInputStream(theXml));
+			XZCompressorOutputStream out = new XZCompressorOutputStream(new FileOutputStream(theXmlXz));
+			final byte[] buffer = new byte[1024];
+			int n = 0;
+			while (-1 != (n = in.read(buffer))) {
+			    out.write(buffer, 0, n);
+			}
+			out.close();
+			in.close();
+			//getLog().debug("new " + theXmlXz.toString() + " written; remove " + theXml.toString());
+			FileUtils.forceDelete(theXml);
+		} catch (IOException|TransformerException ex) { 
+			getLog().error(ex); 
+			throw new MojoFailureException("Error while compressing " + theXml.toString(), ex);
+		} 
 	}
 
 	private void alterIndexFile(File outputSite) throws FileNotFoundException, IOException {
