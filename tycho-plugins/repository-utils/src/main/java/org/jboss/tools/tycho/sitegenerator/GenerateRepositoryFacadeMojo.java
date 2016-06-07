@@ -526,16 +526,17 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		// JBDS-3929 overwrite the content.xml.xz file too
 		// see also https://bugs.eclipse.org/bugs/show_bug.cgi?id=464614
 		//getLog().debug("delete old content.xml.xz");
-		FileUtils.forceDelete(new File(p2repository,"content.xml.xz"));
+		File contentXmlXz = new File(p2repository,"content.xml.xz");
+		FileUtils.forceDelete(contentXmlXz);
 		//getLog().debug("create content.xml from transformed XML");
-		File contentXML = new File(p2repository, "content.xml");
-		FileOutputStream outContentStreamXML = new FileOutputStream(contentXML);
-		StreamResult resultXML = new StreamResult(outContentStreamXML);
-		transformer.transform(source, resultXML);
-		outContentStreamXML.close();
+		File contentXml = new File(p2repository, "content.xml");
+		FileOutputStream outContentStreamXml = new FileOutputStream(contentXml);
+		StreamResult resultXml = new StreamResult(outContentStreamXml);
+		transformer.transform(source, resultXml);
+		outContentStreamXml.close();
 		//getLog().debug("stream content.xml to content.xml.xz");
-		BufferedInputStream in = new BufferedInputStream(new FileInputStream(contentXML));
-		XZCompressorOutputStream out = new XZCompressorOutputStream(new FileOutputStream(new File(p2repository,"content.xml.xz")));
+		BufferedInputStream in = new BufferedInputStream(new FileInputStream(contentXml));
+		XZCompressorOutputStream out = new XZCompressorOutputStream(new FileOutputStream(contentXmlXz));
 		final byte[] buffer = new byte[1024];
 		int n = 0;
 		while (-1 != (n = in.read(buffer))) {
@@ -544,7 +545,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		out.close();
 		in.close();
 		//getLog().debug("new content.xml.xz written; remove content.xml");
-		FileUtils.forceDelete(new File(p2repository,"content.xml"));
+		FileUtils.forceDelete(contentXml);
 	}
 
 	/**
@@ -604,6 +605,31 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		contentStream.close();
 		outContentStream.closeEntry();
 		outContentStream.close();
+
+		// JBDS-3929 overwrite the artifacts.xml.xz file too
+		// see also https://bugs.eclipse.org/bugs/show_bug.cgi?id=464614
+		//getLog().debug("delete old artifacts.xml.xz");
+		File artifactsXmlXz = new File(p2repository,"artifacts.xml.xz");
+		FileUtils.forceDelete(artifactsXmlXz);
+		//getLog().debug("create artifacts.xml from transformed XML");
+		File artifactsXml = new File(p2repository, "artifacts.xml");
+		FileOutputStream outArtifactsStreamXml = new FileOutputStream(artifactsXml);
+		StreamResult resultXml = new StreamResult(outArtifactsStreamXml);
+		transformer.transform(source, resultXml);
+		outArtifactsStreamXml.close();
+		//getLog().debug("stream artifacts.xml to artifacts.xml.xz");
+		BufferedInputStream in = new BufferedInputStream(new FileInputStream(artifactsXml));
+		XZCompressorOutputStream out = new XZCompressorOutputStream(new FileOutputStream(artifactsXmlXz));
+		final byte[] buffer = new byte[1024];
+		int n = 0;
+		while (-1 != (n = in.read(buffer))) {
+		    out.write(buffer, 0, n);
+		}
+		out.close();
+		in.close();
+		//getLog().debug("new artifacts.xml.xz written; remove artifacts.xml");
+		FileUtils.forceDelete(artifactsXml);
+
 	}
 
 	private void alterIndexFile(File outputSite) throws FileNotFoundException, IOException {
