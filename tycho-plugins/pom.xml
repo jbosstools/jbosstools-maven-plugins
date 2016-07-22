@@ -16,9 +16,9 @@
 	<artifactId>tycho-plugins</artifactId>
 	<packaging>pom</packaging>
 	<name>jbosstools-tycho-plugins-parent</name>
-	<version>0.25.1-SNAPSHOT</version>
+	<version>0.26.0-SNAPSHOT</version>
 	<properties>
-		<tychoVersion>0.25.0</tychoVersion>
+		<tychoVersion>0.26.0-SNAPSHOT</tychoVersion>
 		<!-- workaround for https://issues.jboss.org/browse/JBIDE-22248 and https://engineering.redhat.com/rt/Ticket/Display.html?id=401756 -->
 		<!-- <jbossNexus>repository.jboss.org</jbossNexus> -->
 		<jbossNexus>origin-repository.jboss.org</jbossNexus>
@@ -155,7 +155,42 @@
 		</dependency>
 	</dependencies>
 
+	<pluginRepositories>
+		<pluginRepository>
+			<id>tycho-snapshots</id>
+			<url>https://repo.eclipse.org/content/repositories/tycho-snapshots/</url>
+		</pluginRepository>
+		<pluginRepository>
+			<id>sonatype-public-grid</id>
+			<url>https://repository.sonatype.org/content/groups/sonatype-public-grid</url>
+		</pluginRepository>
+		<pluginRepository>
+			<id>sonatype-public-repository</id>
+			<url>https://oss.sonatype.org/content/groups/public</url>
+		</pluginRepository>
+		<pluginRepository>
+			<id>jboss-snapshots-repository</id>
+			<name>JBoss Snapshots Repository</name>
+			<url>https://${jbossNexus}/nexus/content/repositories/snapshots/</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</pluginRepository>
+		<pluginRepository>
+			<id>jboss-releases</id>
+			<name>JBoss Releases Maven Repository</name>
+			<url>https://${jbossNexus}/nexus/content/repositories/releases/</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</pluginRepository>
+	</pluginRepositories>
+
 	<repositories>
+		<repository>
+			<id>tycho-snapshots</id>
+			<url>https://repo.eclipse.org/content/repositories/tycho-snapshots/</url>
+		</repository>
 		<repository>
 			<id>jboss-snapshots-repository</id>
 			<name>JBoss Snapshots Repository</name>

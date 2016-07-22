@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     Mickael Istria (Red Hat Inc.) - initial API and implementation
+ *     Nick Boldt (Red Hat Inc.) - fixes
  ******************************************************************************/
 package org.jboss.tools.tycho.sitegenerator;
 
@@ -73,7 +74,7 @@ public class CompareWithBaselineMojo extends AbstractMojo {
 			getLog().info("Skipped");
 			return;
 		}
-		ReactorProject reactorProject = DefaultReactorProject.adapt(project);
+		ReactorProject reactorProject = DefaultReactorProject.adapt(project); 
 		Set<?> dependencyMetadata = reactorProject.getDependencyMetadata(true);
 		if (dependencyMetadata == null || dependencyMetadata.isEmpty()) {
 			getLog().debug("Skipping baseline version comparison, no p2 artifacts created in build.");

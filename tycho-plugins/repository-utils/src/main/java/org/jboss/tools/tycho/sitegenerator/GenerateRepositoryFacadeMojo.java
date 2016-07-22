@@ -7,6 +7,7 @@
  *
  * Contributor:
  *     Mickael Istria (Red Hat, Inc.) - initial API and implementation
+ *     Nick Boldt (Red Hat Inc.) - fixes
  ******************************************************************************/
 package org.jboss.tools.tycho.sitegenerator;
 
