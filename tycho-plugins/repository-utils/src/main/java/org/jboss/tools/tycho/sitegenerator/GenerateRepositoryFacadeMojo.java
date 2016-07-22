@@ -101,7 +101,6 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		"BUILD_ALIAS",
 		"JOB_NAME",
 		"BUILD_NUMBER",
-		"BUILD_ID",
 		"RELEASE",
 		"ZIPSUFFIX",
 		"TARGET_PLATFORM_VERSION",

@@ -118,7 +118,7 @@ public class CreateFullSiteMojo extends AbstractMojo {
 		addPropertyLine(content, "BUILD_ALIAS");
 		addPropertyLine(content, "JOB_NAME");
 		addPropertyLine(content, "BUILD_NUMBER");
-		addPropertyLine(content, "BUILD_ID");
+		addPropertyLine(content, "BUILD_TIMESTAMP");
 		addPropertyLine(content, "HUDSON_SLAVE");
 		addPropertyLine(content, "RELEASE");
 		addPropertyLine(content, "ZIPSUFFIX");
