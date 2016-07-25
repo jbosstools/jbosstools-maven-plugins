@@ -867,7 +867,8 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			if (projectURL == null && prop.getName().equals("knownReferences") && prop.getValue().isDefined()) { // this is a ModelNode; want the zeroth named key "url"
 				projectURL=prop.getValue().asList().get(0).get("url").asString();
 				getLog().debug("Upstream repo: " + projectURL);
-				projectName=projectURL.replaceAll(".+/([^/]+).git","$1");
+				// JBIDE-22808 support both git://github.com/jbosstools/jbosstools-portlet.git and https://github.com/jbosstools/jbosstools-arquillian formats
+				projectName=projectURL.replaceAll(".+/([^/]+).git","$1").replaceAll(".+/([^/]+)","$1");
 				getLog().debug("Upstream proj: " + projectName);
 			}
 		}

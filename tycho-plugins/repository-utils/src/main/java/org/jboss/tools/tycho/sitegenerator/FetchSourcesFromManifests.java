@@ -378,10 +378,15 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 									}
 									if (!wrongZips.isEmpty())
 									{
-										throw new MojoFailureException("\n" + buildInfoFiles[i].toString() + "\ncontains " + upstreamSHA + 
-											", but upstream " + upstreamProjectName + " project's MANIFEST.MF has Eclipse-SourceReferences\ncommitId " + wrongZips + 
-											". \nIf you have locally built projects which are aggregated here, \nensure they are built from the latest SHA from HEAD, not a local topic branch.\n"
-											+ "Or, use -DskipCheckSHAs=true to bypass this check.");
+										throw new MojoFailureException("\n\n" + buildInfoFiles[i].toString() + "\ncontains " + upstreamSHA +
+											", but upstream " + upstreamProjectName + " project's MANIFEST.MF has Eclipse-SourceReferences \n" +
+											"commitId " + wrongZips + ". \n\n" +
+											"If you have locally built projects which are being aggregated here, ensure \n" +
+											"they are built from the latest SHA from HEAD, not a local topic branch. \n\n" +
+											"It's also possible that some recent changes have not yet been built upstream. \n" +
+											"If that's the case, trigger a build for the " + upstreamProjectName + " project \n" +
+											"to ensure that the latest commits have been built and can be aggregated here. \n\n" +
+											"Or, use -DskipCheckSHAs=true to bypass this check.\n\n"); // JBIDE-22808
 									} else {
 										getLog().warn("\n" + buildInfoFiles[i].toString() + "\ncontains " + upstreamSHA + 
 											", but upstream " + upstreamProjectName + " project's MANIFEST.MF has no Eclipse-SourceReferences commitId.\n" +
