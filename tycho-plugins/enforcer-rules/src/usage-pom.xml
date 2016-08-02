@@ -48,6 +48,8 @@
 									<version>2.0.6</version>
 								</requireMavenVersion>
 								<noSnapshotsAllowed implementation="org.jboss.tools.releng.NoSnapshotsAllowed">
+									<!-- include AM3, Final, and GA when failing if SNAPSHOTs present -->
+									<buildAliasSearch>AM3|Final|GA</buildAliasSearch>
 									<!-- properties to include when searching for SNAPSHOT versions, eg., openshift-restclient-java.version -->
 									<includePattern>.*</includePattern>
 									<!-- properties to exclude when searching for SNAPSHOT versions, eg.,  jbossTychoPluginsVersion|jbosstoolsRelengPublishVersion|TARGET_PLATFORM_VERSION_MAXIMUM -->
