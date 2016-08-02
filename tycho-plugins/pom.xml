@@ -18,7 +18,7 @@
 	<name>jbosstools-tycho-plugins-parent</name>
 	<version>0.25.1-SNAPSHOT</version>
 	<properties>
-		<tychoVersion>0.25.1-SNAPSHOT</tychoVersion>
+		<tychoVersion>0.25.0</tychoVersion>
 		<!-- workaround for https://issues.jboss.org/browse/JBIDE-22248 and https://engineering.redhat.com/rt/Ticket/Display.html?id=401756 -->
 		<!-- <jbossNexus>repository.jboss.org</jbossNexus> -->
 		<jbossNexus>origin-repository.jboss.org</jbossNexus>
