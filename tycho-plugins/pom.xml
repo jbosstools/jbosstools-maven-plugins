@@ -53,6 +53,7 @@
 		<module>discovery-utils</module>
 		<module>target-platform-utils</module>
 		<module>tycho-dependency-plugin</module>
+		<module>enforcer-rules</module>
 	</modules>
 
 	<build>
