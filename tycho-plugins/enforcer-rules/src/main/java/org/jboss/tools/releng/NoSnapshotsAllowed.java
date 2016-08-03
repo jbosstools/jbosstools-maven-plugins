@@ -81,9 +81,9 @@ public class NoSnapshotsAllowed
                     BUILD_ALIAS = projProps.getProperty(key);
                     if (BUILD_ALIAS.matches(buildAliasSearch))
                     {
-                    	log.info("Found BUILD_ALIAS = " + BUILD_ALIAS + " (for " + buildAliasSearch + " = " + buildAliasSearch + ")");
+                    	log.info("Found BUILD_ALIAS = " + BUILD_ALIAS + " (for buildAliasSearch = " + buildAliasSearch + ")");
                     } else{
-                    	log.debug("Found BUILD_ALIAS = " + BUILD_ALIAS + " (for " + buildAliasSearch + " = " + buildAliasSearch + ")");
+                    	log.debug("Found BUILD_ALIAS = " + BUILD_ALIAS + " (for buildAliasSearch = " + buildAliasSearch + ")");
                     }
                 } else if (key.matches(includePattern) && (excludePattern.equals("") || !key.matches(excludePattern)) && projProps.getProperty(key).indexOf(SNAPSHOT)>-1)
                 {
