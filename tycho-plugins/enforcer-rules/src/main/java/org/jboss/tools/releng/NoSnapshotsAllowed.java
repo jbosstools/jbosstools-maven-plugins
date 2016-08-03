@@ -78,15 +78,21 @@ public class NoSnapshotsAllowed
                 String key = (String) e.nextElement();
                 if (key.equals("BUILD_ALIAS"))
                 {
-//                    log.debug("Property: "+ key + " = " + projProps.getProperty(key));
                     BUILD_ALIAS = projProps.getProperty(key);
+                    if (BUILD_ALIAS.matches(buildAliasSearch))
+                    {
+                    	log.info("Found BUILD_ALIAS = " + BUILD_ALIAS + " (for " + buildAliasSearch + " = " + buildAliasSearch + ")");
+                    } else{
+                    	log.debug("Found BUILD_ALIAS = " + BUILD_ALIAS + " (for " + buildAliasSearch + " = " + buildAliasSearch + ")");
+                    }
                 } else if (key.matches(includePattern) && (excludePattern.equals("") || !key.matches(excludePattern)) && projProps.getProperty(key).indexOf(SNAPSHOT)>-1)
                 {
                     log.error("Found property "+ key + " = " + projProps.getProperty(key));
                 	snapshotKey = key;
+//                } else {
+//                    log.debug("Property: "+ key + " = " + projProps.getProperty(key));
                 }
             }
-        	log.info("Found property BUILD_ALIAS = " + BUILD_ALIAS);
             	
 //            // retrieve any component out of the session directly
 //            ArtifactResolver resolver = (ArtifactResolver) helper.getComponent( ArtifactResolver.class );
@@ -100,7 +106,7 @@ public class NoSnapshotsAllowed
             log.debug( "Retrieved Project: " + project );
             log.debug( "Retrieved Project Version: " + project.getVersion());
 
-            if ( BUILD_ALIAS.matches(buildAliasSearch) && !snapshotKey.equals(null))
+            if ( BUILD_ALIAS.matches(buildAliasSearch) && snapshotKey != null)
             {
                 throw new EnforcerRuleException( "\nWhen BUILD_ALIAS (" + BUILD_ALIAS + 
                 		") matches /" + buildAliasSearch + "/, cannot include " + SNAPSHOT + " dependencies.\n");
