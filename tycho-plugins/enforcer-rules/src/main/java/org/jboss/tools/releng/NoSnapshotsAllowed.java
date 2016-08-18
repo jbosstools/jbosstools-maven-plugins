@@ -76,7 +76,8 @@ public class NoSnapshotsAllowed
             Enumeration<?> e = projProps.propertyNames();
             while (e.hasMoreElements()) {
                 String key = (String) e.nextElement();
-                if (key.equals("BUILD_ALIAS"))
+                // fetch from parent pom if not passed into the rule config
+                if (BUILD_ALIAS == null && key.equals("BUILD_ALIAS"))
                 {
                     BUILD_ALIAS = projProps.getProperty(key);
                     if (BUILD_ALIAS.matches(buildAliasSearch))
