@@ -42,7 +42,7 @@ public class NoSnapshotsAllowed
     implements EnforcerRule
 {
     private String snapshotKey = null;
-    private String BUILD_ALIAS = null;
+    private String buildAlias = null;
 
     /**
      * Simple params
@@ -77,14 +77,14 @@ public class NoSnapshotsAllowed
             while (e.hasMoreElements()) {
                 String key = (String) e.nextElement();
                 // fetch from parent pom if not passed into the rule config
-                if (BUILD_ALIAS == null && key.equals("BUILD_ALIAS"))
+                if (buildAlias == null && key.equals("BUILD_ALIAS"))
                 {
-                    BUILD_ALIAS = projProps.getProperty(key);
-                    if (BUILD_ALIAS.matches(buildAliasSearch))
+                    buildAlias = projProps.getProperty(key);
+                    if (buildAlias.matches(buildAliasSearch))
                     {
-                    	log.info("Found BUILD_ALIAS = " + BUILD_ALIAS + " (for buildAliasSearch = " + buildAliasSearch + ")");
+                    	log.info("Found buildAlias = " + buildAlias + " (for buildAliasSearch = " + buildAliasSearch + ")");
                     } else{
-                    	log.debug("Found BUILD_ALIAS = " + BUILD_ALIAS + " (for buildAliasSearch = " + buildAliasSearch + ")");
+                    	log.debug("Found buildAlias = " + buildAlias + " (for buildAliasSearch = " + buildAliasSearch + ")");
                     }
                 } else if (key.matches(includePattern) && (excludePattern.equals("") || !key.matches(excludePattern)) && projProps.getProperty(key).indexOf(SNAPSHOT)>-1)
                 {
@@ -107,9 +107,9 @@ public class NoSnapshotsAllowed
             log.debug( "Retrieved Project: " + project );
             log.debug( "Retrieved Project Version: " + project.getVersion());
 
-            if ( BUILD_ALIAS.matches(buildAliasSearch) && snapshotKey != null)
+            if ( buildAlias.matches(buildAliasSearch) && snapshotKey != null)
             {
-                throw new EnforcerRuleException( "\nWhen BUILD_ALIAS (" + BUILD_ALIAS + 
+                throw new EnforcerRuleException( "\nWhen buildAlias (" + buildAlias + 
                 		") matches /" + buildAliasSearch + "/, cannot include " + SNAPSHOT + " dependencies.\n");
             }
         }
