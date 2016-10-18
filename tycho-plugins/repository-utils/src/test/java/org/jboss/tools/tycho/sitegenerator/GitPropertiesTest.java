@@ -22,8 +22,10 @@ public class GitPropertiesTest {
 	public void testOriginUrl() throws IOException {
 		properties.load(getClass().getClassLoader().getResourceAsStream("git.properties"));
 		// could be git@github.com:jbosstools/jbosstools... or git://github.com/jbosstools/jbosstools...
+		// could include .git suffix or not
 		String projectURL = properties.get("git.remote.origin.url").toString();
-	  	String projectName = projectURL.replaceAll(".+/([^/]+).git","$1");
+	  	String projectName = projectURL.replaceAll(".+/([^/]+)","$1");
+	  	projectName = projectName.replaceAll(".git","");
 	  	assertEquals("jbosstools-maven-plugins", projectName);
 	}
 }
