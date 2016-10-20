@@ -165,7 +165,14 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 	@Parameter(property = "fetch-sources-from-manifests.skip", defaultValue = "false")
 	private boolean skip;
 	
-	@Parameter(property = "skipCheckSHAs", defaultValue = "false")
+	/*  JBIDE-22870 
+		jbosstools now builds using jgit timestamps, it's impossible to define a single plugin which is representative 
+	    of the whole project when checking for the latest SHA - each plugin in a project may have a different latest SHA,
+	    which is different from the latest SHA on that branch. Therefore the default value here will be changed to true,
+	    to skip this check entirely.
+	    For projects which use the old tycho default timestamp provider, you can set this to false with -DskipCheckSHAs=false
+	*/
+	@Parameter(property = "skipCheckSHAs", defaultValue = "true")
 	private boolean skipCheckSHAs;
 
 	Properties allBuildProperties = new Properties();
