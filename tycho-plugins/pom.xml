@@ -231,12 +231,14 @@
 			<name>JBoss Snapshots Repository</name>
 			<url>https://${jbossNexus}/nexus/content/repositories/snapshots/</url>
 			<uniqueVersion>false</uniqueVersion>
+			<layout>default</layout>
 		</snapshotRepository>
 		<repository>
 			<id>jboss-releases-repository</id>
 			<name>JBoss Release Staging Repository</name>
 			<uniqueVersion>false</uniqueVersion>
 			<url>https://${jbossNexus}/nexus/service/local/staging/deploy/maven2/</url>
+			<layout>default</layout>
 		</repository>
 	</distributionManagement>
 
