@@ -109,6 +109,8 @@ public class CoreUIDependency implements EnforcerRule {
 		}
 	}
 
+	// TODO: add support for Import-Package as well as Require-Bundle
+
 	private ManifestModel findAllDependencies(File pluginFile, File manifest, Log log) {
 		ArrayList<String> allDeps = new ArrayList<String>();
 		Manifest mf = null;
@@ -120,13 +122,15 @@ public class CoreUIDependency implements EnforcerRule {
 			if( symbolicName.contains(";")) {
 				symbolicName = symbolicName.substring(0, symbolicName.indexOf(";"));
 			}
-			String[] deps = reqs.split(",");
-			for( int i = 0; i < deps.length; i++ ) {
-				String[] segments = deps[i].split(";");
-				if( segments != null && segments.length > 0) {
-					String dep = segments[0];
-					allDeps.add(dep);
-				} // end for
+			if (reqs != null) {
+				String[] deps = reqs.split(",");
+				for( int i = 0; i < deps.length; i++ ) {
+					String[] segments = deps[i].split(";");
+					if( segments != null && segments.length > 0) {
+						String dep = segments[0];
+						allDeps.add(dep);
+					}
+				}
 			}
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
