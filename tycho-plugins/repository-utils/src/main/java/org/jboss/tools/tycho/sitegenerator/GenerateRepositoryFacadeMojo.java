@@ -907,7 +907,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	}
 
 	protected static File findRepoRoot(File repoRoot) throws FileNotFoundException {
-		while (! new File(repoRoot, ".git").isDirectory()) {
+		while (repoRoot != null && ! new File(repoRoot, ".git").isDirectory()) {
 			repoRoot = repoRoot.getParentFile();
 		}
 		if (repoRoot == null) {
