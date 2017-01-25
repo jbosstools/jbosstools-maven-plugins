@@ -1,3 +1,5 @@
+TEST
+
 To use this plugin in your eclipse-repository build, add it to your site/pom.xml, and set 
 properties as required to override defaults.
 
