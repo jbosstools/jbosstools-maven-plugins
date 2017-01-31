@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.jar.Manifest;
 
@@ -17,7 +16,6 @@ import org.apache.maven.enforcer.rule.api.EnforcerRule;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleException;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleHelper;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
 
 /**
@@ -34,8 +32,8 @@ public class CoreUIDependency implements EnforcerRule {
 		Log log = helper.getLog();
 		try {
 			// get the various expressions out of the helper.
-			MavenProject project = (MavenProject) helper.evaluate( "${project}" );
-			Properties projProps = project.getProperties();
+//			MavenProject project = (MavenProject) helper.evaluate( "${project}" );
+//			Properties projProps = project.getProperties();
 
 			File pluginFolder = (File)helper.evaluate("${project.basedir}");
 			pluginId = pluginFolder;
