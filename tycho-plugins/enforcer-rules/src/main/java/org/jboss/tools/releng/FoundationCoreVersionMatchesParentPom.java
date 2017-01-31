@@ -27,7 +27,8 @@ public class FoundationCoreVersionMatchesParentPom
     /**
      * Simple params
      */
-    private String currentVersionProperties = null; 
+    private String currentVersionProperties = null;
+    private String requiredQualifier = ".Final"; // or .GA
 
     public void execute( EnforcerRuleHelper helper )
         throws EnforcerRuleException
@@ -68,7 +69,7 @@ public class FoundationCoreVersionMatchesParentPom
         		fileProps.load(currentVersionPropertiesFIS);
 
         		defaultVersion = fileProps.getProperty("default.version");
-        		defaultVersionBase = defaultVersion.replaceAll(".Final", "");
+        		defaultVersionBase = defaultVersion.replaceAll(requiredQualifier, "");
         	} catch (IOException ex) {
         		ex.printStackTrace();
         	} finally {
@@ -88,8 +89,8 @@ public class FoundationCoreVersionMatchesParentPom
             if (!defaultVersionBase.equals(parentPomVersionBase) && !defaultVersion.equals(parentPomVersionBase + "." + BUILD_ALIAS))
             {
                 throw new EnforcerRuleException( "\n[ERROR] Invalid value of default.version = " + defaultVersion + 
-                		" for parent pom = " + parentPomVersionBase + "." + BUILD_ALIAS + "-SNAPSHOT !" +
-                		"\n\nMust set default.version = " + parentPomVersionBase + ".Final " +
+                		" for parent = " + parentPomVersionBase + "." + BUILD_ALIAS + "-SNAPSHOT !" +
+                		"\n\nMust set default.version = " + parentPomVersionBase + requiredQualifier + " " +
             			"(or = " + parentPomVersionBase + "." + BUILD_ALIAS + ") " + 
             			"in this file:\n\n" + basedir +"/" + currentVersionProperties);
             }
