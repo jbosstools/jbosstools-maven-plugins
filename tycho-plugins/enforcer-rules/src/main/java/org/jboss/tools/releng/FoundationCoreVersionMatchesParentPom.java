@@ -23,6 +23,11 @@ public class FoundationCoreVersionMatchesParentPom
     private String BUILD_ALIAS = null;
     private String defaultVersion = null; // found in currentVersionPropertiesFile
     private String defaultVersionBase = null; // found in currentVersionPropertiesFile, then remove .Final suffix
+   
+    /**
+     * Simple params
+     */
+    private String currentVersionProperties = null; 
 
     public void execute( EnforcerRuleHelper helper )
         throws EnforcerRuleException
@@ -33,32 +38,7 @@ public class FoundationCoreVersionMatchesParentPom
         {
             MavenProject project = (MavenProject) helper.evaluate( "${project}" );
             String basedir = (String) helper.evaluate( "${project.basedir}" ).toString();
-            String currentVersionProperties = basedir +"/src/org/jboss/tools/foundation/core/properties/internal/currentversion.properties";
-            log.debug( "Retrieved Basedir: " + basedir );
-            log.debug( "Retrieved Project: " + project );
-
-            Properties fileProps = new Properties();
-        	InputStream currentVersionPropertiesFIS = null;
-        	try {
-        		currentVersionPropertiesFIS = new FileInputStream(currentVersionProperties);
-        		fileProps.load(currentVersionPropertiesFIS);
-
-        		defaultVersion = fileProps.getProperty("default.version");
-        		defaultVersionBase = defaultVersion.replaceAll(".Final", "");
-        	} catch (IOException ex) {
-        		ex.printStackTrace();
-        	} finally {
-        		if (currentVersionPropertiesFIS != null) {
-        			try {
-        				currentVersionPropertiesFIS.close();
-        			} catch (IOException e) {
-        				e.printStackTrace();
-        			}
-        		}
-        	}
-       		log.debug("Got default.version      = " + defaultVersion);
-    		log.debug("Got default.version base = " + defaultVersionBase);
- 
+            
             Properties projProps = project.getProperties();
             Enumeration<?> e = projProps.propertyNames();
             while (e.hasMoreElements()) {
@@ -77,6 +57,32 @@ public class FoundationCoreVersionMatchesParentPom
             parentPomVersionBase = parentPomVersionBase.replaceAll(".SNAPSHOT", "");
        		log.debug("Got parentPomVersion     = " + parentPomVersionBase + "." + BUILD_ALIAS);
     		log.debug("Got parentPomVersionBase = " + parentPomVersionBase);
+            
+            log.debug( "Retrieved Basedir: " + basedir );
+            log.debug( "Retrieved Project: " + project );
+
+            Properties fileProps = new Properties();
+        	InputStream currentVersionPropertiesFIS = null;
+        	try {
+        		currentVersionPropertiesFIS = new FileInputStream(basedir +"/" + currentVersionProperties);
+        		fileProps.load(currentVersionPropertiesFIS);
+
+        		defaultVersion = fileProps.getProperty("default.version");
+        		defaultVersionBase = defaultVersion.replaceAll(".Final", "");
+        	} catch (IOException ex) {
+        		ex.printStackTrace();
+        	} finally {
+        		if (currentVersionPropertiesFIS != null) {
+        			try {
+        				currentVersionPropertiesFIS.close();
+        			} catch (IOException ex) {
+        				ex.printStackTrace();
+        			}
+        		}
+        	}
+       		log.debug("Got default.version      = " + defaultVersion);
+    		log.debug("Got default.version base = " + defaultVersionBase);
+ 
 
     		// want to match 4.4.3 == 4.4.3 or 4.4.3.AM2 = 4.4.3.AM2
             if (!defaultVersionBase.equals(parentPomVersionBase) && !defaultVersion.equals(parentPomVersionBase + "." + BUILD_ALIAS))
@@ -85,7 +91,7 @@ public class FoundationCoreVersionMatchesParentPom
                 		" for parent pom = " + parentPomVersionBase + "." + BUILD_ALIAS + "-SNAPSHOT !" +
                 		"\n\nMust set default.version = " + parentPomVersionBase + ".Final " +
             			"(or = " + parentPomVersionBase + "." + BUILD_ALIAS + ") " + 
-            			"in this file:\n\n" + currentVersionProperties);
+            			"in this file:\n\n" + basedir +"/" + currentVersionProperties);
             }
         }
         catch ( ExpressionEvaluationException e )
@@ -106,7 +112,7 @@ public class FoundationCoreVersionMatchesParentPom
     public String getCacheId()
     {
         //no hash on boolean...only parameter so no hash is needed.
-        return ""+parentPomVersionBase+"::"+BUILD_ALIAS+"::"+defaultVersion;
+        return ""+parentPomVersionBase+"::"+BUILD_ALIAS+"::"+defaultVersion+"::"+currentVersionProperties;
     }
 
     /**
