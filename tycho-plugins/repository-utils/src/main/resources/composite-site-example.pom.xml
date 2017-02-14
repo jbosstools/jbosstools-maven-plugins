@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.jboss.tools</groupId>
+	<version>4.4.3-SNAPSHOT</version>
+	<artifactId>org.jboss.tools.site.central.composite.example</artifactId>
+	<name>JBoss Tools - Composite Site Example</name>
+	<packaging>jar</packaging>
+	<properties>
+		<eclipseReleaseName>neon</eclipseReleaseName>
+
+		<!-- if not set, use project.name or fall back to project.artifactId -->
+		<compositeSiteName></compositeSiteName>
+		<!-- path under /target/ where the composite is created; default is composite/ -->
+		<compositeSiteFolder>composite</compositeSiteFolder>
+
+		<!-- static list of child sites to include in the composite; set to blank property (-DchildSites="") to not include any -->
+		<childSites>
+			http://download.jboss.org/jbosstools/static/${eclipseReleaseName}/stable/updates/core/
+			http://download.jboss.org/jbosstools/static/${eclipseReleaseName}/stable/updates/coretests/
+			http://download.jboss.org/jbosstools/static/${eclipseReleaseName}/stable/updates/integration-tests/
+			http://download.jboss.org/jbosstools/static/${eclipseReleaseName}/stable/updates/central/
+			http://download.jboss.org/jbosstools/static/${eclipseReleaseName}/stable/updates/earlyaccess/
+			some-folder
+			/absolute/path/
+			relative/path/
+			../another/relative/path/
+		</childSites>
+
+		<!-- in addition to statically listed childSites, can also create a composite site by reading one or more URLs and looking for child folders to composite together -->
+		<collectChildrenFromRemoteURL>
+			http://download.jboss.org/jbosstools/static/neon/stable/updates/core/
+			http://download.jboss.org/jbosstools/static/neon/stable/updates/coretests/
+		</collectChildrenFromRemoteURL>
+		<!-- append trailing slash to match folders only -->
+		<collectChildrenFromRemoteRegex>\d+\.\d+\.\d+\.(AM.+|Alpha.+|Beta.+|CR.+|Final|GA)/</collectChildrenFromRemoteRegex>
+		<!-- collect only some of the matches on EACH URL to a limit of x; use -1 or "" to collect all -->
+		<collectChildrenFromRemoteLimit>2</collectChildrenFromRemoteLimit>
+	</properties>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.jboss.tools.tycho-plugins</groupId>
+				<artifactId>repository-utils</artifactId>
+				<executions>
+					<execution>
+						<id>generate-composite</id>
+						<phase>package</phase>
+						<goals>
+							<goal>generate-composite-site</goal>
+						</goals>
+						<configuration>
+							<compositeSiteName>${compositeSiteName}</compositeSiteName>
+							<compositeSiteFolder>${compositeSiteFolder}</compositeSiteFolder>
+							<childSites>${childSites}</childSites>
+							<collectChildrenFromRemoteURL>${collectChildrenFromRemoteURL}</collectChildrenFromRemoteURL>
+							<collectChildrenFromRemoteRegex>${collectChildrenFromRemoteRegex}</collectChildrenFromRemoteRegex>
+							<collectChildrenFromRemoteLimit>${collectChildrenFromRemoteLimit}</collectChildrenFromRemoteLimit>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>
