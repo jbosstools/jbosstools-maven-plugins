@@ -11,12 +11,12 @@
 		<eclipseReleaseName>neon</eclipseReleaseName>
 
 		<!-- if not set, use project.name or fall back to project.artifactId -->
-		<compositeSiteName></compositeSiteName>
+		<generate-composite-site.compositeSiteName></generate-composite-site.compositeSiteName>
 		<!-- path under /target/ where the composite is created; default is composite/ -->
-		<compositeSiteFolder>composite</compositeSiteFolder>
+		<generate-composite-site.compositeSiteFolder>composite</generate-composite-site.compositeSiteFolder>
 
 		<!-- static list of child sites to include in the composite; set to blank property (-DchildSites="") to not include any -->
-		<childSites>
+		<generate-composite-site.childSites>
 			http://download.jboss.org/jbosstools/static/${eclipseReleaseName}/stable/updates/core/
 			http://download.jboss.org/jbosstools/static/${eclipseReleaseName}/stable/updates/coretests/
 			http://download.jboss.org/jbosstools/static/${eclipseReleaseName}/stable/updates/integration-tests/
@@ -26,17 +26,17 @@
 			/absolute/path/
 			relative/path/
 			../another/relative/path/
-		</childSites>
+		</generate-composite-site.childSites>
 
 		<!-- in addition to statically listed childSites, can also create a composite site by reading one or more URLs and looking for child folders to composite together -->
-		<collectChildrenFromRemoteURL>
+		<generate-composite-site.collectChildrenFromRemoteURL>
 			http://download.jboss.org/jbosstools/static/neon/stable/updates/core/
 			http://download.jboss.org/jbosstools/static/neon/stable/updates/coretests/
-		</collectChildrenFromRemoteURL>
+		</generate-composite-site.collectChildrenFromRemoteURL>
 		<!-- append trailing slash to match folders only -->
-		<collectChildrenFromRemoteRegex>\d+\.\d+\.\d+\.(AM.+|Alpha.+|Beta.+|CR.+|Final|GA)/</collectChildrenFromRemoteRegex>
+		<generate-composite-site.collectChildrenFromRemoteRegex>\d+\.\d+\.\d+\.(AM.+|Alpha.+|Beta.+|CR.+|Final|GA)/</generate-composite-site.collectChildrenFromRemoteRegex>
 		<!-- collect only some of the matches on EACH URL to a limit of x; use -1 or "" to collect all -->
-		<collectChildrenFromRemoteLimit>2</collectChildrenFromRemoteLimit>
+		<generate-composite-site.collectChildrenFromRemoteLimit>2</generate-composite-site.collectChildrenFromRemoteLimit>
 	</properties>
 	<build>
 		<plugins>
@@ -50,14 +50,6 @@
 						<goals>
 							<goal>generate-composite-site</goal>
 						</goals>
-						<configuration>
-							<compositeSiteName>${compositeSiteName}</compositeSiteName>
-							<compositeSiteFolder>${compositeSiteFolder}</compositeSiteFolder>
-							<childSites>${childSites}</childSites>
-							<collectChildrenFromRemoteURL>${collectChildrenFromRemoteURL}</collectChildrenFromRemoteURL>
-							<collectChildrenFromRemoteRegex>${collectChildrenFromRemoteRegex}</collectChildrenFromRemoteRegex>
-							<collectChildrenFromRemoteLimit>${collectChildrenFromRemoteLimit}</collectChildrenFromRemoteLimit>
-						</configuration>
 					</execution>
 				</executions>
 			</plugin>
