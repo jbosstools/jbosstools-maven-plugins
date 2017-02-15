@@ -37,44 +37,44 @@ import org.jsoup.select.Elements;
 @Mojo(name = "generate-composite-site", defaultPhase = LifecyclePhase.PACKAGE, requiresProject=false)
 public class GenerateCompositeSite extends AbstractTychoPackagingMojo {
 
-	@Parameter(property = "project", required = false, readonly = true)
+	@Parameter(property = "project", required = false, readonly = false)
 	private MavenProject project;
 
 	/**
 	 * Child sites to add into the composite
 	 */
-	@Parameter
+	@Parameter(property = "generate-composite-site.childSites")
 	private String childSites;
 
 	/**
 	 * Folder to create under /target/ containing the composite site
 	 */
-	@Parameter
+	@Parameter(property = "generate-composite-site.compositeSiteFolder", defaultValue = "composite")
 	private String compositeSiteFolder = "composite";
 
 	/**
 	 * Label to use to name the composite site repo; if null, fall back to project.name or project.artifactId
 	 */
-	@Parameter
+	@Parameter(property = "generate-composite-site.compositeSiteName")
 	private String compositeSiteName;
 
 	
 	/**
 	 *  In addition to statically listed childSites, can also create a composite site by reading this URL and looking for child folders to composite together
 	 */
-	@Parameter
+	@Parameter(property = "generate-composite-site.collectChildrenFromRemoteURL")
 	private String collectChildrenFromRemoteURL;
 
 	/**
 	 * Regex to use to find children at the above URL, eg., \d+\.\d+\.\d+\.(AM.+|Alpha.+|Beta.+|CR.+|Final|GA)/ - append trailing slash to match folders only
 	 */
-	@Parameter
+	@Parameter(property = "generate-composite-site.collectChildrenFromRemoteRegex")
 	private String collectChildrenFromRemoteRegex = null;
 
 	/**
 	 * Limit of children to collect; if -1, collect all children.
 	 */
-	@Parameter
+	@Parameter(property = "generate-composite-site.collectChildrenFromRemoteLimit", defaultValue = "-1")
 	private int collectChildrenFromRemoteLimit = -1;
 
 	
