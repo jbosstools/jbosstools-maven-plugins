@@ -19,7 +19,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -35,14 +34,11 @@ import org.jsoup.select.Elements;
  * Generates a composite site from 1 or more URLs, a site name (pulled from , and a
  * destination path
  */
-@Mojo(name = "generate-composite-site", defaultPhase = LifecyclePhase.PACKAGE)
+@Mojo(name = "generate-composite-site", defaultPhase = LifecyclePhase.PACKAGE, requiresProject=false)
 public class GenerateCompositeSite extends AbstractTychoPackagingMojo {
 
-	@Parameter(property = "project", required = true, readonly = true)
+	@Parameter(property = "project", required = false, readonly = true)
 	private MavenProject project;
-
-	@Parameter(property = "session", readonly = true)
-	private MavenSession session;
 
 	/**
 	 * Child sites to add into the composite
