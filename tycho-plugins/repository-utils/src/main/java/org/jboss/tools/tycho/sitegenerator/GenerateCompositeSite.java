@@ -179,5 +179,14 @@ public class GenerateCompositeSite extends AbstractTychoPackagingMojo {
 			compositeArtifact.append("  </children>").append('\n').append("</repository>\n\n");
 			org.apache.commons.io.FileUtils.writeStringToFile(compositeArtifactsXml, compositeArtifact.toString());
 		}
+		{
+			File compositeP2Index = new File(outputRepository, "p2.index");
+			StringBuilder p2Index = new StringBuilder();
+			p2Index.append("version = 1").append('\n')
+				.append("metadata.repository.factory.order = compositeContent.xml,\\!").append('\n')
+				.append("artifact.repository.factory.order = compositeArtifacts.xml,\\!").append('\n');
+			org.apache.commons.io.FileUtils.writeStringToFile(compositeP2Index, p2Index.toString());
+
+		}
 	}
 }
