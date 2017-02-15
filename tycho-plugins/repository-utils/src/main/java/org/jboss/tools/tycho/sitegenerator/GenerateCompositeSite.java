@@ -15,7 +15,7 @@
  *     Or via commandline w/o a pom. For example:
  *
  *      cd /tmp
- *      mvn org.jboss.tools.tycho-plugins:repository-utils:0.26.1-SNAPSHOT:generate-composite-site \
+ *      mvn org.jboss.tools.tycho-plugins:repository-utils:0.26.1:generate-composite-site \
  *          -Dgenerate-composite-site.compositeSiteName="My Composite Site" \
  *          -Dgenerate-composite-site.compositeSiteFolder=composite-site-folder \
  *          -Dgenerate-composite-site.childSites="http://something http://something.else" \
