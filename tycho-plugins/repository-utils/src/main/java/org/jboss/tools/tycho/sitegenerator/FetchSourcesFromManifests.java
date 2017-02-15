@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014-2015, Red Hat, Inc.
+ * Copyright (c) 2014-2017, Red Hat, Inc.
  * Distributed under license by Red Hat, Inc. All rights reserved.
  * This program is made available under the terms of the
  * Eclipse Public License v1.0 which accompanies this distribution,
@@ -86,6 +86,9 @@ import org.jboss.dmr.Property;
  * jbosstools-base_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
  * 
  * f) unpack each source zip and combine them into a single zip
+ * 
+ *  For example, see repository-utils/src/main/resources/fetch-sources-from-manifests-example.pom.xml
+ *  
  */
 @Mojo(name = "fetch-sources-from-manifests", defaultPhase = LifecyclePhase.PACKAGE)
 public class FetchSourcesFromManifests extends AbstractMojo {

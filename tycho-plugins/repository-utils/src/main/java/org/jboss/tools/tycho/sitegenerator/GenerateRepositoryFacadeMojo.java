@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2012-2015, Red Hat, Inc.
+ * Copyright (c) 2012-2017, Red Hat, Inc.
  * Distributed under license by Red Hat, Inc. All rights reserved.
  * This program is made available under the terms of the
  * Eclipse Public License v1.0 which accompanies this distribution,
@@ -87,6 +87,8 @@ import org.xml.sax.SAXException;
 
 /**
  * Generates a JBoss-friendly facade and files for this p2 repo
+ * 
+ *  For example, see repository-utils/src/main/resources/generate-repository-facade-example.pom.xml
  */
 @Mojo(name = "generate-repository-facade", defaultPhase = LifecyclePhase.PACKAGE)
 public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {

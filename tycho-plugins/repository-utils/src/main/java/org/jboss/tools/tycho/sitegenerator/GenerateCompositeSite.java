@@ -10,7 +10,7 @@
  *
  *     This can be run from within a pom (mapped to package phase). See:
  *
- *     	repository-utils/src/main/resources/composite-site-example.pom.xml
+ *     	repository-utils/src/main/resources/generate-composite-site-example.pom.xml
  *
  *     Or via commandline w/o a pom. For example:
  *
