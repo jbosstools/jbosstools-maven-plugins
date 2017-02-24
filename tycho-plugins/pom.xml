@@ -16,9 +16,9 @@
 	<artifactId>tycho-plugins</artifactId>
 	<packaging>pom</packaging>
 	<name>jbosstools-tycho-plugins-parent</name>
-	<version>0.26.1</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<properties>
-		<tychoVersion>0.26.0</tychoVersion>
+		<tychoVersion>1.0.0</tychoVersion>
 		<!-- workaround for https://issues.jboss.org/browse/JBIDE-22248 and https://engineering.redhat.com/rt/Ticket/Display.html?id=401756 -->
 		<!-- <jbossNexus>repository.jboss.org</jbossNexus> -->
 		<jbossNexus>origin-repository.jboss.org</jbossNexus>
@@ -58,6 +58,18 @@
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.sonatype.plugins</groupId>
+				<artifactId>nexus-staging-maven-plugin</artifactId>
+				<version>1.6.7</version>
+				<extensions>true</extensions>
+				<configuration>
+					<!-- The Base URL of Nexus instance where we want to stage -->
+					<nexusUrl>https://${jbossNexus}/nexus/</nexusUrl>
+					<!-- The server "id" element from settings to use authentication from -->
+					<serverId>jboss-releases-repository</serverId>
+				</configuration>
+			</plugin>
 			<plugin>
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-source-plugin</artifactId>
