@@ -56,6 +56,7 @@ public class FoundationCoreVersionMatchesParentPom
                 }
             }
             parentPomVersionBase = parentPomVersionBase.replaceAll(".SNAPSHOT", "");
+            parentPomVersionBase = parentPomVersionBase.replaceAll(".(((AM|Alpha|Beta|CR)[0-9]+)|Final|GA)", "");
        		log.debug("Got parentPomVersion     = " + parentPomVersionBase + "." + BUILD_ALIAS);
     		log.debug("Got parentPomVersionBase = " + parentPomVersionBase);
             
