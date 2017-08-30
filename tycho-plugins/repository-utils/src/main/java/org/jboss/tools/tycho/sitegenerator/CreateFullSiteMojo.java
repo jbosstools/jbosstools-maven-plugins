@@ -22,6 +22,7 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.tycho.PackagingType;
 
+/* deprecated @since JBT 4.5.1.AM2. Use generate-repository-facade instead. */
 @Mojo(name="create-full-site", defaultPhase=LifecyclePhase.DEPLOY, requiresProject=true)
 public class CreateFullSiteMojo extends AbstractMojo {
 

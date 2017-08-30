@@ -54,6 +54,7 @@ public class BuildPublisherMojo extends AbstractMojo {
 			return;
 		}
 
+		/* deprecated @since JBT 4.5.1.AM2. Use generate-repository-facade instead. */
 		File fullSite = new File(this.project.getBuild().getOutputDirectory(), CreateFullSiteMojo.FULL_SITE_FOLDER_NAME);
 		if (!fullSite.isDirectory()) {
 			throw new MojoFailureException("Expected to find a site to publish in " + fullSite);

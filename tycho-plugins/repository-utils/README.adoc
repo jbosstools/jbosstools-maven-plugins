@@ -42,7 +42,7 @@ link:src/main/resources/generate-repository-facade-example.pom.xml[Example pom]
 |
 create-full-site
 |
-Creates an update site including index.html
+DEPRECATED @since JBT 4.5.1.AM2. Creates an update site including index.html. Use generate-repository-facade instead.
 |
 link:https://github.com/jbosstools/jbosstools-build-sites/blob/master/aggregate/pom.xml#L59[Example pom]
 

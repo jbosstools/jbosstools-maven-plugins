@@ -104,9 +104,10 @@
 						</goals>
 						<configuration>
 							<!-- <zipCacheFolder>${basedir}/cache</zipCacheFolder> -->
-							<!-- <outputFolder>${project.build.directory}/fullSite</outputFolder> -->
+							<!-- <outputFolder>${project.build.directory}/</outputFolder> -->
 							<!-- <fallbackToChild>latest/all/repo</fallbackToChild> -->
-							<sourcesZip>${project.build.directory}/fullSite/all/jbosstools-${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}.${BUILD_ALIAS}-src.zip</sourcesZip>
+							<!-- old default was /fullSite/all/ but since full-site is deprecated @since JBT 4.5.1.AM2, new default is / -->
+							<sourcesZip>${project.build.directory}/jbosstools-${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}.${BUILD_ALIAS}-src.zip</sourcesZip>
 							<sourcesZipRootFolder>jbosstools-${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}.${BUILD_ALIAS}-src</sourcesZipRootFolder>
 							<sourceFetchMap>
 								<!-- pick a plugin available in the project's update site from which we can deduce the Eclipse-SourceReference -->

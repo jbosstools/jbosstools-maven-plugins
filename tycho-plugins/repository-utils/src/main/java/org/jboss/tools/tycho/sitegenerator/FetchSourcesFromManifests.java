@@ -155,7 +155,8 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 	private File zipsDirectory;
 
 	// the zip file to be created; default is "jbosstools-src.zip" but can override here
-	@Parameter(property = "fetch-sources-from-manifests.sourcesZip", defaultValue = "${project.build.directory}/fullSite/all/jbosstools-src.zip")
+	/* old default was /fullSite/all/ but since full-site is deprecated @since JBT 4.5.1.AM2, new default is / */
+	@Parameter(property = "fetch-sources-from-manifests.sourcesZip", defaultValue = "${project.build.directory}/jbosstools-src.zip")
 	private File sourcesZip;
 
 	// the folder at the root of the zip; default is "jbosstools-src.zip!sources/" but can override here
