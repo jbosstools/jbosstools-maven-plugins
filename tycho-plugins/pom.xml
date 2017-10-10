@@ -92,30 +92,21 @@
 			<plugins>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-compiler-plugin</artifactId>
+					<artifactId>maven-plugin-plugin</artifactId>
+					<version>3.3</version>
 					<configuration>
-						<compilerVersion>1.7</compilerVersion>
-						<target>1.7</target>
-						<source>1.7</source>
+							<!-- see http://jira.codehaus.org/browse/MNG-5346 -->
+							<skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
 					</configuration>
+					<executions>
+						<execution>
+							<id>mojo-descriptor</id>
+							<goals>
+									<goal>descriptor</goal>
+							</goals>
+						</execution>
+					</executions>
 				</plugin>
-				<plugin>
-							<groupId>org.apache.maven.plugins</groupId>
-							<artifactId>maven-plugin-plugin</artifactId>
-							<version>3.3</version>
-							<configuration>
-									<!-- see http://jira.codehaus.org/browse/MNG-5346 -->
-									<skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
-							</configuration>
-							<executions>
-									<execution>
-										<id>mojo-descriptor</id>
-										<goals>
-												<goal>descriptor</goal>
-										</goals>
-									</execution>
-								</executions>
-							</plugin>
 				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
