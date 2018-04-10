@@ -19,9 +19,8 @@
 	<version>1.1.0</version>
 	<properties>
 		<tychoVersion>1.1.0</tychoVersion>
-		<!-- workaround for https://issues.jboss.org/browse/JBIDE-22248 and https://engineering.redhat.com/rt/Ticket/Display.html?id=401756 -->
+		<!-- if https://issues.jboss.org/browse/JBIDE-22248 comes back, use <jbossNexus>origin-repository.jboss.org</jbossNexus> -->
 		<jbossNexus>repository.jboss.org</jbossNexus>
-		<!-- <jbossNexus>origin-repository.jboss.org</jbossNexus> -->
 	</properties>
 
 	<description>In-House Maven plugins for jbosstools / devstudio builds</description>
