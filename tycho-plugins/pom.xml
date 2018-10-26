@@ -18,7 +18,7 @@
 	<name>jbosstools-tycho-plugins-parent</name>
 	<version>1.1.1-SNAPSHOT</version>
 	<properties>
-		<tychoVersion>1.1.0</tychoVersion>
+		<tychoVersion>1.3.0-SNAPSHOT</tychoVersion>
 		<!-- if https://issues.jboss.org/browse/JBIDE-22248 comes back, use <jbossNexus>origin-repository.jboss.org</jbossNexus> -->
 		<jbossNexus>repository.jboss.org</jbossNexus>
 	</properties>

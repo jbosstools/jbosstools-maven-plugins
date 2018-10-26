@@ -145,8 +145,8 @@ public class TargetToRepoMojo extends AbstractMojo {
 	        	}
 	        }
 
-			final DestinationRepositoryDescriptor destinationDescriptor = new DestinationRepositoryDescriptor(this.outputRepository, this.sourceTargetFile.getName(), true, true,
-					false, false, true);
+			final DestinationRepositoryDescriptor destinationDescriptor = 
+					new DestinationRepositoryDescriptor(this.outputRepository, this.sourceTargetFile.getName());
 
 	        List<IUDescription> initialIUs = new ArrayList<IUDescription>();
 	        for (final Location loc : target.getLocations()) {
