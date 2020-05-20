@@ -224,7 +224,7 @@
 		<repository>
 			<id>jboss-ga-repository</id>
 			<name>JBoss General Availability Maven Repository</name>
-			<url>http://maven.repository.redhat.com/ga/</url>
+			<url>https://maven.repository.redhat.com/ga/</url>
 			<releases>
 				<enabled>true</enabled>
 			</releases>
