@@ -90,7 +90,7 @@ public class CompareWithBaselineMojo extends AbstractMojo {
 		for (String baselineRepo : this.baselines) {
 			baselineTPStub.addP2Repository(toRepoURI(baselineRepo));
 		}
-		TargetPlatform baselineTP = resolverFactory.getTargetPlatformFactory().createTargetPlatform(baselineTPStub, TychoProjectUtils.getExecutionEnvironmentConfiguration(this.project), null, null);
+		TargetPlatform baselineTP = resolverFactory.getTargetPlatformFactory().createTargetPlatform(baselineTPStub, TychoProjectUtils.getExecutionEnvironmentConfiguration(reactorProject), null, null);
 
 		for (Object item : dependencyMetadata) {
 			try {
@@ -114,7 +114,7 @@ public class CompareWithBaselineMojo extends AbstractMojo {
 							throw new MojoFailureException(message);
 						}
 					} else if (version.equals(baselineVersion)) {
-						File baselineFile = foundInBaseline.getLocation();
+						File baselineFile = foundInBaseline.getLocation(true);
 						File currentFile = null;
 						// TODO: currently, there are only 2 kinds of (known) artifacts, but we could have more
 						// and unknown ones. Need to find something smarter to map artifact with actual file.

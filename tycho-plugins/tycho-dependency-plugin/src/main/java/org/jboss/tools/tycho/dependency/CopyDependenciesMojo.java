@@ -25,6 +25,7 @@ import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.tycho.core.ArtifactDependencyVisitor;
 import org.eclipse.tycho.core.PluginDescription;
 import org.eclipse.tycho.core.TychoProject;
+import org.eclipse.tycho.core.osgitools.DefaultReactorProject;
 
 /**
  *
@@ -55,22 +56,22 @@ public class CopyDependenciesMojo extends AbstractMojo {
 			this.outputDir.mkdirs();
 		}
 		final StringBuilder errorBuilder = new StringBuilder();
-		tychoProject.getDependencyWalker(this.project).walk(new ArtifactDependencyVisitor() {
+		tychoProject.getDependencyWalker(DefaultReactorProject.adapt(this.project)).walk(new ArtifactDependencyVisitor() {
 			@Override
 			public void visitPlugin(PluginDescription pluginRef) {
 				try {
-					File location = pluginRef.getLocation();
+					File location = pluginRef.getLocation(true);
 					if (location.isFile()) {
-						FileUtils.copyFileToDirectory(pluginRef.getLocation(), outputDir);
+						FileUtils.copyFileToDirectory(pluginRef.getLocation(true), outputDir);
 					} else if (location.isDirectory()) {
 						if (pluginRef.getMavenProject() != null) {
 							getLog().warn("Reactor projects not yet supported: " + pluginRef.getMavenProject());
 						} else {
-							getLog().warn("Directory-shaped bundles not yet supported: " + pluginRef.getLocation());
+							getLog().warn("Directory-shaped bundles not yet supported: " + pluginRef.getLocation(true));
 						}
 					}
 				} catch (Exception ex) {
-					errorBuilder.append("Couldn't copy " + pluginRef.getLocation() + " to " + outputDir);
+					errorBuilder.append("Couldn't copy " + pluginRef.getLocation(true) + " to " + outputDir);
 					errorBuilder.append("\n");
 				}
 			}
