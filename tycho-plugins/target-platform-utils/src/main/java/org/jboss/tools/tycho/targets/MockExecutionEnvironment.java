@@ -10,6 +10,8 @@
  */
 package org.jboss.tools.tycho.targets;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.tycho.core.ee.shared.ExecutionEnvironment;
@@ -44,6 +46,14 @@ public class MockExecutionEnvironment implements
 
 	public boolean isIgnoredByResolver() {
 		return true;
+	}
+
+	public Collection<ExecutionEnvironment> getAllKnownEEs() {
+		return Collections.emptyList();
+	}
+
+	public boolean ignoreExecutionEnvironment() {
+		return false;
 	}
 
 }

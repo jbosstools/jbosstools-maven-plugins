@@ -34,11 +34,10 @@ import org.eclipse.tycho.ArtifactType;
 import org.eclipse.tycho.BuildOutputDirectory;
 import org.eclipse.tycho.DefaultArtifactKey;
 import org.eclipse.tycho.artifacts.TargetPlatform;
-import org.eclipse.tycho.core.resolver.shared.IncludeSourceMode;
+import org.eclipse.tycho.core.ee.TargetDefinitionFile;
 import org.eclipse.tycho.core.resolver.shared.MavenRepositoryLocation;
 import org.eclipse.tycho.core.shared.TargetEnvironment;
 import org.eclipse.tycho.osgi.adapters.MavenLoggerAdapter;
-import org.eclipse.tycho.p2.resolver.TargetDefinitionFile;
 import org.eclipse.tycho.p2.resolver.facade.P2ResolutionResult;
 import org.eclipse.tycho.p2.resolver.facade.P2ResolutionResult.Entry;
 import org.eclipse.tycho.p2.resolver.facade.P2Resolver;
@@ -134,7 +133,7 @@ public class TargetToRepoMojo extends AbstractMojo {
 
 			final MirrorApplicationService mirrorService = equinox.getService(MirrorApplicationService.class);
 
-			TargetDefinitionFile target = TargetDefinitionFile.read(sourceTargetFile, IncludeSourceMode.ignore);
+			TargetDefinitionFile target = TargetDefinitionFile.read(sourceTargetFile);
 	        final RepositoryReferences sourceDescriptor = new RepositoryReferences();
 	        for (final Location loc : target.getLocations()) {
 	        	if (loc instanceof InstallableUnitLocation) {
@@ -156,7 +155,7 @@ public class TargetToRepoMojo extends AbstractMojo {
 	        		}
 	        	}
 	        }	        
-	        mirrorService.mirrorStandalone(sourceDescriptor, destinationDescriptor, initialIUs, createMirrorOptions(), new BuildOutputDirectory(this.project.getBuild().getOutputDirectory()));
+	        mirrorService.mirrorStandalone(sourceDescriptor, destinationDescriptor, initialIUs, createMirrorOptions(), new BuildOutputDirectory(new File(this.project.getBuild().getOutputDirectory())));
 	        
 	        if (this.includeSources) {
 	        	getLog().info("Computing missing sources...");
@@ -218,7 +217,7 @@ public class TargetToRepoMojo extends AbstractMojo {
 	        			}
 	        		}
 	        		if (!additionalSourceUnits.isEmpty()) {
-	        			mirrorService.mirrorStandalone(sourceDescriptor, destinationDescriptor, additionalSourceUnits, createMirrorOptions(), new BuildOutputDirectory(this.project.getBuild().getOutputDirectory()));
+	        			mirrorService.mirrorStandalone(sourceDescriptor, destinationDescriptor, additionalSourceUnits, createMirrorOptions(), new BuildOutputDirectory(new File(this.project.getBuild().getOutputDirectory())));
 	        		}
 	        	}
 	        }

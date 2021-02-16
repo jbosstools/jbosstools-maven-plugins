@@ -71,6 +71,7 @@ import org.eclipse.tycho.ReactorProject;
 import org.eclipse.tycho.core.ArtifactDependencyVisitor;
 import org.eclipse.tycho.core.FeatureDescription;
 import org.eclipse.tycho.core.TychoProject;
+import org.eclipse.tycho.core.osgitools.DefaultReactorProject;
 import org.eclipse.tycho.core.osgitools.EclipseRepositoryProject;
 import org.eclipse.tycho.model.FeatureRef;
 import org.eclipse.tycho.model.UpdateSite;
@@ -426,7 +427,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		} catch (IOException ex) {
 			throw new MojoExecutionException("Could not read 'category.xml' file", ex);
 		}
-		new EclipseRepositoryProject().getDependencyWalker(this.project).traverseUpdateSite(site, new ArtifactDependencyVisitor() {
+		new EclipseRepositoryProject().getDependencyWalker(DefaultReactorProject.adapt(this.project)).traverseUpdateSite(site, new ArtifactDependencyVisitor() {
 			@Override
 			public boolean visitFeature(FeatureDescription feature) {
 				FeatureRef featureRef = feature.getFeatureRef();
