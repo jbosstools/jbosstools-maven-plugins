@@ -302,9 +302,7 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 						// parse out the commitId from Eclipse-SourceReferences:
 						// scm:git:https://github.com/jbosstools/jbosstools-base.git;path="usage/plugins/org.jboss.tools.usage";commitId=184e18cc3ac7c339ce406974b6a4917f73909cc4
 						Attributes attr = manifest.getMainAttributes();
-						String ESR = null;
-						SHA = null;
-						ESR = attr.getValue("Eclipse-SourceReferences");
+						String ESR = attr.getValue("Eclipse-SourceReferences");
 						// getLog().debug(ESR);
 						if (ESR != null) {
 							SHA = ESR.substring(ESR.lastIndexOf(";commitId=") + 10);
