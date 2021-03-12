@@ -241,7 +241,6 @@ public class TargetToRepoMojo extends AbstractMojo {
 								return false;
 							}
 						});
-				getLog().info("Mirroring missing sources...");
 				Set<DefaultArtifactKey> sourcesFound = new HashSet<DefaultArtifactKey>();
 				Set<DefaultArtifactKey> regularArtifacts = new HashSet<DefaultArtifactKey>();
 				for (Entry entry : result.getArtifacts()) {
