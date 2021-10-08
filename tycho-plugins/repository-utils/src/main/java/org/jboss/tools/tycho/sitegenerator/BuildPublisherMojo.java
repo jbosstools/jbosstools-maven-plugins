@@ -84,7 +84,7 @@ public class BuildPublisherMojo extends AbstractMojo {
 				  .readEnvironment() // scan environment GIT_* variables
 				  .findGitDir() // scan up the file system tree
 				  .build();
-				Ref head = gitRepo.getRef(Constants.HEAD);
+				Ref head = gitRepo.exactRef(Constants.HEAD);
 
 				publish = !head.getObjectId().getName().equals(previousCommitId);
 			} catch (MalformedURLException ex) {
