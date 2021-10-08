@@ -651,8 +651,21 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 
 		// clone local sources into combinedZipFile (dirty files revert to their clean state)
 		File gitSourcesArchive = new File("/tmp/" + localCleanSourcesDir + ".zip"); // /tmp/jbosstools-build-sites-3df6b66f70691868e7cc4f1da70f1a0efb952dfc.zip
-		getLog().debug("cd " + repoRoot + "; git archive --prefix " + localCleanSourcesDir + " -o " + gitSourcesArchive + " HEAD");
-		String command = "git archive --prefix " + localCleanSourcesDir + "/ -o " + gitSourcesArchive + " HEAD";
+		File gitSourcesDir = new File("/tmp/" + localCleanSourcesDir); // /tmp/jbosstools-build-sites-3df6b66f70691868e7cc4f1da70f1a0efb952dfc
+		if (gitSourcesDir.exists())
+		{
+			try {
+				FileUtils.deleteDirectory(gitSourcesDir);
+			} catch (IOException ex) {
+				throw new MojoExecutionException ("IO Exception:", ex);
+			}
+		}
+		// JBDS-3598 using git archive means we don't get a .git folder, so can't build from sources: One of setGitDir or setWorkTree must be called.
+		//String command = "git archive --prefix " + localCleanSourcesDir + "/ -o " + gitSourcesArchive + " HEAD";
+		// using git clone --mirror for a bare repo clone doesn't work as the resulting repo can't be built w/ maven
+		// using git clone --depth 1 for a shallow clone doesn't work as the resulting repo can't be built w/ maven: Unable to find commits until some tag: Walk failure. Missing commit d5420e8522133f6392e05bb6b504823a6a6a5abe
+		String command = "git clone file://" + repoRoot + " " + gitSourcesDir.toString();
+		getLog().debug("cd " + repoRoot + "; " + command);
 		try {
 			// Note: this can be run from any subfolder in the project tree, but if we run from the root we get everything (not just site/ but jbosstools-build-sites/aggregate/site/)
 			// from http://www.javaworld.com/article/2071275/core-java/when-runtime-exec---won-t.html?page=2
@@ -664,14 +677,18 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 			outputGobbler.start();
 			int exitVal = proc.waitFor();
 			getLog().debug("Runtime.getRuntime.exec() - exit value: " + exitVal);
-			getLog().debug("Packed to: " + gitSourcesArchive);
-			double filesize = gitSourcesArchive.length();
-			getLog().debug("Pack size: " + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M" : String.format("%.1f", filesize / 1024) + " k"));
-			unzipToDirectory(gitSourcesArchive, fullUnzipPath);
+			getLog().debug("Cloned " + repoRoot + " to: " + gitSourcesDir.toString());
 		} catch (IOException ex) {
-			throw new MojoExecutionException ("Error cloning from " + repoRoot.toString() + " to " + gitSourcesArchive, ex);
+			throw new MojoExecutionException ("Error cloning from " + repoRoot.toString() + " to " + gitSourcesDir.toString(), ex);
 		} catch (InterruptedException ex) {
-			throw new MojoExecutionException ("Error cloning from " + repoRoot.toString() + " to " + gitSourcesArchive, ex);
+			throw new MojoExecutionException ("Error cloning from " + repoRoot.toString() + " to " + gitSourcesDir.toString(), ex);
+		}
+
+		try {
+			zipDirectory(gitSourcesDir,gitSourcesArchive);
+			unzipToDirectory(gitSourcesArchive, fullUnzipPath + "/" + localCleanSourcesDir);
+		} catch (IOException ex) {
+			throw new MojoExecutionException ("IO Exception:", ex);
 		}
 
 		// JBIDE-19798 - copy target/buildinfo/buildinfo*.json into sourcesZipRootFolder/buildinfo/
@@ -711,10 +728,10 @@ public class FetchSourcesFromManifests extends AbstractMojo {
 			getLog().debug("Delete dir: " + fullUnzipPath);
 			FileUtils.deleteDirectory(new File(fullUnzipPath));
 			gitSourcesArchive.delete();
+			FileUtils.deleteDirectory(gitSourcesDir);
 		} catch (IOException ex) {
 			throw new MojoExecutionException ("IO Exception:", ex);
 		}
-
 	}
 	
 	// from http://stackoverflow.com/questions/981578/how-to-unzip-files-recursively-in-java
