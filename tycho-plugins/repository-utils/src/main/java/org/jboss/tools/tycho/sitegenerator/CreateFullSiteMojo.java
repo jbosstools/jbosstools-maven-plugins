@@ -95,7 +95,7 @@ public class CreateFullSiteMojo extends AbstractMojo {
 		  .findGitDir() // scan up the file system tree
 		  .build();
 		Properties revProperties = new Properties();
-		Ref head = gitRepo.getRef(Constants.HEAD);
+		Ref head = gitRepo.exactRef(Constants.HEAD);
 		revProperties.put(Constants.HEAD, head.getObjectId().getName());
 		for (Entry<String, Ref> entry : gitRepo.getAllRefs().entrySet()) {
 			if (entry.getKey().startsWith(Constants.R_REMOTES) && entry.getValue().getObjectId().getName().equals(head.getObjectId().getName())) {

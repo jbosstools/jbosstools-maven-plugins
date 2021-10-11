@@ -886,7 +886,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		  .readEnvironment() // scan environment GIT_* variables
 		  .findGitDir() // scan up the file system tree
 		  .build();
-		Ref head = gitRepo.getRef(Constants.HEAD);
+		Ref head = gitRepo.exactRef(Constants.HEAD);
 		res.get("HEAD").set(head.getObjectId().getName());
 		if (head.getTarget() != null && head.getTarget().getName() != null) {
 			res.get("currentBranch").set(head.getTarget().getName());
