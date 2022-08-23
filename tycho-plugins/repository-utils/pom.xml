@@ -21,7 +21,7 @@
 	<parent>
 		<groupId>org.jboss.tools</groupId>
 		<artifactId>tycho-plugins</artifactId>
-		<version>2.5.0</version>
+		<version>2.7.4-SNAPSHOT</version>
 	</parent>
 
 	<dependencies>
@@ -58,12 +58,12 @@
 		<dependency>
 			<groupId>com.googlecode.maven-download-plugin</groupId>
 			<artifactId>download-maven-plugin</artifactId>
-			<version>1.6.7</version>
+			<version>1.6.8</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
 			<artifactId>org.eclipse.jgit</artifactId>
-			<version>5.13.0.202109080827-r</version>
+			<version>6.1.0.202203080745-r</version>
 		</dependency>
  		<!-- Available under GNU LESSER GENERAL PUBLIC LICENSE Version 3, 29 June 2007 https://github.com/ktoso/maven-git-commit-id-plugin/blob/master/LICENSE -->
 		<dependency>

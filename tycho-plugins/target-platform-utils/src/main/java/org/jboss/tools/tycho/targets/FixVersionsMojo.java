@@ -27,7 +27,6 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.logging.Logger;
 import org.eclipse.sisu.equinox.EquinoxServiceFactory;
 import org.eclipse.tycho.artifacts.TargetPlatform;
-import org.eclipse.tycho.core.ee.TargetDefinitionFile;
 import org.eclipse.tycho.core.resolver.shared.MavenRepositoryLocation;
 import org.eclipse.tycho.osgi.adapters.MavenLoggerAdapter;
 import org.eclipse.tycho.p2.resolver.facade.P2ResolutionResult;
@@ -37,6 +36,7 @@ import org.eclipse.tycho.p2.target.facade.TargetDefinition.InstallableUnitLocati
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Location;
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Repository;
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Unit;
+import org.eclipse.tycho.p2.target.facade.TargetDefinitionFile;
 import org.eclipse.tycho.p2.target.facade.TargetPlatformConfigurationStub;
 import org.osgi.framework.Version;
 
@@ -101,7 +101,7 @@ public class FixVersionsMojo extends AbstractMojo {
 					tpConfig.addP2Repository(new MavenRepositoryLocation(id, repo.getLocation()));
 				}
 				TargetPlatform site = resolverFactory.getTargetPlatformFactory().createTargetPlatform(
-						tpConfig, new MockExecutionEnvironment(), null, null);
+						tpConfig, new MockExecutionEnvironment(), null);
 				P2Resolver resolver = resolverFactory.createResolver(new MavenLoggerAdapter(this.plexusLogger, true));
 				for (Unit unit : loc.getUnits()) {
 					getLog().info("checking " + unit.getId());
@@ -112,13 +112,15 @@ public class FixVersionsMojo extends AbstractMojo {
 						fos.write(message.getBytes());
 						fos.write('\n');
 					}
-					if (unit instanceof TargetDefinitionFile.Unit) {
+					// no more possible to set versions in Units. need to parse and set manually by hand
+					//if (unit instanceof TargetDefinitionFile.Unit) {
 						// That's deprecated, but so cool (and no other way to do it except doing parsing by hand)
-						((TargetDefinitionFile.Unit)unit).setVersion(version);
-					}
+						//((TargetDefinitionFile.Unit)unit).setVersion(version);
+					//}
 				}
 			}
-			TargetDefinitionFile.write(targetDef, new File(targetFile.getParent(), targetFile.getName() + "_fixedVersion.target"));
+			// since no automatic modifications, there is no need to create a new target platform.
+			//TargetDefinitionFile.write(targetDef, new File(targetFile.getParent(), targetFile.getName() + "_fixedVersion.target"));
 		} catch (FileNotFoundException ex) {
 			throw new MojoExecutionException("Error while opening output file " + outputFile, ex);
 		} catch (IOException ex) {

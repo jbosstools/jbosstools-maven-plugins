@@ -36,7 +36,6 @@ import org.eclipse.tycho.BuildOutputDirectory;
 import org.eclipse.tycho.DefaultArtifactKey;
 import org.eclipse.tycho.artifacts.TargetPlatform;
 import org.eclipse.tycho.core.ee.ExecutionEnvironmentUtils;
-import org.eclipse.tycho.core.ee.TargetDefinitionFile;
 import org.eclipse.tycho.core.ee.shared.ExecutionEnvironment;
 import org.eclipse.tycho.core.ee.shared.ExecutionEnvironmentConfiguration;
 import org.eclipse.tycho.core.ee.shared.SystemCapability;
@@ -51,6 +50,7 @@ import org.eclipse.tycho.p2.target.facade.TargetDefinition.InstallableUnitLocati
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Location;
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Repository;
 import org.eclipse.tycho.p2.target.facade.TargetDefinition.Unit;
+import org.eclipse.tycho.p2.target.facade.TargetDefinitionFile;
 import org.eclipse.tycho.p2.target.facade.TargetPlatformConfigurationStub;
 import org.eclipse.tycho.p2.tools.DestinationRepositoryDescriptor;
 import org.eclipse.tycho.p2.tools.RepositoryReferences;
@@ -270,7 +270,7 @@ public class TargetToRepoMojo extends AbstractMojo {
 						}
 					}
 					TargetPlatform sitesTP = this.p2Factory.getTargetPlatformFactory().createTargetPlatform(sites,
-							new MockExecutionEnvironment(), null, null);
+							new MockExecutionEnvironment(), null);
 					for (DefaultArtifactKey artifactWithoutSources : artifactsWithoutSources) {
 						String sourceUnitId;
 						if (artifactWithoutSources.getId().endsWith(".feature.jar")) {
