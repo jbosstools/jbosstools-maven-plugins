@@ -97,14 +97,14 @@ public class CreateFullSiteMojo extends AbstractMojo {
 		Properties revProperties = new Properties();
 		Ref head = gitRepo.exactRef(Constants.HEAD);
 		revProperties.put(Constants.HEAD, head.getObjectId().getName());
-		for (Entry<String, Ref> entry : gitRepo.getAllRefs().entrySet()) {
-			if (entry.getKey().startsWith(Constants.R_REMOTES) && entry.getValue().getObjectId().getName().equals(head.getObjectId().getName())) {
-				int lastSlashIndex = entry.getKey().lastIndexOf('/');
-				String remoteName = entry.getKey().substring(Constants.R_REMOTES.length(), lastSlashIndex);
+		for (Ref entry : gitRepo.getRefDatabase().getRefs()) {
+			if (entry.getName().startsWith(Constants.R_REMOTES) && entry.getObjectId().getName().equals(head.getObjectId().getName())) {
+				int lastSlashIndex = entry.getName().lastIndexOf('/');
+				String remoteName = entry.getName().substring(Constants.R_REMOTES.length(), lastSlashIndex);
 				String remoteUrl = gitRepo.getConfig().getString("remote", remoteName, "url");
-				String branchName = entry.getKey().substring(lastSlashIndex + 1);
+				String branchName = entry.getName().substring(lastSlashIndex + 1);
 				revProperties.put(remoteUrl + ":" + branchName,
-						entry.getValue().getObjectId().getName());
+						entry.getObjectId().getName());
 			}
 		}
 		File gitRevisionFile = new File(logs, "GIT_REVISION.txt");

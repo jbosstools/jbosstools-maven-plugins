@@ -28,6 +28,7 @@ public class NoSnapshotsAllowed
     private String includePattern = "";
     private String excludePattern = "";
 
+    @Override
     public void execute( EnforcerRuleHelper helper )
         throws EnforcerRuleException
     {
@@ -104,6 +105,7 @@ public class NoSnapshotsAllowed
      * 
      * If your rule is not cacheable, then the result here is not important, you may return anything.
      */
+    @Override
     public String getCacheId()
     {
         //no hash on boolean...only parameter so no hash is needed.
@@ -116,6 +118,7 @@ public class NoSnapshotsAllowed
      * project. This means that even things that change from project to project may still 
      * be cacheable in certain instances.
      */
+    @Override
     public boolean isCacheable()
     {
         return false;
@@ -128,6 +131,7 @@ public class NoSnapshotsAllowed
      * by the helper need to be queried. You may for example, store certain objects in your rule
      * and then query them later.
      */
+    @Override
     public boolean isResultValid( EnforcerRule arg0 )
     {
         return false;

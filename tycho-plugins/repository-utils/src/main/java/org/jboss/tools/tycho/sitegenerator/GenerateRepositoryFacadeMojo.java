@@ -225,6 +225,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
 	private File categoryFile;
 
+	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		if (!PackagingType.TYPE_ECLIPSE_REPOSITORY.equals(this.project.getPackaging())) {
 			return;
@@ -892,13 +893,13 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			res.get("currentBranch").set(head.getTarget().getName());
 		}
 		ModelNode knownReferences = new ModelNode();
-		for (Entry<String, Ref> entry : gitRepo.getAllRefs().entrySet()) {
-			if (entry.getKey().startsWith(Constants.R_REMOTES) && entry.getValue().getObjectId().getName().equals(head.getObjectId().getName())) {
+		for (Ref entry : gitRepo.getRefDatabase().getRefs()) {
+			if (entry.getName().startsWith(Constants.R_REMOTES) && entry.getObjectId().getName().equals(head.getObjectId().getName())) {
 				ModelNode reference = new ModelNode();
-				String remoteName = entry.getKey().substring(Constants.R_REMOTES.length());
+				String remoteName = entry.getName().substring(Constants.R_REMOTES.length());
 				remoteName = remoteName.substring(0, remoteName.indexOf('/'));
 				String remoteUrl = gitRepo.getConfig().getString("remote", remoteName, "url");
-				String branchName = entry.getKey().substring(Constants.R_REMOTES.length() + 1 + remoteName.length());
+				String branchName = entry.getName().substring(Constants.R_REMOTES.length() + 1 + remoteName.length());
 				reference.get("name").set(remoteName);
 				reference.get("url").set(remoteUrl);
 				reference.get("ref").set(branchName);

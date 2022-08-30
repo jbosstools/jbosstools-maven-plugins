@@ -15,6 +15,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -47,19 +52,18 @@ import org.osgi.framework.Version;
 public class FixVersionsMojo extends AbstractMojo {
 
 	@Parameter(property = "targetFile")
-    private File targetFile;
+	private File targetFile;
 
 	@Parameter(property = "project")
-    private MavenProject project;
+	private MavenProject project;
 
-    @Component
-    protected EquinoxServiceFactory equinox;
+	@Component
+	protected EquinoxServiceFactory equinox;
 
-    @Component
-    private Logger plexusLogger;
+	@Component
+	private Logger plexusLogger;
 
-
-	@SuppressWarnings("deprecation")
+	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
 		if (this.targetFile == null) {
 			if (this.project != null && this.project.getPackaging().equals("eclipse-target-definition")) {
@@ -74,65 +78,57 @@ public class FixVersionsMojo extends AbstractMojo {
 		}
 
 		File outputFile = new File(targetFile.getParentFile(), targetFile.getName() + "_update_hints.txt");
-		FileOutputStream fos = null;
 		try {
 			outputFile.createNewFile();
-			fos = new FileOutputStream(outputFile);
+			try (FileOutputStream fos = new FileOutputStream(outputFile)) {
 
-			P2ResolverFactory resolverFactory = this.equinox.getService(P2ResolverFactory.class);
-			TargetDefinitionFile targetDef;
-			try {
-				targetDef = TargetDefinitionFile.read(this.targetFile);
-			} catch (Exception ex) {
-				throw new MojoExecutionException(ex.getMessage(), ex);
-			}
-			for (Location location : targetDef.getLocations()) {
-				if (!(location instanceof InstallableUnitLocation)) {
-					getLog().warn("Location type " + location.getClass().getSimpleName() + " not supported");
-					continue;
+				P2ResolverFactory resolverFactory = this.equinox.getService(P2ResolverFactory.class);
+				TargetDefinitionFile targetDef;
+				try {
+					targetDef = TargetDefinitionFile.read(this.targetFile);
+				} catch (Exception ex) {
+					throw new MojoExecutionException(ex.getMessage(), ex);
 				}
-				InstallableUnitLocation loc = (InstallableUnitLocation) location;
-				TargetPlatformConfigurationStub tpConfig = new TargetPlatformConfigurationStub();
-				for (Repository repo : loc.getRepositories()) {
-					String id = repo.getId();
-					if (repo.getId() == null || repo.getId().isEmpty()) {
-						id = repo.getLocation().toString();
+				for (Location location : targetDef.getLocations()) {
+					if (!(location instanceof InstallableUnitLocation)) {
+						getLog().warn("Location type " + location.getClass().getSimpleName() + " not supported");
+						continue;
 					}
-					tpConfig.addP2Repository(new MavenRepositoryLocation(id, repo.getLocation()));
-				}
+					InstallableUnitLocation loc = (InstallableUnitLocation) location;
+					TargetPlatformConfigurationStub tpConfig = new TargetPlatformConfigurationStub();
+					for (Repository repo : loc.getRepositories()) {
+						String id = repo.getId();
+						if (repo.getId() == null || repo.getId().isEmpty()) {
+							id = repo.getLocation().toString();
+						}
+						tpConfig.addP2Repository(new MavenRepositoryLocation(id, repo.getLocation()));
+					}
 				TargetPlatform site = resolverFactory.getTargetPlatformFactory().createTargetPlatform(
 						tpConfig, new MockExecutionEnvironment(), null);
 				P2Resolver resolver = resolverFactory.createResolver(new MavenLoggerAdapter(this.plexusLogger, true));
-				for (Unit unit : loc.getUnits()) {
-					getLog().info("checking " + unit.getId());
-					String version = findBestMatchingVersion(site, resolver, unit);
-					if (!version.equals(unit.getVersion())) {
-						String message = unit.getId() + " ->" + version;
-						getLog().info(message);
-						fos.write(message.getBytes());
-						fos.write('\n');
+					for (Unit unit : loc.getUnits()) {
+						getLog().info("checking " + unit.getId());
+						String version = findBestMatchingVersion(site, resolver, unit);
+						if (!version.equals(unit.getVersion())) {
+							String message = unit.getId() + " -> " + version;
+							getLog().info(message);
+							fos.write(message.getBytes());
+							fos.write('\n');
+						}
 					}
-					// no more possible to set versions in Units. need to parse and set manually by hand
-					//if (unit instanceof TargetDefinitionFile.Unit) {
-						// That's deprecated, but so cool (and no other way to do it except doing parsing by hand)
-						//((TargetDefinitionFile.Unit)unit).setVersion(version);
-					//}
+				}
+			if (outputFile.length() > 0) {
+				getLog().warn("fix-versions mojo is deprecated since 7.4.0 and will be removed in next release.\nIf build fails with validation errors, please take a look below for a list of available updated version of bundles:");
+				Path path = Paths.get(outputFile.getAbsolutePath());
+				try (Stream<String> lines = Files.lines(path)) {
+					getLog().info(lines.collect(Collectors.joining("\n")));
 				}
 			}
-			// since no automatic modifications, there is no need to create a new target platform.
-			//TargetDefinitionFile.write(targetDef, new File(targetFile.getParent(), targetFile.getName() + "_fixedVersion.target"));
-		} catch (FileNotFoundException ex) {
-			throw new MojoExecutionException("Error while opening output file " + outputFile, ex);
+			} catch (FileNotFoundException ex) {
+				throw new MojoExecutionException("Error while opening output file " + outputFile, ex);
+			}
 		} catch (IOException ex) {
 			throw new MojoExecutionException("Can't write to file " + outputFile, ex);
-		} finally {
-			if (fos != null) {
-				try {
-					fos.close();
-				} catch (Exception ex) {
-					throw new MojoExecutionException("IO error", ex);
-				}
-			}
 		}
 	}
 
@@ -173,7 +169,6 @@ public class FixVersionsMojo extends AbstractMojo {
 		return "[" + version + "," + version + "]";
 	}
 
-
 	private String toQueryIgnoreMinor(String version) {
 		Version osgiVersion = new Version(version);
 		StringBuilder res = new StringBuilder();
@@ -196,7 +191,6 @@ public class FixVersionsMojo extends AbstractMojo {
 		return res.toString();
 	}
 
-
 	private String toQueryIgnoreQualifier(String version) {
 		Version osgiVersion = new Version(version);
 		StringBuilder res = new StringBuilder();
@@ -207,6 +201,5 @@ public class FixVersionsMojo extends AbstractMojo {
 		res.append(")");
 		return res.toString();
 	}
-
 
 }
