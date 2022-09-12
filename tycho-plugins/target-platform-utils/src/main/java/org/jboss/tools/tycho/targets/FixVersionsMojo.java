@@ -118,7 +118,7 @@ public class FixVersionsMojo extends AbstractMojo {
 					}
 				}
 			if (outputFile.length() > 0) {
-				getLog().warn("fix-versions mojo is deprecated since 7.4.0 and will be removed in next release.\nIf build fails with validation errors, please take a look below for a list of available updated version of bundles:");
+				getLog().warn("fix-versions mojo is deprecated and will be removed in next release.\nIf build fails with validation errors, please take a look below for a list of available updated version of bundles:");
 				Path path = Paths.get(outputFile.getAbsolutePath());
 				try (Stream<String> lines = Files.lines(path)) {
 					getLog().info(lines.collect(Collectors.joining("\n")));

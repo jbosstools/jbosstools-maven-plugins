@@ -16,9 +16,9 @@
 	<artifactId>tycho-plugins</artifactId>
 	<packaging>pom</packaging>
 	<name>jbosstools-tycho-plugins-parent</name>
-	<version>2.7.4</version>
+	<version>2.7.5</version>
 	<properties>
-		<tychoVersion>2.7.4</tychoVersion>
+		<tychoVersion>2.7.5</tychoVersion>
 		<!-- if https://issues.jboss.org/browse/JBIDE-22248 comes back, use <jbossNexus>origin-repository.jboss.org</jbossNexus> -->
 		<jbossNexus>repository.jboss.org</jbossNexus>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
