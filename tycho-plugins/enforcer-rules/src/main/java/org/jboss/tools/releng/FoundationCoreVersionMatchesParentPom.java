@@ -30,6 +30,7 @@ public class FoundationCoreVersionMatchesParentPom
     private String currentVersionProperties = null;
     private String requiredQualifier = ".Final"; // or .GA
 
+    @Override
     public void execute( EnforcerRuleHelper helper )
         throws EnforcerRuleException
     {
@@ -38,7 +39,7 @@ public class FoundationCoreVersionMatchesParentPom
         try
         {
             MavenProject project = (MavenProject) helper.evaluate( "${project}" );
-            String basedir = (String) helper.evaluate( "${project.basedir}" ).toString();
+            String basedir = helper.evaluate( "${project.basedir}" ).toString();
             
             Properties projProps = project.getProperties();
             Enumeration<?> e = projProps.propertyNames();
@@ -111,6 +112,7 @@ public class FoundationCoreVersionMatchesParentPom
      * 
      * If your rule is not cacheable, then the result here is not important, you may return anything.
      */
+    @Override
     public String getCacheId()
     {
         //no hash on boolean...only parameter so no hash is needed.
@@ -123,6 +125,7 @@ public class FoundationCoreVersionMatchesParentPom
      * project. This means that even things that change from project to project may still 
      * be cacheable in certain instances.
      */
+    @Override
     public boolean isCacheable()
     {
         return false;
@@ -135,6 +138,7 @@ public class FoundationCoreVersionMatchesParentPom
      * by the helper need to be queried. You may for example, store certain objects in your rule
      * and then query them later.
      */
+    @Override
     public boolean isResultValid( EnforcerRule arg0 )
     {
         return false;

@@ -28,6 +28,7 @@ public class CoreUIDependency implements EnforcerRule {
 
     private String joinString = "\n     > ";
 
+	@Override
 	public void execute( EnforcerRuleHelper helper ) throws EnforcerRuleException {
 		Log log = helper.getLog();
 		try {
@@ -46,7 +47,7 @@ public class CoreUIDependency implements EnforcerRule {
 				}
 
 				Set<String> ui = model.getAllUIDeps();
-				String[] uiDeps = (String[]) ui.toArray(new String[ui.size()]);
+				String[] uiDeps = ui.toArray(new String[ui.size()]);
 				if( uiDeps.length > 0 ) {
 					String msg = "[CoreUIDependency] " + (String)helper.evaluate("${project.artifactId}") +
 						" is a Core plugin, but depends on these UI plugins directly or transitively:" +
@@ -264,7 +265,7 @@ public class CoreUIDependency implements EnforcerRule {
 	private void findUIDependencies(ManifestModel mm, Log log, boolean verbose) {
 		String symbolicName = mm.bundleId;
 		List<String> deps = new ArrayList<String>(mm.deps);
-		String[] asArr = (String[]) deps.toArray(new String[deps.size()]);
+		String[] asArr = deps.toArray(new String[deps.size()]);
 		if( verbose ) {
 			log.debug("[CoreUIDependency] " + symbolicName + " requires the following units: " + joinString + String.join(joinString, asArr));
 		}
@@ -288,6 +289,7 @@ public class CoreUIDependency implements EnforcerRule {
 	 * 
 	 * If your rule is not cacheable, then the result here is not important, you may return anything.
 	 */
+	@Override
 	public String getCacheId()
 	{
 		//no hash on boolean...only parameter so no hash is needed.
@@ -300,6 +302,7 @@ public class CoreUIDependency implements EnforcerRule {
 	 * project. This means that even things that change from project to project may still 
 	 * be cacheable in certain instances.
 	 */
+	@Override
 	public boolean isCacheable()
 	{
 		return false;
@@ -312,6 +315,7 @@ public class CoreUIDependency implements EnforcerRule {
 	 * by the helper need to be queried. You may for example, store certain objects in your rule
 	 * and then query them later.
 	 */
+	@Override
 	public boolean isResultValid( EnforcerRule arg0 )
 	{
 		return false;
