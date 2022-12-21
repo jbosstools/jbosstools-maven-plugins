@@ -265,7 +265,9 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			generateWebStuff(outputRepository, outputCategoryXml);
 		}
 		try {
-			alterContentJar(outputRepository);
+			if (new File(p2repository, "content.jar").exists()) {
+				alterContentJar(outputRepository);
+			}
 		} catch (Exception ex) {
 			throw new MojoExecutionException("Error while altering content.jar", ex);
 		}
@@ -481,7 +483,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 				if (entry.getName().equals("content.xml")) {
 					contentDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(contentStream);
 					Element repoElement = (Element) contentDoc.getElementsByTagName("repository").item(0);
-					{
+					if (this.associateSites != null) {
 						NodeList references = repoElement.getElementsByTagName("references");
 						// remove default references
 						for (int i = 0; i < references.getLength(); i++) {
@@ -489,8 +491,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 							currentRef.getParentNode().removeChild(currentRef);
 						}
 						// add associateSites
-						if (this.associateSites != null && this.associateSites.size() > 0
-								&& this.referenceStrategy == ReferenceStrategy.embedReferences) {
+						if (this.associateSites.size() > 0 && this.referenceStrategy == ReferenceStrategy.embedReferences) {
 							Element refElement = contentDoc.createElement("references");
 							refElement.setAttribute("size", Integer.valueOf(2 * associateSites.size()).toString());
 							for (String associate : associateSites) {
