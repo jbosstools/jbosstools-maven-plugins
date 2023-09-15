@@ -20,7 +20,8 @@
 	<properties>
 		<tychoVersion>4.0.2</tychoVersion>
 		<maven.version>3.9.4</maven.version>
-		<!-- if https://issues.jboss.org/browse/JBIDE-22248 comes back, use <jbossNexus>origin-repository.jboss.org</jbossNexus> -->
+		<!-- if https://issues.jboss.org/browse/JBIDE-22248 comes back, use
+		<jbossNexus>origin-repository.jboss.org</jbossNexus> -->
 		<jbossNexus>repository.jboss.org</jbossNexus>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -33,7 +34,7 @@
 			<url>http://www.eclipse.org/legal/epl-v10.html</url>
 		</license>
 	</licenses>
- 
+
 	<scm>
 		<connection>scm:git:git://git@github.com:jbosstools/jbosstools-maven-plugins.git</connection>
 		<developerConnection>scm:git:ssh://git@github.com:jbosstools/jbosstools-maven-plugins.git</developerConnection>
@@ -42,7 +43,7 @@
 
 	<developers>
 		<developer>
- 			<id>tools.jboss.org</id>
+			<id>tools.jboss.org</id>
 			<name>JBoss Tools</name>
 			<organization>jboss.org/tools</organization>
 			<organizationUrl>http://jboss.org/tools</organizationUrl>
@@ -67,23 +68,31 @@
 					<!-- The server "id" element from settings to use authentication from -->
 					<serverId>jboss-releases-repository</serverId>
 				</configuration>
+				<dependencies>
+					<!-- TODO: Remove after OSSRH-66257, NEXUS-26993 are fixed. -->
+					<dependency>
+						<groupId>com.thoughtworks.xstream</groupId>
+						<artifactId>xstream</artifactId>
+						<version>1.4.15</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 			<plugin>
-			<groupId>org.apache.maven.plugins</groupId>
-			<artifactId>maven-source-plugin</artifactId>
-			<version>3.3.0</version>
-			<executions>
-				<execution>
-				<id>attach-sources</id>
-				<phase>verify</phase>
-				<goals>
-					<goal>jar-no-fork</goal>
-				</goals>
-				</execution>
-			</executions>
-			<configuration>
-				<attach>true</attach>
-			</configuration>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.3.0</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<attach>true</attach>
+				</configuration>
 			</plugin>
 		</plugins>
 		<pluginManagement>
@@ -110,24 +119,24 @@
 	</build>
 
 	<dependencies>
-			<dependency>
-				<groupId>org.apache.maven</groupId>
-				<artifactId>maven-plugin-api</artifactId>
-				<version>${maven.version}</version>
-				<scope>provided</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.codehaus.plexus</groupId>
-				<artifactId>plexus-component-annotations</artifactId>
-				<version>2.1.1</version>
-			</dependency>
-			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit</artifactId>
-				<version>4.13.2</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
+		<dependency>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-plugin-api</artifactId>
+			<version>${maven.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.codehaus.plexus</groupId>
+			<artifactId>plexus-component-annotations</artifactId>
+			<version>2.1.1</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.13.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.maven.plugin-testing</groupId>
 			<artifactId>maven-plugin-testing-harness</artifactId>
 			<version>3.3.0</version>
