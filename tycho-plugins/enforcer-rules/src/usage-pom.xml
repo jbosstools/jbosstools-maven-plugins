@@ -47,7 +47,7 @@
 								<requireMavenVersion>
 									<version>2.0.6</version>
 								</requireMavenVersion>
-								<noSnapshotsAllowed implementation="org.jboss.tools.releng.NoSnapshotsAllowed">
+								<noSnapshotsAllowed>
 									<!-- if not set, use ${BUILD_ALIAS} maven property -->
 									<buildAlias>${BUILD_ALIAS}</buildAlias>
 									<!-- include AM3, Final, and GA when failing if SNAPSHOTs present -->
