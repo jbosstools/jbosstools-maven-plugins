@@ -265,7 +265,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			generateWebStuff(outputRepository, outputCategoryXml);
 		}
 		try {
-			if (new File(p2repository, "content.jar").exists()) {
+			if (new File(outputRepository, "content.jar").exists()) {
 				alterContentJar(outputRepository);
 			}
 		} catch (Exception ex) {
