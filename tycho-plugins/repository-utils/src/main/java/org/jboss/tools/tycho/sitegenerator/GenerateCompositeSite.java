@@ -31,17 +31,18 @@ package org.jboss.tools.tycho.sitegenerator;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
 import org.eclipse.tycho.packaging.AbstractTychoPackagingMojo;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -49,13 +50,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 /**
- * Generates a composite site into a specified destination path, from 1 or more URLs and a site name
+ * Generates a composite site into a specified destination path, from 1 or more
+ * URLs and a site name
  */
-@Mojo(name = "generate-composite-site", defaultPhase = LifecyclePhase.PACKAGE, requiresProject = false)
+@Mojo(name = "generate-composite-site", defaultPhase = LifecyclePhase.PACKAGE, requiresProject = true)
 public class GenerateCompositeSite extends AbstractTychoPackagingMojo {
-
-	@Parameter(property = "project", required = false, readonly = false)
-	private MavenProject project;
 
 	/**
 	 * Child sites to add into the composite
@@ -77,17 +76,16 @@ public class GenerateCompositeSite extends AbstractTychoPackagingMojo {
 	private String compositeSiteName;
 
 	/**
-	 * In addition to statically listed childSites, can also create a composite
-	 * site by reading this URL and looking for child folders to composite
-	 * together
+	 * In addition to statically listed childSites, can also create a composite site
+	 * by reading this URL and looking for child folders to composite together
 	 */
 	@Parameter(property = "generate-composite-site.collectChildrenFromRemoteURL")
 	private String collectChildrenFromRemoteURL;
 
 	/**
 	 * Regex to use to find children at the above URL, eg.,
-	 * \d+\.\d+\.\d+\.(AM.+|Alpha.+|Beta.+|CR.+|Final|GA)/ - append trailing
-	 * slash to match folders only
+	 * \d+\.\d+\.\d+\.(AM.+|Alpha.+|Beta.+|CR.+|Final|GA)/ - append trailing slash
+	 * to match folders only
 	 */
 	@Parameter(property = "generate-composite-site.collectChildrenFromRemoteRegex")
 	private String collectChildrenFromRemoteRegex = null;
@@ -98,6 +96,7 @@ public class GenerateCompositeSite extends AbstractTychoPackagingMojo {
 	@Parameter(property = "generate-composite-site.collectChildrenFromRemoteLimit", defaultValue = "-1")
 	private int collectChildrenFromRemoteLimit = -1;
 
+	@Override
 	public void execute() throws MojoFailureException {
 
 		File outputRepository = new File(
@@ -108,11 +107,12 @@ public class GenerateCompositeSite extends AbstractTychoPackagingMojo {
 				compositeSiteFolder);
 
 		List<String> childSitesList = this.childSites != null
-				? new ArrayList<String>(Arrays.asList(this.childSites.split("[\\s\t\n\r]+"))) : new ArrayList<String>();
+				? new ArrayList<>(Arrays.asList(this.childSites.split("[\\s\t\n\r]+")))
+				: new ArrayList<>();
 
 		List<String> collectChildrenFromRemoteURLList = this.collectChildrenFromRemoteURL != null
-				? new ArrayList<String>(Arrays.asList(this.collectChildrenFromRemoteURL.split("[\\s\t\n\r]+")))
-				: new ArrayList<String>();
+				? new ArrayList<>(Arrays.asList(this.collectChildrenFromRemoteURL.split("[\\s\t\n\r]+")))
+				: new ArrayList<>();
 
 		for (String site : collectChildrenFromRemoteURLList) {
 			collectChildrenFromRemote(site, collectChildrenFromRemoteRegex, collectChildrenFromRemoteLimit,
@@ -187,7 +187,7 @@ public class GenerateCompositeSite extends AbstractTychoPackagingMojo {
 				compositeContent.append("    <child location='").append(site).append("'/>").append('\n');
 			}
 			compositeContent.append("  </children>").append('\n').append("</repository>\n\n");
-			org.apache.commons.io.FileUtils.writeStringToFile(compositeContentXml, compositeContent.toString());
+			FileUtils.writeStringToFile(compositeContentXml, compositeContent.toString(), StandardCharsets.UTF_8);
 		}
 		{
 			File compositeArtifactsXml = new File(outputRepository, "compositeArtifacts.xml");
@@ -204,7 +204,7 @@ public class GenerateCompositeSite extends AbstractTychoPackagingMojo {
 				compositeArtifact.append("    <child location='").append(site).append("'/>").append('\n');
 			}
 			compositeArtifact.append("  </children>").append('\n').append("</repository>\n\n");
-			org.apache.commons.io.FileUtils.writeStringToFile(compositeArtifactsXml, compositeArtifact.toString());
+			FileUtils.writeStringToFile(compositeArtifactsXml, compositeArtifact.toString(), StandardCharsets.UTF_8);
 		}
 		{
 			File compositeP2Index = new File(outputRepository, "p2.index");
@@ -212,7 +212,7 @@ public class GenerateCompositeSite extends AbstractTychoPackagingMojo {
 			p2Index.append("version = 1").append('\n')
 					.append("metadata.repository.factory.order = compositeContent.xml,\\!").append('\n')
 					.append("artifact.repository.factory.order = compositeArtifacts.xml,\\!").append('\n');
-			org.apache.commons.io.FileUtils.writeStringToFile(compositeP2Index, p2Index.toString());
+			FileUtils.writeStringToFile(compositeP2Index, p2Index.toString(), StandardCharsets.UTF_8);
 
 		}
 

@@ -16,9 +16,10 @@
 	<artifactId>tycho-plugins</artifactId>
 	<packaging>pom</packaging>
 	<name>jbosstools-tycho-plugins-parent</name>
-	<version>2.7.5</version>
+	<version>4.0.2</version>
 	<properties>
-		<tychoVersion>2.7.5</tychoVersion>
+		<tychoVersion>4.0.2</tychoVersion>
+		<maven.version>3.9.4</maven.version>
 		<!-- if https://issues.jboss.org/browse/JBIDE-22248 comes back, use <jbossNexus>origin-repository.jboss.org</jbossNexus> -->
 		<jbossNexus>repository.jboss.org</jbossNexus>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -34,9 +35,9 @@
 	</licenses>
  
 	<scm>
-		 <connection>scm:git:git://git@github.com:jbosstools/jbosstools-maven-plugins.git</connection>
-		 <developerConnection>scm:git:ssh://git@github.com:jbosstools/jbosstools-maven-plugins.git</developerConnection>
-		 <url>git://github.com/jbosstools/jbosstools-maven-plugins.git</url>
+		<connection>scm:git:git://git@github.com:jbosstools/jbosstools-maven-plugins.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com:jbosstools/jbosstools-maven-plugins.git</developerConnection>
+		<url>git://github.com/jbosstools/jbosstools-maven-plugins.git</url>
 	</scm>
 
 	<developers>
@@ -50,21 +51,11 @@
 
 	<modules>
 		<module>repository-utils</module>
-		<module>target-platform-utils</module>
 		<module>enforcer-rules</module>
 	</modules>
 
 	<build>
 		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version>
-				<configuration>
-					<source>11</source>
-					<target>11</target>
-				</configuration>
-			</plugin>
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
@@ -80,7 +71,7 @@
 			<plugin>
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-source-plugin</artifactId>
-			<version>3.2.1</version>
+			<version>3.3.0</version>
 			<executions>
 				<execution>
 				<id>attach-sources</id>
@@ -99,30 +90,21 @@
 			<plugins>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-compiler-plugin</artifactId>
+					<artifactId>maven-plugin-plugin</artifactId>
+					<version>3.9.0</version>
 					<configuration>
-						<compilerVersion>11</compilerVersion>
-						<target>11</target>
-						<source>11</source>
+						<!-- see http://jira.codehaus.org/browse/MNG-5346 -->
+						<skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
 					</configuration>
+					<executions>
+						<execution>
+							<id>mojo-descriptor</id>
+							<goals>
+								<goal>descriptor</goal>
+							</goals>
+						</execution>
+					</executions>
 				</plugin>
-				<plugin>
-							<groupId>org.apache.maven.plugins</groupId>
-							<artifactId>maven-plugin-plugin</artifactId>
-							<version>3.6.0</version>
-							<configuration>
-									<!-- see http://jira.codehaus.org/browse/MNG-5346 -->
-									<skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
-							</configuration>
-							<executions>
-									<execution>
-										<id>mojo-descriptor</id>
-										<goals>
-												<goal>descriptor</goal>
-										</goals>
-									</execution>
-								</executions>
-							</plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
@@ -131,17 +113,7 @@
 			<dependency>
 				<groupId>org.apache.maven</groupId>
 				<artifactId>maven-plugin-api</artifactId>
-				<version>3.8.6</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.maven</groupId>
-				<artifactId>maven-core</artifactId>
-				<version>3.8.6</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.maven.plugin-tools</groupId>
-				<artifactId>maven-plugin-annotations</artifactId>
-				<version>3.6.4</version>
+				<version>${maven.version}</version>
 				<scope>provided</scope>
 			</dependency>
 			<dependency>

@@ -14,15 +14,7 @@ This project contains numerous mojos that can be used in your eclipse-repository
 |Description
 |Example
 
-| ###### *CompareWithBaselineMojo*
-|
-compare-version-with-baselines
-|
-Checks that the artifactrs being built are correctrly versioned relative a previously released update site baseline
-|
-link:https://github.com/jbosstools/jbosstools-build/blob/master/parent/pom.xml#L412-L430[Example pom]
-
-| ###### *GenerateCompositeSite*
+| *GenerateCompositeSite*
 |
 generate-composite-site
 |
@@ -30,7 +22,7 @@ Headless mojo that can generate a composite site from one or more folders, URLs,
 |
 link:src/main/resources/generate-composite-site-example.pom.xml[Example pom]
 
-| ###### *GenerateRepositoryFacadeMojo*
+| *GenerateRepositoryFacadeMojo*
 |
 generate-repository-facade
 |
@@ -38,47 +30,45 @@ Generates a JBoss-friendly facade and files for a p2 repo - used for JBoss Tools
 |
 link:src/main/resources/generate-repository-facade-example.pom.xml[Example pom]
 
-| ###### *CreateFullSiteMojo*
-|
-create-full-site
-|
-DEPRECATED @since JBT 4.5.1.AM2. Creates an update site including index.html. Use generate-repository-facade instead.
-|
-link:https://github.com/jbosstools/jbosstools-build-sites/blob/master/aggregate/pom.xml#L59[Example pom]
 
-| ###### *FetchSourcesFromManifests*
-|
+|===
 
-fetch-sources-from-manifests
-|
-DEPRECATED. For a list of projects and plugins, find the SHAs of those plugins' sources and fetch zips of those sources from github. No longer used since JBoss Tools uses jgit timestamps
-|
-link:src/main/resources/fetch-sources-from-manifests-example.pom.xml[Example pom]
+== Deprecated mojos
 
-| ###### *FetchZipsFromRepo*
-|
+:frame: all
+:grid: all
+:halign: left
+:valign: top
 
-fetch-zips-for-aggregate
-|
-DEPRECATED. Way to find sources for a given JBoss Tools build
-|
+[cols="3a,3a,10a", options="header"]
+|===
+|Mojo
+|Goal
+|Description
 
-| ###### *GenerateDirectoryXmlMojo*
-|
+| *CompareWithBaselineMojo*
+| compare-version-with-baselines
+| Replaced by tycho extra mojo : link:https://tycho.eclipseprojects.io/doc/latest/tycho-extras/tycho-p2-extras-plugin/compare-version-with-baselines-mojo.html[tycho-p2-extras-plugin]
 
-generate-discovery-site
-|
-Create directory.xml file for use with a Mylyn Discovery site such as Red Hat Central.
+| *BuildPublisherMojo*
+| publish-build
+| Unused
 
-Unused?
-|
+| *GenerateDirectoryXmlMojo*
+| generate-discovery-site
+| Create directory.xml file for use with a Mylyn Discovery site such as Red Hat Central.
 
-| ###### *BuildPublisherMojo*
-|
+| *FetchZipsFromRepo*
+| fetch-zips-for-aggregate
+| Way to find sources for a given JBoss Tools build.
 
-publish-build
-|
-Unused?
-|
+| *CreateFullSiteMojo*
+| create-full-site
+| Creates an update site including index.html. Use generate-repository-facade instead.
+
+| *FetchSourcesFromManifests*
+| fetch-sources-from-manifests
+| For a list of projects and plugins, find the SHAs of those plugins' sources and fetch zips of those sources from github. No longer used since JBoss Tools uses jgit timestamps.
+
 
 |===
