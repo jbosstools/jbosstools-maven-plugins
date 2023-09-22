@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <description>
+      To install these features, point Eclipse at this site.
+   </description>
+   <feature id="org.eclipse.equinox.core.feature">
+      <category name="AllFeatures"/>
+   </feature>
+   <category-def name="AllFeatures" label="Update Site">
+      <description>
+         Update Site: contains all features in this build.
+      </description>
+   </category-def>
+</site>

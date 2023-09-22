@@ -96,7 +96,7 @@ import org.jboss.dmr.Property;
  * f) unpack each source zip and combine them into a single zip
  * 
  * For example, see
- * repository-utils/src/main/resources/fetch-sources-from-manifests-example.pom.xml
+ * repository-utils/src/test/resources/fetch-sources-from-manifests-example.pom.xml
  * 
  */
 @Mojo(name = "fetch-sources-from-manifests", defaultPhase = LifecyclePhase.PACKAGE)

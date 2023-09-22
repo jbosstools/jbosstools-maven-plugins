@@ -90,7 +90,7 @@ import org.xml.sax.SAXException;
  * Generates a JBoss-friendly facade and files for this p2 repo
  * 
  * For example, see
- * repository-utils/src/main/resources/generate-repository-facade-example.pom.xml
+ * repository-utils/src/test/resources/generate-repository-facade-example.pom.xml
  */
 @Mojo(name = "generate-repository-facade", defaultPhase = LifecyclePhase.PACKAGE, requiresProject = true)
 public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
@@ -193,6 +193,9 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
 	@Parameter
 	private String p2StatsUrl;
+	
+	@Component(role = TychoProject.class, hint = PackagingType.TYPE_ECLIPSE_REPOSITORY)
+	private EclipseRepositoryProject eclipseRepositoryProject;
 
 	/**
 	 * In case some content is missing on site, use alternate URL pattern as
@@ -422,7 +425,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		} catch (IOException ex) {
 			throw new MojoExecutionException("Could not read 'category.xml' file", ex);
 		}
-		new EclipseRepositoryProject().getDependencyWalker(DefaultReactorProject.adapt(this.project))
+		eclipseRepositoryProject.getDependencyWalker(DefaultReactorProject.adapt(this.project))
 				.traverseUpdateSite(site, new ArtifactDependencyVisitor() {
 					@Override
 					public boolean visitFeature(FeatureDescription feature) {

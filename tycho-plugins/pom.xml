@@ -16,7 +16,7 @@
 	<artifactId>tycho-plugins</artifactId>
 	<packaging>pom</packaging>
 	<name>jbosstools-tycho-plugins-parent</name>
-	<version>4.0.2</version>
+	<version>4.0.3-SNAPSHOT</version>
 	<properties>
 		<tychoVersion>4.0.2</tychoVersion>
 		<maven.version>3.9.4</maven.version>
@@ -117,32 +117,6 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-
-	<dependencies>
-		<dependency>
-			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-plugin-api</artifactId>
-			<version>${maven.version}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.codehaus.plexus</groupId>
-			<artifactId>plexus-component-annotations</artifactId>
-			<version>2.1.1</version>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.13.2</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.maven.plugin-testing</groupId>
-			<artifactId>maven-plugin-testing-harness</artifactId>
-			<version>3.3.0</version>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
 
 	<repositories>
 		<repository>

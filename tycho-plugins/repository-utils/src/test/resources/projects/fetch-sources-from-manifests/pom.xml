@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.jboss.tools</groupId>
+	<version>4.0.2-SNAPSHOT</version>
+	<artifactId>org.jboss.tools.site.central.fetch-from-manifests.example</artifactId>
+	<packaging>eclipse-repository</packaging>
+	<properties>
+		<update.site.name>Example</update.site.name>
+		<skipCheckSHAs>true</skipCheckSHAs>
+	</properties>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.jboss.tools.tycho-plugins</groupId>
+				<artifactId>repository-utils</artifactId>
+				<version>4.0.3-SNAPSHOT</version>
+				<executions>
+					<execution>
+						<id>fetch-sources</id>
+						<phase>package</phase>
+						<goals>
+							<goal>fetch-sources-from-manifests</goal>
+						</goals>
+						<configuration>
+							<zipCacheFolder>${basedir}/cache</zipCacheFolder>
+							<outputFolder>${project.build.directory}</outputFolder>
+							<sourcesZip>${project.build.directory}/jbosstools-src.zip</sourcesZip>
+							<sourcesZipRootFolder>src</sourcesZipRootFolder>
+							<sourceFetchMap>
+								<!-- pick a plugin available in the project's update site from which we can deduce the Eclipse-SourceReference -->
+								<jbosstools-base>org.jboss.tools.common</jbosstools-base>
+								<!-- instead of pulling from a plugin, pull source info from a URL containing the buildinfo.json file -->
+								<jbosstools-quarkus>${jbosstools-quarkus-site}/buildinfo.json</jbosstools-quarkus>
+							</sourceFetchMap>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+	<repositories>
+		<repository>
+			<id>jbosstools-base-site</id>
+			<layout>p2</layout>
+			<url>https://download.jboss.org/jbosstools/photon/snapshots/builds/jbosstools-base_master/latest/all/repo/</url>
+		</repository>
+		<repository>
+			<id>jbosstools-quarkus-site</id>
+			<layout>p2</layout>
+			<url>https://download.jboss.org/jbosstools/photon/snapshots/builds/jbosstools-quarkus_master/latest/all/repo/</url>
+		</repository>
+	</repositories>
+
+</project>
