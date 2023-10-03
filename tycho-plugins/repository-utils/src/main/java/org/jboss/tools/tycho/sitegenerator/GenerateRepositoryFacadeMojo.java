@@ -96,20 +96,32 @@ import org.xml.sax.SAXException;
 public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
 	private enum ReferenceStrategy {
-		embedReferences, compositeReferences
+		embedReferences,
+		compositeReferences
 	}
 
-	public static final Set<String> defaultSystemProperties = new HashSet<>(Arrays.asList(new String[] {
-			// these are all parameters of the Jenkins job; if not set they'll be null
-			// TODO should default to null or "" ?
-			"BUILD_ALIAS", "JOB_NAME", "BUILD_NUMBER", "RELEASE", "ZIPSUFFIX", "TARGET_PLATFORM_VERSION",
-			"TARGET_PLATFORM_VERSION_MAXIMUM", "NODE_NAME", // The name of the node the current build is running on
-
-			// these are environment variables so should be valid when run in Jenkins or for
-			// local builds
-			"HOSTNAME", // replaces HUDSON_SLAVE: more portable & means the same thing
-			"WORKSPACE", // likely the same as user.dir, unless -DWORKSPACE= used to override
-			"os.name", "os.version", "os.arch", "java.vendor", "java.version", "user.dir" }));
+	public static final Set<String> defaultSystemProperties = new HashSet<String>(Arrays.asList(new String[] {
+		// these are all parameters of the Jenkins job; if not set they'll be null
+		// TODO should default to null or "" ?
+		"BUILD_ALIAS",
+		"JOB_NAME",
+		"BUILD_NUMBER",
+		"RELEASE",
+		"ZIPSUFFIX",
+		"TARGET_PLATFORM_VERSION",
+		"TARGET_PLATFORM_VERSION_MAXIMUM",
+		"NODE_NAME", // The name of the node the current build is running on
+		
+		// these are environment variables so should be valid when run in Jenkins or for local builds
+		"HOSTNAME", // replaces HUDSON_SLAVE: more portable & means the same thing
+		"WORKSPACE", // likely the same as user.dir, unless -DWORKSPACE= used to override
+		"os.name",
+		"os.version",
+		"os.arch",
+		"java.vendor",
+		"java.version",
+		"user.dir"
+	}));
 
 	private static final String UPSTREAM_ELEMENT = "upstream";
 	public static final String BUILDINFO_JSON = "buildinfo.json";
@@ -127,8 +139,8 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	private File siteTemplateFolder;
 
 	/**
-	 * Additional files to add to repo and that are not in the "siteTemplateFolder".
-	 * These can be folders.
+	 * Additional files to add to repo and that are not in the
+	 * "siteTemplateFolder". These can be folders.
 	 */
 	@Parameter
 	private List<File> additionalWebResources;
@@ -141,25 +153,25 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 
 	/**
 	 * This can have 2 values: embedReferences or compositeReferences.
-	 * "embedReferences" will add the repository references directly to the
-	 * content.jar of the repository. "compositeReferences" will add repository
-	 * references to a new external content.xml and will create a composite that
-	 * composite both content and references. Then top-level repository won't
-	 * contain any reference to other repo whereas repository in "withreferences"
-	 * will composite the top-level repo, with the additional repo adding references
-	 * to associateSites
+	 * "embedReferences" will add the repository references directly to the content.jar
+	 * of the repository.
+	 * "compositeReferences" will add repository references to a new external content.xml
+	 * and will create a composite that composite both content and references. Then top-level
+	 * repository won't contain any reference to other repo whereas repository in "withreferences"
+	 * will composite the top-level repo, with the additional repo adding references to
+	 * associateSites
 	 *
-	 * "compositeReferences" is preferred in case your site is used by an upstream
-	 * project that will manage the dependencies since its output is actually 2
-	 * sites: one without the references for integrators, and one with references
-	 * for testers/users who just want dependencies to come without adding sites, so
-	 * relying on references.
+	 * "compositeReferences" is preferred in case your site is used by an upstream project
+	 * that will manage the dependencies since its output is actually 2 sites: one without
+	 * the references for integrators, and one with references for testers/users who just
+	 * want dependencies to come without adding sites, so relying on references.
 	 */
 	@Parameter(defaultValue = "embedReferences")
 	private ReferenceStrategy referenceStrategy;
 
 	/**
-	 * name of the file in ${siteTemplateFolder} to use as template for index.html
+	 * name of the file in ${siteTemplateFolder} to use as template for
+	 * index.html
 	 */
 	@Parameter(defaultValue = "index.html")
 	private String indexName;
@@ -198,10 +210,9 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	private EclipseRepositoryProject eclipseRepositoryProject;
 
 	/**
-	 * In case some content is missing on site, use alternate URL pattern as
-	 * fallback, if provided. Eg, search
-	 * http://download.jboss.org/jbosstools/mars/snapshots/builds/jbosstools-base_master/latest/all/repo/buildinfo.json
-	 * instead of
+	 * In case some content is missing on site, use alternate URL pattern as fallback, if provided.
+	 * Eg, search
+	 * http://download.jboss.org/jbosstools/mars/snapshots/builds/jbosstools-base_master/latest/all/repo/buildinfo.json instead of
 	 * http://download.jboss.org/jbosstools/mars/snapshots/builds/jbosstools-base_master/buildinfo.json
 	 */
 	@Parameter(defaultValue = "latest/all/repo")

@@ -16,7 +16,7 @@
 			<plugin>
 				<groupId>org.jboss.tools.tycho-plugins</groupId>
 				<artifactId>repository-utils</artifactId>
-				<version>4.0.3-SNAPSHOT</version>
+				<version>4.0.3</version>
 				<executions>
 					<execution>
 						<id>fetch-sources</id>
