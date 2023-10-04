@@ -302,8 +302,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		}
 
 		if (!skipBuildInfo) {
-			// collect buildinfo.json files from upstream and store them in
-			// target/buildinfo/
+			// collect buildinfo.json files from upstream and store them in target/buildinfo/
 			// also save a copy of the merged buildinfo.json in target/repository/
 			createBuildInfo(outputRepository, buildinfoFolder);
 		}
@@ -332,19 +331,17 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		referencesDir.mkdir();
 		File contentXmlReference = new File(referencesDir, "content.xml");
 		StringBuilder content = new StringBuilder();
-		content.append("<?xml version='1.0' encoding='UTF-8' standalone='yes'?>").append('\n')
-				.append("<?metadataRepository version='1.1.0'?>").append('\n')
-				.append("<repository name='References for").append(repoName)
-				.append("' type='org.eclipse.equinox.internal.p2.metadata.repository.LocalMetadataRepository' version='1'>")
-				.append('\n').append("  <properties size='1'>").append('\n')
-				.append("    <property name='p2.timestamp' value='").append(timestamp).append("'/>").append('\n')
-				.append("  </properties>").append('\n').append("  <references size='")
-				.append(2 * associateSites2.size()).append("'>").append('\n');
+		content
+			.append("<?xml version='1.0' encoding='UTF-8' standalone='yes'?>").append('\n')
+			.append("<?metadataRepository version='1.1.0'?>").append('\n')
+			.append("<repository name='References for").append(repoName).append("' type='org.eclipse.equinox.internal.p2.metadata.repository.LocalMetadataRepository' version='1'>").append('\n')
+			.append("  <properties size='1'>").append('\n')
+			.append("    <property name='p2.timestamp' value='").append(timestamp).append("'/>").append('\n')
+			.append("  </properties>").append('\n')
+			.append("  <references size='").append(2 * associateSites2.size()).append("'>").append('\n');
 		for (String site : associateSites2) {
-			content.append("      <repository options='1' type='0' uri='").append(site).append("' url='").append(site)
-					.append("'/>").append('\n');
-			content.append("      <repository options='1' type='1' uri='").append(site).append("' url='").append(site)
-					.append("'/>").append('\n');
+			content.append("      <repository options='1' type='0' uri='").append(site).append("' url='").append(site).append("'/>").append('\n');
+			content.append("      <repository options='1' type='1' uri='").append(site).append("' url='").append(site).append("'/>").append('\n');
 		}
 		content.append("  </references>").append('\n');
 		content.append("</repository>");
@@ -357,14 +354,16 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			File compositeContentXml = new File(compositeWithRefDir, "compositeContent.xml");
 			StringBuilder compositeContent = new StringBuilder();
 			compositeContent.append("<?compositeMetadataRepository version='1.0.0'?>").append('\n')
-					.append("<repository name='").append(repoName)
-					.append("' type='org.eclipse.equinox.internal.p2.metadata.repository.CompositeMetadataRepository' version='1.0.0'>")
-					.append('\n').append("  <properties size='2'>").append('\n')
-					.append("    <property name='p2.compressed' value='true'/>").append('\n')
-					.append("    <property name='p2.timestamp' value='").append(timestamp).append("'/>").append('\n')
-					.append("  </properties>").append("\n").append("  <children size='2'>").append("\n")
-					.append("    <child location='../'/>").append('\n').append("    <child location='../references'/>")
-					.append('\n').append("  </children>").append('\n').append("</repository>");
+				.append("<repository name='").append(repoName).append("' type='org.eclipse.equinox.internal.p2.metadata.repository.CompositeMetadataRepository' version='1.0.0'>").append('\n')
+				.append("  <properties size='2'>").append('\n')
+				.append("    <property name='p2.compressed' value='true'/>").append('\n')
+				.append("    <property name='p2.timestamp' value='").append(timestamp).append("'/>").append('\n')
+				.append("  </properties>").append("\n")
+				.append("  <children size='2'>").append("\n")
+				.append("    <child location='../'/>").append('\n')
+				.append("    <child location='../references'/>").append('\n')
+				.append("  </children>").append('\n')
+				.append("</repository>");
 			org.apache.commons.io.FileUtils.writeStringToFile(compositeContentXml, compositeContent.toString(),
 					StandardCharsets.UTF_8);
 		}
@@ -372,14 +371,15 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			File compositeArtifactsXml = new File(compositeWithRefDir, "compositeArtifacts.xml");
 			StringBuilder compositeArtifact = new StringBuilder();
 			compositeArtifact.append("<?compositeArtifactRepository version='1.0.0'?>").append('\n')
-					.append("<repository name='").append(repoName)
-					.append("' type='org.eclipse.equinox.internal.p2.artifact.repository.CompositeArtifactRepository' version='1.0.0'>")
-					.append('\n').append("  <properties size='2'>").append('\n')
-					.append("    <property name='p2.compressed' value='true'/>").append('\n')
-					.append("    <property name='p2.timestamp' value='").append(timestamp).append("'/>").append('\n')
-					.append("  </properties>").append("\n").append("  <children size='1'>").append("\n")
-					.append("    <child location='../'/>").append('\n').append("  </children>").append('\n')
-					.append("</repository>");
+				.append("<repository name='").append(repoName).append("' type='org.eclipse.equinox.internal.p2.artifact.repository.CompositeArtifactRepository' version='1.0.0'>").append('\n')
+				.append("  <properties size='2'>").append('\n')
+				.append("    <property name='p2.compressed' value='true'/>").append('\n')
+				.append("    <property name='p2.timestamp' value='").append(timestamp).append("'/>").append('\n')
+				.append("  </properties>").append("\n")
+				.append("  <children size='1'>").append("\n")
+				.append("    <child location='../'/>").append('\n')
+				.append("  </children>").append('\n')
+				.append("</repository>");
 			org.apache.commons.io.FileUtils.writeStringToFile(compositeArtifactsXml, compositeArtifact.toString(),
 					StandardCharsets.UTF_8);
 		}
@@ -425,8 +425,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	}
 
 	/*
-	 * This version of category.xml (including feature/bundle versions) is used to
-	 * generate list of features in site.properties and index.html
+	 * This version of category.xml (including feature/bundle versions) is used to generate list of features in site.properties and index.html
 	 */
 	private File generateCategoryXml(File outputRepository) throws MojoExecutionException {
 		// Generate category.xml
@@ -471,9 +470,10 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	}
 
 	/**
-	 * Alter content.xml, content.jar, content.xml.xz to: remove default
-	 * "Uncategorized" category, remove 3rd party associate sites, and add associate
-	 * sites defined in site's pom.xml
+	 * Alter content.xml, content.jar, content.xml.xz to:
+	 * remove default "Uncategorized" category, 
+	 * remove 3rd party associate sites, and 
+	 * add associate sites defined in site's pom.xml
 	 *
 	 * @param p2repository
 	 * @throws FileNotFoundException
@@ -563,8 +563,8 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	}
 
 	/**
-	 * Add p2 stats to the repository's artifacts.xml (and .jar and .xml.xz) See
-	 * http://wiki.eclipse.org/Equinox_p2_download_stats
+	 * Add p2 stats to the repository's artifacts.xml (and .jar and .xml.xz) 
+	 * See http://wiki.eclipse.org/Equinox_p2_download_stats
 	 *
 	 * @param p2repository
 	 * @throws FileNotFoundException
@@ -636,8 +636,8 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 	}
 
 	/**
-	 * Add p2 stats to the repository's artifacts.xml (and .jar and .xml.xz) See
-	 * http://wiki.eclipse.org/Equinox_p2_download_stats
+	 * Add p2 stats to the repository's artifacts.xml (and .jar and .xml.xz) 
+	 * See http://wiki.eclipse.org/Equinox_p2_download_stats
 	 * 
 	 * @param theXml
 	 * @param theXmlXz
@@ -652,14 +652,11 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		try {
 			// JBDS-3929 overwrite the artifacts.xml.xz file too
 			// see also https://bugs.eclipse.org/bugs/show_bug.cgi?id=464614
-			// getLog().debug("delete " + theXmlXz.toString());
 			FileUtils.forceDelete(theXmlXz);
-			// getLog().debug("create " + theXml.toString() + " from transformed XML");
 			FileOutputStream outStreamXml = new FileOutputStream(theXml);
 			StreamResult resultXml = new StreamResult(outStreamXml);
 			transformer.transform(source, resultXml);
 			outStreamXml.close();
-			// getLog().debug("stream " + theXml.toString() + " to " + theXmlXz.toString());
 			BufferedInputStream in = new BufferedInputStream(new FileInputStream(theXml));
 			XZCompressorOutputStream out = new XZCompressorOutputStream(new FileOutputStream(theXmlXz));
 			final byte[] buffer = new byte[1024];
@@ -669,8 +666,6 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 			}
 			out.close();
 			in.close();
-			// getLog().debug("new " + theXmlXz.toString() + " written; remove " +
-			// theXml.toString());
 			FileUtils.forceDelete(theXml);
 		} catch (IOException | TransformerException ex) {
 			getLog().error(ex);
@@ -887,26 +882,15 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		}
 	}
 
-	// for a given JSON object, find /revision/knownReferences[0]/url, then extract
-	// the project name from the git repo URL
+	// for a given JSON object, find /revision/knownReferences[0]/url, then extract the project name from the git repo URL
 	private String getProjectName(ModelNode obj) {
 		String projectURL = null;
 		String projectName = null;
 		for (Property prop : obj.get("revision").asPropertyList()) {
-			if (projectURL == null && prop.getName().equals("knownReferences") && prop.getValue().isDefined()) { // this
-																													// is
-																													// a
-																													// ModelNode;
-																													// want
-																													// the
-																													// zeroth
-																													// named
-																													// key
-																													// "url"
+			if (projectURL == null && prop.getName().equals("knownReferences") && prop.getValue().isDefined()) { // this is a ModelNode; want the zeroth named key "url"
 				projectURL = prop.getValue().asList().get(0).get("url").asString();
 				getLog().debug("Upstream repo: " + projectURL);
-				// JBIDE-22808 support both git://github.com/jbosstools/jbosstools-portlet.git
-				// and https://github.com/jbosstools/jbosstools-arquillian formats
+				// JBIDE-22808 support both git://github.com/jbosstools/jbosstools-portlet.git and https://github.com/jbosstools/jbosstools-arquillian formats
 				projectName = projectURL.replaceAll(".+/([^/]+).git", "$1").replaceAll(".+/([^/]+)", "$1");
 				getLog().debug("Upstream proj: " + projectName);
 			}
@@ -918,8 +902,8 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		ModelNode res = new ModelNode();
 		File repoRoot = findRepoRoot(this.project.getBasedir());
 		FileRepositoryBuilder builder = new FileRepositoryBuilder();
-		Repository gitRepo = builder.setGitDir(new File(repoRoot, ".git")).readEnvironment() // scan environment GIT_*
-																								// variables
+		Repository gitRepo = builder.setGitDir(new File(repoRoot, ".git"))
+				.readEnvironment() // scan environment GIT_* variables
 				.findGitDir() // scan up the file system tree
 				.build();
 		Ref head = gitRepo.exactRef(Constants.HEAD);
@@ -927,6 +911,7 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 		if (head.getTarget() != null && head.getTarget().getName() != null) {
 			res.get("currentBranch").set(head.getTarget().getName());
 		}
+		
 		ModelNode knownReferences = new ModelNode();
 		for (Ref entry : gitRepo.getRefDatabase().getRefs()) {
 			if (entry.getName().startsWith(Constants.R_REMOTES)
@@ -937,7 +922,9 @@ public class GenerateRepositoryFacadeMojo extends AbstractTychoPackagingMojo {
 				String remoteUrl = gitRepo.getConfig().getString("remote", remoteName, "url");
 				String branchName = entry.getName().substring(Constants.R_REMOTES.length() + 1 + remoteName.length());
 				reference.get("name").set(remoteName);
-				reference.get("url").set(remoteUrl);
+				//remote url on github action is not properly retrieved because of detached HEAD and pull request, make this workaround to pass test
+				if (remoteUrl != null)
+					reference.get("url").set(remoteUrl);
 				reference.get("ref").set(branchName);
 				knownReferences.add(reference);
 			}
