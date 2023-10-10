@@ -78,32 +78,26 @@ import org.jboss.dmr.Property;
  * d) turn those into SHAs, eg., 184e18cc3ac7c339ce406974b6a4917f73909cc4
  * 
  * e) fetch source zips for those SHAs, eg.,
- * https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip
- * and save as
+ * https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip and save as
  * jbosstools-base_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
  * 
  * digest file listing:
  * 
- * github project, plugin, version, SHA, origin/branch@SHA, remote zipfile,
- * local zipfile
+ * github project, plugin, version, SHA, origin/branch@SHA, remote zipfile, local zipfile
  * 
- * jbosstools-base, org.jboss.tools.usage, 1.2.100.Alpha2-v20140221-1555-B437,
- * 184e18cc3ac7c339ce406974b6a4917f73909cc4,
- * origin/jbosstools-4.1.x@184e18cc3ac7c339ce406974b6a4917f73909cc4,
- * https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip,
+ * jbosstools-base, org.jboss.tools.usage, 1.2.100.Alpha2-v20140221-1555-B437, 184e18cc3ac7c339ce406974b6a4917f73909cc4,
+ * origin/jbosstools-4.1.x@184e18cc3ac7c339ce406974b6a4917f73909cc4, https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip,
  * jbosstools-base_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
  * 
  * f) unpack each source zip and combine them into a single zip
  * 
- * For example, see
- * repository-utils/src/test/resources/fetch-sources-from-manifests-example.pom.xml
+ * For example, see repository-utils/src/test/resources/fetch-sources-from-manifests-example.pom.xml
  * 
  */
 @Mojo(name = "fetch-sources-from-manifests", defaultPhase = LifecyclePhase.PACKAGE)
 public class FetchSourcesFromManifests extends AbstractMojo implements Contextualizable {
 
-	// Two modes of operation when merging zips: either store them in cache folder,
-	// or just delete them
+	// Two modes of operation when merging zips: either store them in cache folder, or just delete them
 	private static final int CACHE_ZIPS = 1;
 	private static final int PURGE_ZIPS = 2;
 
@@ -111,7 +105,8 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 	private MavenProject project;
 
 	/**
-	 * Map of projects to plugins, so we know where to get the SHA (git revision)
+	 * Map of projects to plugins, so we know where to get the SHA (git
+	 * revision)
 	 * 
 	 * sourceFetchMap>
 	 * jbosstools-aerogear>org.jboss.tools.aerogear.hybrid.core</jbosstools-aerogear>
@@ -140,8 +135,9 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 	 * Alternative location to look for zips. Here is the order to process zip
 	 * research
 	 * 
-	 * 1. Look for zip in zipCacheFolder = ${basedir}/cache 2. Look for zip in
-	 * outputFolder = ${basedir}/zips 3. Look for zip at expected URL
+	 * 1. Look for zip in zipCacheFolder = ${basedir}/cache
+	 * 2. Look for zip in outputFolder = ${basedir}/zips
+	 * 3. Look for zip at expected URL
 	 */
 	@Parameter(property = "fetch-sources-from-manifests.zipCacheFolder", defaultValue = "${basedir}/cache")
 	private File zipCacheFolder;
@@ -149,8 +145,7 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 	/**
 	 * Location where to put zips and other metadata
 	 *
-	 * @parameter default-value="${basedir}/zips"
-	 *            property="fetch-sources-from-manifests.outputFolder"
+	 * @parameter default-value="${basedir}/zips" property="fetch-sources-from-manifests.outputFolder"
 	 */
 	@Parameter(property = "fetch-sources-from-manifests.outputFolder", defaultValue = "${basedir}/zips")
 	private File outputFolder;
@@ -158,23 +153,17 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 	/**
 	 * Location where to put zips
 	 *
-	 * @parameter default-value="${basedir}/zips/all"
-	 *            property="fetch-sources-from-manifests.zipsDirectory"
+	 * @parameter default-value="${basedir}/zips/all" property="fetch-sources-from-manifests.zipsDirectory"
 	 */
 	@Parameter(property = "fetch-sources-from-manifests.zipsDirectory", defaultValue = "${basedir}/zips/all")
 	private File zipsDirectory;
 
-	// the zip file to be created; default is "jbosstools-src.zip" but can override
-	// here
-	/*
-	 * old default was /fullSite/all/ but since full-site is deprecated @since JBT
-	 * 4.5.1.AM2, new default is /
-	 */
+	// the zip file to be created; default is "jbosstools-src.zip" but can override here
+	/* old default was /fullSite/all/ but since full-site is deprecated @since JBT 4.5.1.AM2, new default is / */
 	@Parameter(property = "fetch-sources-from-manifests.sourcesZip", defaultValue = "${project.build.directory}/jbosstools-src.zip")
 	private File sourcesZip;
 
-	// the folder at the root of the zip; default is "jbosstools-src.zip!sources/"
-	// but can override here
+	// the folder at the root of the zip; default is "jbosstools-src.zip!sources/" but can override here
 	@Parameter(property = "fetch-sources-from-manifests.sourcesZipRootFolder", defaultValue = "sources")
 	private String sourcesZipRootFolder;
 
@@ -184,14 +173,12 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 	@Parameter(property = "fetch-sources-from-manifests.skip", defaultValue = "false")
 	private boolean skip;
 
-	/*
-	 * JBIDE-22870 jbosstools now builds using jgit timestamps, it's impossible to
-	 * define a single plugin which is representative of the whole project when
-	 * checking for the latest SHA - each plugin in a project may have a different
-	 * latest SHA, which is different from the latest SHA on that branch. Therefore
-	 * the default value here will be changed to true, to skip this check entirely.
-	 * For projects which use the old tycho default timestamp provider, you can set
-	 * this to false with -DskipCheckSHAs=false
+	/*  JBIDE-22870 
+	 * jbosstools now builds using jgit timestamps, it's impossible to define a single plugin which is representative 
+	 * of the whole project when checking for the latest SHA - each plugin in a project may have a different latest SHA,
+	 * which is different from the latest SHA on that branch. Therefore the default value here will be changed to true,
+	 * to skip this check entirely.
+	 * For projects which use the old tycho default timestamp provider, you can set this to false with -DskipCheckSHAs=false
 	 */
 	@Parameter(property = "skipCheckSHAs", defaultValue = "true")
 	private boolean skipCheckSHAs;
@@ -239,38 +226,31 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 			FileWriter dfw;
 			StringBuffer sb = new StringBuffer();
 			String branch = project.getProperties().getProperty("mvngit.branch");
-			sb.append("-=> " + project.getGroupId() + ":" + project.getArtifactId() + ":" + project.getVersion()
-					+ columnSeparator + branch + " <=-\n");
+			sb.append("-=> " + project.getGroupId() + ":" + project.getArtifactId() + ":" + project.getVersion() + columnSeparator + branch + " <=-\n");
 
-			String pluginPath = project.getBasedir() + File.separator + "target" + File.separator + "repository"
-					+ File.separator + "plugins";
+			String pluginPath = project.getBasedir() + File.separator + "target" + File.separator + "repository" + File.separator + "plugins";
 			String sep = " " + columnSeparator + " ";
 
 			if (sourceFetchMap == null) {
-				getLog().warn(
-						"No <sourceFetchMap> defined in pom. Can't fetch sources without a list of plugins. Did you forget to enable fetch-source-zips profile?");
+				getLog().warn("No <sourceFetchMap> defined in pom. Can't fetch sources without a list of plugins. Did you forget to enable fetch-source-zips profile?");
 			} else {
 				for (String projectName : this.sourceFetchMap.keySet()) {
 					String pluginNameOrBuildInfoJsonUrl = this.sourceFetchMap.get(projectName);
 					// jbosstools-base = org.jboss.tools.common
-					getLog().debug("For project " + projectName + ": plugin name or buildinfo.json = "
-							+ pluginNameOrBuildInfoJsonUrl);
+					getLog().debug("For project " + projectName + ": plugin name or buildinfo.json = " + pluginNameOrBuildInfoJsonUrl);
 
 					String SHA = null;
 					String qualifier = null;
 					String SHASource = null;
 
 					// if the value is a buildinfo.json URL, not a plugin name
-					if ((pluginNameOrBuildInfoJsonUrl.startsWith("http")
-							|| pluginNameOrBuildInfoJsonUrl.startsWith("ftp"))
-							&& pluginNameOrBuildInfoJsonUrl.matches(".+buildinfo.*json")) {
+					if ((pluginNameOrBuildInfoJsonUrl.startsWith("http") || pluginNameOrBuildInfoJsonUrl.startsWith("ftp")) && pluginNameOrBuildInfoJsonUrl.matches(".+buildinfo.*json")) { 
 						getLog().debug("Read JSON from: " + pluginNameOrBuildInfoJsonUrl);
 						ModelNode obj;
 						try (InputStream in = new URL(pluginNameOrBuildInfoJsonUrl).openStream()) {
 							obj = ModelNode.fromJSONStream(in);
 						} catch (IOException e) {
-							throw new MojoExecutionException("Problem occurred reading " + pluginNameOrBuildInfoJsonUrl,
-									e);
+							throw new MojoExecutionException("Problem occurred reading " + pluginNameOrBuildInfoJsonUrl, e);
 						}
 						SHA = getSHA(obj);
 						getLog().debug("Found SHA = " + SHA);
@@ -279,24 +259,24 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 						getLog().debug("Found qualifier = " + qualifier);
 						SHASource = pluginNameOrBuildInfoJsonUrl;
 					} else {
-						// find the first matching plugin jar, eg.,
-						// target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
-						File[] matchingFiles = listFilesMatching(new File(pluginPath),
-								pluginNameOrBuildInfoJsonUrl + "_.+\\.jar");
+						// find the first matching plugin jar, eg., target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
+						File[] matchingFiles = listFilesMatching(new File(pluginPath), pluginNameOrBuildInfoJsonUrl + "_.+\\.jar");
 						// for (File file : matchingFiles) getLog().debug(file.toString());
 						if (matchingFiles.length < 1) {
-							throw new MojoExecutionException("No matching plugin found in " + pluginPath + " for "
-									+ pluginNameOrBuildInfoJsonUrl + "_.+\\.jar.\nCheck your pom.xml for this line: <"
-									+ projectName + ">" + pluginNameOrBuildInfoJsonUrl + "</" + projectName + ">");
+							throw new MojoExecutionException("No matching plugin found in " + pluginPath + " for " + pluginNameOrBuildInfoJsonUrl + "_.+\\.jar.\nCheck your pom.xml for this line: <" + projectName + ">" + pluginNameOrBuildInfoJsonUrl + "</" + projectName + ">");
 						}
 						File jarFile = matchingFiles[0];
-						File manifestFile = null;
+						File manifestFile;
+						try {
+							manifestFile = File.createTempFile(MANIFEST, "");
+						} catch (IOException e) {
+							throw new MojoExecutionException("Error extracting " + MANIFEST + " from " + jarFile, e);
+						}
 
 						try (OutputStream out = new FileOutputStream(manifestFile);
 								FileInputStream fin = new FileInputStream(jarFile);
 								BufferedInputStream bin = new BufferedInputStream(fin);
 								ZipInputStream zin = new ZipInputStream(bin)) {
-							manifestFile = File.createTempFile(MANIFEST, "");
 							ZipEntry ze = null;
 							while ((ze = zin.getNextEntry()) != null) {
 								// getLog().debug(ze.getName());
@@ -318,8 +298,7 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 							throw new MojoExecutionException("Error extracting " + MANIFEST + " from " + jarFile, ex);
 						}
 
-						// retrieve the MANIFEST.MF file, eg.,
-						// org.jboss.tools.usage_1.2.100.Alpha2-v20140221-1555-B437.jar!/META-INF/MANIFEST.MF
+						// retrieve the MANIFEST.MF file, eg., org.jboss.tools.usage_1.2.100.Alpha2-v20140221-1555-B437.jar!/META-INF/MANIFEST.MF
 						Manifest manifest;
 						try (InputStream in = new FileInputStream(manifestFile)) {
 							manifest = new Manifest(in);
@@ -344,15 +323,13 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 						qualifier = getQualifier(pluginNameOrBuildInfoJsonUrl, jarFile.toString(), true);
 						SHASource = removePrefix(jarFile.toString(), pluginPath) + " " + MANIFEST;
 					}
-					// fetch github source archive for that SHA, eg.,
-					// https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip
+					// fetch github source archive for that SHA, eg., https://github.com/jbosstools/jbosstools-base/archive/184e18cc3ac7c339ce406974b6a4917f73909cc4.zip
 					// to jbosstools-base_184e18cc3ac7c339ce406974b6a4917f73909cc4_sources.zip
 					String URL = "";
 					String outputZipName = "";
 					try {
 						if (SHA == null || SHA.equals("UNKNOWN")) {
-							getLog().warn("Cannot fetch " + projectName + " sources: no Eclipse-SourceReferences in "
-									+ SHASource);
+							getLog().warn("Cannot fetch " + projectName + " sources: no Eclipse-SourceReferences in " + SHASource);
 						} else {
 							URL = "https://github.com/jbosstools/" + projectName + "/archive/" + SHA + ".zip";
 							outputZipName = projectName + "_" + SHA + "_sources.zip";
@@ -362,32 +339,29 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 						throw new MojoExecutionException("Error while downloading github source archive", ex);
 					}
 
-					// github project, plugin, version, SHA, origin/branch@SHA, remote zipfile,
-					// local zipfile
-					String revisionLine = projectName + sep + pluginNameOrBuildInfoJsonUrl + sep + qualifier + sep + SHA
-							+ sep + "origin/" + branch + "@" + SHA + sep + URL + sep + outputZipName + "\n";
+					// github project, plugin, version, SHA, origin/branch@SHA, remote zipfile, local zipfile
+					String revisionLine = projectName + sep + pluginNameOrBuildInfoJsonUrl + sep + qualifier + sep + SHA + sep + "origin/" + branch + "@" + SHA + sep + URL + sep + outputZipName + "\n";
 					// getLog().debug(revisionLine);
 					sb.append(revisionLine);
 				}
 			}
 
 			/*
-			 * JBIDE-19467 check if SHA in buildinfo_projectName.json matches
-			 * projectName_65cb06bb81773714b9e3fc1c312e33aaa068dc33_sources.zip. Note: this
-			 * may fail if you've built stuff locally because those plugins will use
-			 * different SHAs (eg., from a pull-request topic branch)
-			 * 
-			 * To test this is working via commandline shell equivalent
-			 * 
-			 * cd jbosstools-build-sites/aggregate/site for j in
-			 * target/buildinfo/buildinfo_jbosstools-*; do echo -n $j; k=${j##*_};
-			 * k=${k/.json}; echo " :: $k"; cat $j | grep HEAD | head -1 | sed
-			 * "s#[\t\w\ ]\+\"HEAD\" : \"\(.\+\)\",#0: \1#"; ls cache/${k}_*_sources.zip |
-			 * sed -e "s#cache/${k}_\(.\+\)_sources.zip#1: \1#"; echo ""; done
+			JBIDE-19467 check if SHA in buildinfo_projectName.json matches projectName_65cb06bb81773714b9e3fc1c312e33aaa068dc33_sources.zip.
+			Note: this may fail if you've built stuff locally because those plugins will use different SHAs (eg., from a pull-request topic branch)
+	
+			To test this is working via commandline shell equivalent
+	
+			cd jbosstools-build-sites/aggregate/site
+			for j in target/buildinfo/buildinfo_jbosstools-*; do
+				echo -n $j; k=${j##*_}; k=${k/.json}; echo " :: $k";
+				cat $j | grep HEAD | head -1 | sed "s#[\t\w\ ]\+\"HEAD\" : \"\(.\+\)\",#0: \1#";
+				ls cache/${k}_*_sources.zip  | sed -e "s#cache/${k}_\(.\+\)_sources.zip#1: \1#";
+				echo "";
+			done
 			 */
 			if (skipCheckSHAs) {
-				getLog().warn(
-						"skipCheckSHAs=true :: Skip check that buildinfo_*.json HEAD SHA matches MANIFEST.MF Eclipse-SourceReferences commitId SHA.");
+				getLog().warn("skipCheckSHAs=true :: Skip check that buildinfo_*.json HEAD SHA matches MANIFEST.MF Eclipse-SourceReferences commitId SHA.");
 			} else {
 				File buildinfoFolder = new File(this.project.getBuild().getDirectory(), "buildinfo");
 				if (buildinfoFolder.isDirectory()) {
@@ -397,8 +371,7 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 							try (InputStream in = new FileInputStream(buildInfoFiles[i])) {
 								ModelNode obj = null;
 								String upstreamSHA = null;
-								String upstreamProjectName = buildInfoFiles[i].toString()
-										.replaceAll(".+buildinfo_(.+).json", "$1");
+							String upstreamProjectName = buildInfoFiles[i].toString().replaceAll(".+buildinfo_(.+).json", "$1");
 								getLog().debug(i + ": " + buildInfoFiles[i].toString() + " :: " + upstreamProjectName);
 								try {
 									getLog().debug("Read JSON from: " + buildInfoFiles[i].toString());
@@ -409,40 +382,30 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 									String outputZipName = upstreamProjectName + "_" + upstreamSHA + "_sources.zip";
 									File outputZipFile = new File(zipsDirectory, outputZipName);
 									if (!outputZipFile.isFile()) {
-										getLog().debug("Check " + outputFolder.toString() + " for "
-												+ upstreamProjectName + "_.+_sources.zip");
-										// find the sources we DID download, eg.,
-										// jbosstools-browsersim_9255a5b7c04fb10768c14942e60092e860881d6b_sources.zip
-										File[] wrongZipFiles = listFilesMatching(zipsDirectory,
-												upstreamProjectName + "_.+_sources.zip");
+									getLog().debug("Check " + outputFolder.toString() + " for " + upstreamProjectName + "_.+_sources.zip");
+									// find the sources we DID download, eg., jbosstools-browsersim_9255a5b7c04fb10768c14942e60092e860881d6b_sources.zip
+									File[] wrongZipFiles = listFilesMatching(zipsDirectory,upstreamProjectName + "_.+_sources.zip");
 										String wrongZips = "";
 										for (int j = 0; j < wrongZipFiles.length; j++) {
 											getLog().debug(wrongZipFiles[j].toString());
-											wrongZips += (wrongZips.isEmpty() ? "" : ", ") + wrongZipFiles[j].toString()
-													.replaceAll(".+" + upstreamProjectName + "_(.+)_sources.zip", "$1");
+											wrongZips += (wrongZips.isEmpty() ? "" : ", ") + wrongZipFiles[j].toString().replaceAll(".+" + upstreamProjectName + "_(.+)_sources.zip", "$1");
 										}
 										if (wrongZips.isEmpty()) {
-											getLog().warn("\n" + buildInfoFiles[i].toString() + "\ncontains "
-													+ upstreamSHA + ", but upstream " + upstreamProjectName
-													+ " project's MANIFEST.MF has no Eclipse-SourceReferences commitId.\n"
-													+ "Using sources from " + upstreamSHA + ".");
-											// fetch sources from upstreamProjectName's upstreamSHA (but do not log in
-											// the
-											// digestFile)
-											fetchUpstreamSourcesZip(upstreamProjectName, upstreamSHA);
+											getLog().warn("\n" + buildInfoFiles[i].toString() + "\ncontains " + upstreamSHA + 
+													", but upstream " + upstreamProjectName + " project's MANIFEST.MF has no Eclipse-SourceReferences commitId.\n" +
+													"Using sources from " + upstreamSHA + ".");
+												// fetch sources from upstreamProjectName's upstreamSHA (but do not log in the digestFile)
+												fetchUpstreamSourcesZip(upstreamProjectName, upstreamSHA);
 										} else {
-											throw new MojoFailureException("\n\n" + buildInfoFiles[i].toString()
-													+ "\ncontains " + upstreamSHA + ", but upstream "
-													+ upstreamProjectName
-													+ " project's MANIFEST.MF has Eclipse-SourceReferences \n"
-													+ "commitId " + wrongZips + ". \n\n"
-													+ "If you have locally built projects which are being aggregated here, ensure \n"
-													+ "they are built from the latest SHA from HEAD, not a local topic branch. \n\n"
-													+ "It's also possible that some recent changes have not yet been built upstream. \n"
-													+ "If that's the case, trigger a build for the "
-													+ upstreamProjectName + " project \n"
-													+ "to ensure that the latest commits have been built and can be aggregated here. \n\n"
-													+ "Or, use -DskipCheckSHAs=true to bypass this check.\n\n"); // JBIDE-22808
+											throw new MojoFailureException("\n\n" + buildInfoFiles[i].toString() + "\ncontains " + upstreamSHA +
+													", but upstream " + upstreamProjectName + " project's MANIFEST.MF has Eclipse-SourceReferences \n" +
+													"commitId " + wrongZips + ". \n\n" +
+													"If you have locally built projects which are being aggregated here, ensure \n" +
+													"they are built from the latest SHA from HEAD, not a local topic branch. \n\n" +
+													"It's also possible that some recent changes have not yet been built upstream. \n" +
+													"If that's the case, trigger a build for the " + upstreamProjectName + " project \n" +
+													"to ensure that the latest commits have been built and can be aggregated here. \n\n" +
+													"Or, use -DskipCheckSHAs=true to bypass this check.\n\n"); // JBIDE-22808
 										}
 									}
 								} finally {
@@ -451,29 +414,27 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 							}
 						}
 					} catch (Exception ex) {
-						throw new MojoExecutionException("Problem occurred checking upstream buildinfo.json files!",
-								ex);
+						throw new MojoExecutionException("Problem occurred checking upstream buildinfo.json files!",ex);
 					}
 				}
 			}
 
 			/*
-			 * JBIDE-19467 check if SHA in buildinfo_projectName.json matches
-			 * projectName_65cb06bb81773714b9e3fc1c312e33aaa068dc33_sources.zip. Note: this
-			 * may fail if you've built stuff locally because those plugins will use
-			 * different SHAs (eg., from a pull-request topic branch)
-			 * 
-			 * To test this is working via commandline shell equivalent
-			 * 
-			 * cd jbosstools-build-sites/aggregate/site for j in
-			 * target/buildinfo/buildinfo_jbosstools-*; do echo -n $j; k=${j##*_};
-			 * k=${k/.json}; echo " :: $k"; cat $j | grep HEAD | head -1 | sed
-			 * "s#[\t\w\ ]\+\"HEAD\" : \"\(.\+\)\",#0: \1#"; ls cache/${k}_*_sources.zip |
-			 * sed -e "s#cache/${k}_\(.\+\)_sources.zip#1: \1#"; echo ""; done
+			JBIDE-19467 check if SHA in buildinfo_projectName.json matches projectName_65cb06bb81773714b9e3fc1c312e33aaa068dc33_sources.zip.
+			Note: this may fail if you've built stuff locally because those plugins will use different SHAs (eg., from a pull-request topic branch)
+	
+			To test this is working via commandline shell equivalent
+	
+			cd jbosstools-build-sites/aggregate/site
+			for j in target/buildinfo/buildinfo_jbosstools-*; do
+				echo -n $j; k=${j##*_}; k=${k/.json}; echo " :: $k";
+				cat $j | grep HEAD | head -1 | sed "s#[\t\w\ ]\+\"HEAD\" : \"\(.\+\)\",#0: \1#";
+				ls cache/${k}_*_sources.zip  | sed -e "s#cache/${k}_\(.\+\)_sources.zip#1: \1#";
+				echo "";
+			done
 			 */
 			if (skipCheckSHAs) {
-				getLog().warn(
-						"skipCheckSHAs=true :: Skip check that buildinfo_*.json HEAD SHA matches MANIFEST.MF Eclipse-SourceReferences commitId SHA.");
+				getLog().warn("skipCheckSHAs=true :: Skip check that buildinfo_*.json HEAD SHA matches MANIFEST.MF Eclipse-SourceReferences commitId SHA.");
 			} else {
 				File buildinfoFolder = new File(this.project.getBuild().getDirectory(), "buildinfo");
 				if (buildinfoFolder.isDirectory()) {
@@ -483,8 +444,7 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 							InputStream in = null;
 							ModelNode obj = null;
 							String upstreamSHA = null;
-							String upstreamProjectName = buildInfoFiles[i].toString()
-									.replaceAll(".+buildinfo_(.+).json", "$1");
+							String upstreamProjectName = buildInfoFiles[i].toString().replaceAll(".+buildinfo_(.+).json", "$1");
 							getLog().debug(i + ": " + buildInfoFiles[i].toString() + " :: " + upstreamProjectName);
 							try {
 								getLog().debug("Read JSON from: " + buildInfoFiles[i].toString());
@@ -496,32 +456,24 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 								String outputZipName = upstreamProjectName + "_" + upstreamSHA + "_sources.zip";
 								File outputZipFile = new File(zipsDirectory, outputZipName);
 								if (!outputZipFile.isFile()) {
-									getLog().debug("Check " + outputFolder.toString() + " for " + upstreamProjectName
-											+ "_.+_sources.zip");
-									// find the sources we DID download, eg.,
-									// jbosstools-browsersim_9255a5b7c04fb10768c14942e60092e860881d6b_sources.zip
-									File[] wrongZipFiles = listFilesMatching(zipsDirectory,
-											upstreamProjectName + "_.+_sources.zip");
+									getLog().debug("Check " + outputFolder.toString() + " for " + upstreamProjectName + "_.+_sources.zip");
+									// find the sources we DID download, eg., jbosstools-browsersim_9255a5b7c04fb10768c14942e60092e860881d6b_sources.zip
+									File[] wrongZipFiles = listFilesMatching(zipsDirectory,upstreamProjectName + "_.+_sources.zip");
 									String wrongZips = "";
 									for (int j = 0; j < wrongZipFiles.length; j++) {
 										getLog().debug(wrongZipFiles[j].toString());
-										wrongZips += (wrongZips.isEmpty() ? "" : ", ") + wrongZipFiles[j].toString()
-												.replaceAll(".+" + upstreamProjectName + "_(.+)_sources.zip", "$1");
+										wrongZips += (wrongZips.isEmpty() ? "" : ", ") + wrongZipFiles[j].toString().replaceAll(".+" + upstreamProjectName + "_(.+)_sources.zip", "$1");
 									}
 									if (!wrongZips.isEmpty()) {
-										throw new MojoFailureException("\n" + buildInfoFiles[i].toString()
-												+ "\ncontains " + upstreamSHA + ", but upstream " + upstreamProjectName
-												+ " project's MANIFEST.MF has Eclipse-SourceReferences\ncommitId "
-												+ wrongZips
-												+ ". \nIf you have locally built projects which are aggregated here, \nensure they are built from the latest SHA from HEAD, not a local topic branch.\n"
+										throw new MojoFailureException("\n" + buildInfoFiles[i].toString() + "\ncontains " + upstreamSHA + 
+												", but upstream " + upstreamProjectName + " project's MANIFEST.MF has Eclipse-SourceReferences\ncommitId " + wrongZips + 
+												". \nIf you have locally built projects which are aggregated here, \nensure they are built from the latest SHA from HEAD, not a local topic branch.\n"
 												+ "Or, use -DskipCheckSHAs=true to bypass this check.");
 									} else {
-										getLog().warn("\n" + buildInfoFiles[i].toString() + "\ncontains " + upstreamSHA
-												+ ", but upstream " + upstreamProjectName
-												+ " project's MANIFEST.MF has no Eclipse-SourceReferences commitId.\n"
-												+ "Using sources from " + upstreamSHA + ".");
-										// fetch sources from upstreamProjectName's upstreamSHA (but do not log in the
-										// digestFile)
+										getLog().warn("\n" + buildInfoFiles[i].toString() + "\ncontains " + upstreamSHA + 
+											", but upstream " + upstreamProjectName + " project's MANIFEST.MF has no Eclipse-SourceReferences commitId.\n" +
+											"Using sources from " + upstreamSHA + ".");
+										// fetch sources from upstreamProjectName's upstreamSHA (but do not log in the digestFile)
 										fetchUpstreamSourcesZip(upstreamProjectName, upstreamSHA);
 									}
 								}
@@ -530,14 +482,12 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 							}
 						}
 					} catch (Exception ex) {
-						throw new MojoExecutionException("Problem occurred checking upstream buildinfo.json files!",
-								ex);
+						throw new MojoExecutionException("Problem occurred checking upstream buildinfo.json files!",ex);
 					}
 				}
 			}
 
-			// JBDS-3364 JBDS-3208 JBIDE-19467 when not using publish.sh, unpack downloaded
-			// source zips and combine them into a single zip
+			// JBDS-3364 JBDS-3208 JBIDE-19467 when not using publish.sh, unpack downloaded source zips and combine them into a single zip
 			createCombinedZipFile(zipsDirectory, zipFiles, CACHE_ZIPS);
 
 			// getLog().debug("Generating aggregate site metadata");
@@ -572,8 +522,7 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 			} catch (Exception ex) {
 				throw new MojoExecutionException("Error writing to " + digestFile.toString(), ex);
 			}
-			// getLog().debug("Written to " + digestFile.toString() + ":\n\n" +
-			// sb.toString());
+			// getLog().debug("Written to " + digestFile.toString() + ":\n\n" + sb.toString());
 		} else {
 			getLog().info("fetch-sources-from-manifests (fetch-sources) :: skipped.");
 		}
@@ -589,8 +538,7 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 			File cachedZip = new File(this.zipCacheFolder, outputZipName);
 			if (cachedZip.exists()) {
 				FileUtils.copyFile(cachedZip, outputZipFile);
-				getLog().debug(
-						"Copied " + removePrefix(outputZipFile.getAbsolutePath(), project.getBasedir().toString()));
+				getLog().debug("Copied " + removePrefix(outputZipFile.getAbsolutePath(), project.getBasedir().toString()));
 				getLog().debug("  From " + removePrefix(cachedZip.getAbsolutePath(), project.getBasedir().toString()));
 				diduseCache = true;
 			}
@@ -606,8 +554,7 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 		}
 		File[] matchingSourceMD5s = listFilesMatching(this.zipCacheFolder, projectName + "_.+\\.zip\\.MD5");
 		for (int i = 0; i < matchingSourceMD5s.length; i++) {
-			// don't delete the file we want, only all others matching projectName_.zip or
-			// .MD5
+			// don't delete the file we want, only all others matching projectName_.zip or .MD5
 			if (!(outputZipFile.getName() + ".MD5").equals(matchingSourceMD5s[i].getName())) {
 				getLog().warn("Delete " + matchingSourceMD5s[i].getName());
 				matchingSourceMD5s[i].delete();
@@ -625,9 +572,9 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 	}
 
 	/*
-	 * Given a set of zip files, unpack them and merge them into a single combined
-	 * source zip If mode == PURGE_ZIPS, delete zips to save disk space, keeping
-	 * only the combined zip If mode == CACHE_ZIPS, move zips into cache folder
+	 * Given a set of zip files, unpack them and merge them into a single combined source zip
+	 * If mode == PURGE_ZIPS, delete zips to save disk space, keeping only the combined zip
+	 * If mode == CACHE_ZIPS, move zips into cache folder
 	 * 
 	 */
 	private void createCombinedZipFile(File zipsDirectory, Set<File> zipFiles, int mode) throws MojoExecutionException {
@@ -656,46 +603,33 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 					zipFile.renameTo(new File(this.zipCacheFolder, zipFile.getName()));
 				}
 			} catch (ZipException ex) {
-				throw new MojoExecutionException("Error unpacking " + outputFile.toString() + " to " + fullUnzipPath,
-						ex);
+				throw new MojoExecutionException("Error unpacking " + outputFile.toString() + " to " + fullUnzipPath, ex);
 			} catch (IOException ex) {
-				throw new MojoExecutionException("Error unpacking " + outputFile.toString() + " to " + fullUnzipPath,
-						ex);
+				throw new MojoExecutionException("Error unpacking " + outputFile.toString() + " to " + fullUnzipPath, ex);
 			}
 		}
 
-		// JBIDE-19814 - include local sources in jbosstools-project-SHA folder
-		// (jbosstools-build-sites or jbdevstudio-product)
-		// get project name & SHA (from .git metadata) - needed for
-		// sourcesZipRootFolder/projectName-SHA folder
+		// JBIDE-19814 - include local sources in jbosstools-project-SHA folder (jbosstools-build-sites or jbdevstudio-product)
+		// get project name & SHA (from .git metadata) - needed for sourcesZipRootFolder/projectName-SHA folder
 		Properties properties = new Properties();
 		String projectURL = null;
 		String projectName = null;
 		String projectSHA = null;
 		try {
-			properties.load(
-					new FileInputStream(this.project.getBuild().getDirectory() + File.separator + "git.properties")); // as
-																														// defined
-																														// by
-																														// build-sites/aggregate/site/pom.xml
-			getLog().debug("git.remote.origin.url = " + properties.get("git.remote.origin.url").toString()); // could be
-																												// git@github.com:jbosstools/jbosstools...
-																												// or
-																												// git://github.com/jbosstools/jbosstools...
+			properties.load(new FileInputStream(this.project.getBuild().getDirectory() + File.separator + "git.properties")); // as defined by build-sites/aggregate/site/pom.xml
+			getLog().debug("git.remote.origin.url = " + properties.get("git.remote.origin.url").toString()); // could be git@github.com:jbosstools/jbosstools... or git://github.com/jbosstools/jbosstools...
 			projectURL = properties.get("git.remote.origin.url").toString();
 			projectName = projectURL.replaceAll(".+/([^/]+).git", "$1");
 			getLog().debug("git.commit.id = " + properties.get("git.commit.id").toString()); // 5bfba37d042200ae71089678b6a441b57dd00d1f
 			projectSHA = properties.get("git.commit.id").toString();
 		} catch (IOException ex) {
-			throw new MojoExecutionException(
-					"Error loading " + this.project.getBuild().getDirectory() + File.separator + "git.properties", ex);
+			throw new MojoExecutionException("Error loading " + this.project.getBuild().getDirectory() + File.separator + "git.properties", ex);
 		}
 
 		String localCleanSourcesDir = null;
 		if (projectName != null) {
 			if (projectSHA != null) {
-				// might get projectName = git@github.com:dgolovin/jbdevstudio-product so scrub
-				// out invalid characters
+				// might get projectName = git@github.com:dgolovin/jbdevstudio-product so scrub out invalid characters
 				getLog().debug("projectName = " + projectName);
 				localCleanSourcesDir = projectName.replaceAll("[@:/]+", "_") + "-" + projectSHA;
 				getLog().debug("localCleanSourcesDir = " + localCleanSourcesDir);
@@ -714,18 +648,13 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 		}
 		getLog().debug("repoRoot = " + repoRoot);
 
-		// clone local sources into combinedZipFile (dirty files revert to their clean
-		// state)
+		// clone local sources into combinedZipFile (dirty files revert to their clean state)
 		File gitSourcesArchive = new File("/tmp/" + localCleanSourcesDir + ".zip"); // /tmp/jbosstools-build-sites-3df6b66f70691868e7cc4f1da70f1a0efb952dfc.zip
-		getLog().debug("cd " + repoRoot + "; git archive --prefix " + localCleanSourcesDir + " -o " + gitSourcesArchive
-				+ " HEAD");
+		getLog().debug("cd " + repoRoot + "; git archive --prefix " + localCleanSourcesDir + " -o " + gitSourcesArchive + " HEAD");
 		String command = "git archive --prefix " + localCleanSourcesDir + "/ -o " + gitSourcesArchive + " HEAD";
 		try {
-			// Note: this can be run from any subfolder in the project tree, but if we run
-			// from the root we get everything (not just site/ but
-			// jbosstools-build-sites/aggregate/site/)
-			// from
-			// http://www.javaworld.com/article/2071275/core-java/when-runtime-exec---won-t.html?page=2
+			// Note: this can be run from any subfolder in the project tree, but if we run from the root we get everything (not just site/ but jbosstools-build-sites/aggregate/site/)
+			// from http://www.javaworld.com/article/2071275/core-java/when-runtime-exec---won-t.html?page=2
 			Runtime rt = Runtime.getRuntime();
 			Process proc = rt.exec(command, null, repoRoot);
 			StreamGobbler errorGobbler = new StreamGobbler(proc.getErrorStream(), "ERROR");
@@ -736,20 +665,15 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 			getLog().debug("Runtime.getRuntime.exec() - exit value: " + exitVal);
 			getLog().debug("Packed to: " + gitSourcesArchive);
 			double filesize = gitSourcesArchive.length();
-			getLog().debug(
-					"Pack size: " + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M"
-							: String.format("%.1f", filesize / 1024) + " k"));
+			getLog().debug("Pack size: " + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M" : String.format("%.1f", filesize / 1024) + " k"));
 			unzipToDirectory(gitSourcesArchive, fullUnzipPath);
 		} catch (IOException ex) {
-			throw new MojoExecutionException("Error cloning from " + repoRoot.toString() + " to " + gitSourcesArchive,
-					ex);
+			throw new MojoExecutionException("Error cloning from " + repoRoot.toString() + " to " + gitSourcesArchive, ex);
 		} catch (InterruptedException ex) {
-			throw new MojoExecutionException("Error cloning from " + repoRoot.toString() + " to " + gitSourcesArchive,
-					ex);
+			throw new MojoExecutionException("Error cloning from " + repoRoot.toString() + " to " + gitSourcesArchive, ex);
 		}
 
-		// JBIDE-19798 - copy target/buildinfo/buildinfo*.json into
-		// sourcesZipRootFolder/buildinfo/
+		// JBIDE-19798 - copy target/buildinfo/buildinfo*.json into sourcesZipRootFolder/buildinfo/
 		File buildinfoFolder = new File(this.project.getBuild().getDirectory(), "buildinfo");
 		if (buildinfoFolder.isDirectory()) {
 			try {
@@ -757,38 +681,30 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 				FileUtils.copyDirectory(buildinfoFolder, buildinfoFolderCopy);
 				getLog().debug("Pack from: " + buildinfoFolderCopy);
 
-				// remove dupe buildinfo/buildinfo_jbosstools-build-sites.json if projectName =
-				// jbosstools-build-sites (should not have an upstream that's the same as the
-				// local project)
-				File dupeUpstreamBuildinfoFile = new File(
-						buildinfoFolderCopy + File.separator + "buildinfo_" + projectName + ".json");
+				// remove dupe buildinfo/buildinfo_jbosstools-build-sites.json if projectName = jbosstools-build-sites (should not have an upstream that's the same as the local project)
+				File dupeUpstreamBuildinfoFile = new File(buildinfoFolderCopy + File.separator + "buildinfo_" + projectName  + ".json");
 				if (dupeUpstreamBuildinfoFile.isFile()) {
 					dupeUpstreamBuildinfoFile.delete();
 				}
 			} catch (IOException e) {
-				throw new MojoExecutionException(
-						"Error copying buildinfo files to " + fullUnzipPath + File.separator + "buildinfo", e);
+				throw new MojoExecutionException("Error copying buildinfo files to " + fullUnzipPath + File.separator + "buildinfo", e);
 			}
 		} else {
 			getLog().warn("No buildinfo files found in " + buildinfoFolder.toString());
 		}
 
-		// add the unzipped upstream sources & buildinfo into the existing local sources
-		// zip
+		// add the unzipped upstream sources & buildinfo into the existing local sources zip
 		try {
 			getLog().debug("Pack from: " + fullUnzipPath);
 			zipDirectory(fullUnzipDir.getParentFile(), combinedZipFile);
 			getLog().debug("Packed to: " + combinedZipFile.getAbsolutePath());
 			double filesize = combinedZipFile.length();
-			getLog().debug(
-					"Pack size: " + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M"
-							: String.format("%.1f", filesize / 1024) + " k"));
+			getLog().debug("Pack size: " + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M" : String.format("%.1f", filesize / 1024) + " k"));
 		} catch (IOException e) {
 			throw new MojoExecutionException("Error packing " + combinedZipFile, e);
 		}
 
-		// delete temp folder with upstream sources; delete temp zip with git archive
-		// sources
+		// delete temp folder with upstream sources; delete temp zip with git archive sources
 		try {
 			getLog().debug("Delete dir: " + fullUnzipPath);
 			FileUtils.deleteDirectory(new File(fullUnzipPath));
@@ -799,8 +715,7 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 
 	}
 
-	// from
-	// http://stackoverflow.com/questions/981578/how-to-unzip-files-recursively-in-java
+	// from http://stackoverflow.com/questions/981578/how-to-unzip-files-recursively-in-java
 	static public void unzipToDirectory(String zipFile, String newPath) throws ZipException, IOException {
 		unzipToDirectory(new File(zipFile), newPath);
 	}
@@ -841,8 +756,7 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 		zip.close();
 	}
 
-	// from
-	// http://stackoverflow.com/questions/2403830/recursively-zip-a-directory-containing-any-number-of-files-and-subdirectories-in?rq=1
+	// from http://stackoverflow.com/questions/2403830/recursively-zip-a-directory-containing-any-number-of-files-and-subdirectories-in?rq=1
 	public static void zipDirectory(File dir, File zipFile) throws IOException {
 		FileOutputStream fout = new FileOutputStream(zipFile);
 		ZipOutputStream zout = new ZipOutputStream(fout);
@@ -853,8 +767,7 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 		fout.close();
 	}
 
-	// from
-	// http://stackoverflow.com/questions/2403830/recursively-zip-a-directory-containing-any-number-of-files-and-subdirectories-in?rq=1
+	// from http://stackoverflow.com/questions/2403830/recursively-zip-a-directory-containing-any-number-of-files-and-subdirectories-in?rq=1
 	private static void zipSubDirectory(String basePath, File dir, ZipOutputStream zout) throws IOException {
 		byte[] buffer = new byte[4096];
 		File[] files = dir.listFiles();
@@ -878,16 +791,14 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 	}
 
 	// given: prefix = org.jboss.tools.common
-	// given: stringToTrim =
-	// target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
+	// given: stringToTrim = target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
 	// return: 3.6.0.Alpha2-v20140304-0055-B440.jar
 	private String removePrefix(String stringToTrim, String prefix) {
 		return stringToTrim.substring(stringToTrim.lastIndexOf(prefix) + prefix.length() + 1);
 	}
 
 	// given: pluginName = org.jboss.tools.common
-	// given: jarFileName =
-	// target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
+	// given: jarFileName = target/repository/plugins/org.jboss.tools.common_3.6.0.Alpha2-v20140304-0055-B440.jar
 	// return 3.6.0.Alpha2-v20140304-0055-B440 (if full = true)
 	// return Alpha2-v20140304-0055-B440 (if full = false)
 	private String getQualifier(String pluginName, String jarFileName, boolean full) {
@@ -922,26 +833,21 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 		Wagon wagon = getWagon(repository.getProtocol());
 
 		// TODO: this should be retrieved from wagonManager
-		// com.googlecode.ConsoleDownloadMonitor downloadMonitor = new
-		// com.googlecode.ConsoleDownloadMonitor();
+		// com.googlecode.ConsoleDownloadMonitor downloadMonitor = new com.googlecode.ConsoleDownloadMonitor();
 		// wagon.addTransferListener(downloadMonitor);
 		wagon.connect(repository);
 		wagon.get(file, outputFile);
 		wagon.disconnect();
 		// wagon.removeTransferListener(downloadMonitor);
 		double filesize = outputFile.length();
-		getLog().info("Downloaded:  " + outputFile.getName() + " ("
-				+ (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M)"
-						: String.format("%.1f", filesize / 1024) + " k)"));
+		getLog().info("Downloaded:  " + outputFile.getName() + " (" + (filesize >= 1024 * 1024 ? String.format("%.1f", filesize / 1024 / 1024) + " M)" : String.format("%.1f", filesize / 1024) + " k)"));
 	}
 
-	// for a given JSON object, find /revision/HEAD, then extract the latest
-	// revision SHA from the git repo URL
+	// for a given JSON object, find /revision/HEAD, then extract the latest revision SHA from the git repo URL
 	private String getSHA(ModelNode obj) {
 		String projectSHA = null;
 		for (Property prop : obj.get("revision").asPropertyList()) {
-			if (projectSHA == null && prop.getName().equals("HEAD")) { // this is a ModelNode; want the zeroth named key
-																		// "url"
+			if (projectSHA == null && prop.getName().equals("HEAD")) { // this is a ModelNode; want the zeroth named key "url"
 				projectSHA = prop.getValue().asString();
 				getLog().debug("Upstream SHA: " + projectSHA);
 			}
@@ -953,8 +859,7 @@ public class FetchSourcesFromManifests extends AbstractMojo implements Contextua
 	private String getProperty(ModelNode obj, String propertyName) {
 		String theProperty = null;
 		for (Property prop : obj.get("properties").asPropertyList()) {
-			if (theProperty == null && prop.getName().equals(propertyName)) { // this is a ModelNode; want the zeroth
-																				// named key "url"
+			if (theProperty == null && prop.getName().equals(propertyName)) { // this is a ModelNode; want the zeroth named key "url"
 				theProperty = prop.getValue().asString();
 				getLog().debug("Upstream " + propertyName + ": " + theProperty);
 			}
