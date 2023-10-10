@@ -16,7 +16,7 @@
 	<artifactId>tycho-plugins</artifactId>
 	<packaging>pom</packaging>
 	<name>jbosstools-tycho-plugins-parent</name>
-	<version>4.0.3</version>
+	<version>4.0.4-SNAPSHOT</version>
 	<properties>
 		<tychoVersion>4.0.3</tychoVersion>
 		<maven.version>3.9.4</maven.version>
