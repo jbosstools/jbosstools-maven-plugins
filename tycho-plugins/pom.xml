@@ -60,7 +60,7 @@
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>1.6.8</version>
+				<version>1.6.13</version>
 				<extensions>true</extensions>
 				<configuration>
 					<!-- The Base URL of Nexus instance where we want to stage -->
@@ -68,14 +68,6 @@
 					<!-- The server "id" element from settings to use authentication from -->
 					<serverId>jboss-releases-repository</serverId>
 				</configuration>
-				<dependencies>
-					<!-- TODO: Remove after OSSRH-66257, NEXUS-26993 are fixed. -->
-					<dependency>
-						<groupId>com.thoughtworks.xstream</groupId>
-						<artifactId>xstream</artifactId>
-						<version>1.4.15</version>
-					</dependency>
-				</dependencies>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
