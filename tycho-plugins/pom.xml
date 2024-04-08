@@ -16,9 +16,9 @@
 	<artifactId>tycho-plugins</artifactId>
 	<packaging>pom</packaging>
 	<name>jbosstools-tycho-plugins-parent</name>
-	<version>4.0.5-SNAPSHOT</version>
+	<version>4.0.6</version>
 	<properties>
-		<tychoVersion>4.0.4</tychoVersion>
+		<tychoVersion>4.0.6</tychoVersion>
 		<maven.version>3.9.4</maven.version>
 		<!-- if https://issues.jboss.org/browse/JBIDE-22248 comes back, use
 		<jbossNexus>origin-repository.jboss.org</jbossNexus> -->
